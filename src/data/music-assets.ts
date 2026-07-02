@@ -358,6 +358,8 @@ export const themePrograms: ThemeProgram[] = [
         id: "Module 02",
         title: "音樂 Prompt 模組",
         purpose: "把 brief 轉為可直接生成的英文音樂提示詞。",
+        outputSlots: 2,
+        outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
         template: `You are a professional AI music prompt designer.
 
 Generate 2 English prompts for CEO Deep Focus instrumental electronic music.

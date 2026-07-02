@@ -65,6 +65,8 @@ export type ThemePromptModule = {
   title: string;
   purpose: string;
   template: string;
+  outputSlots?: number;
+  outputSlotLabels?: string[];
 };
 
 export type ThemeChecklistItem = {

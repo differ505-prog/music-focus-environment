@@ -36,12 +36,54 @@ function buildModuleKey(programId: string, moduleId: string) {
   return `${programId}::${moduleId}`;
 }
 
+function buildModuleSlotKey(programId: string, moduleId: string, slotIndex: number) {
+  return `${buildModuleKey(programId, moduleId)}::slot-${slotIndex}`;
+}
+
+function getModuleOutputSlotCount(module: ThemeProgram['promptModules'][number]) {
+  return Math.max(module.outputSlots ?? 1, 1);
+}
+
+function getModuleOutputSlotLabel(
+  module: ThemeProgram['promptModules'][number],
+  slotIndex: number,
+  fallbackPrefix = '候選 Prompt',
+) {
+  return (
+    module.outputSlotLabels?.[slotIndex] ??
+    (getModuleOutputSlotCount(module) > 1
+      ? `${fallbackPrefix} ${String(slotIndex + 1).padStart(2, '0')}`
+      : '此步驟輸出')
+  );
+}
+
+function combineModuleOutputs(
+  programId: string,
+  module: ThemeProgram['promptModules'][number],
+  moduleOutputs: Record<string, string>,
+) {
+  const slotCount = getModuleOutputSlotCount(module);
+  const outputs = Array.from({ length: slotCount }, (_, slotIndex) => {
+    const value = moduleOutputs[buildModuleSlotKey(programId, module.id, slotIndex)]?.trim() ?? '';
+
+    if (!value) {
+      return null;
+    }
+
+    return slotCount > 1
+      ? `===== ${getModuleOutputSlotLabel(module, slotIndex)} =====\n${value}`
+      : value;
+  }).filter((value): value is string => Boolean(value));
+
+  return outputs.join('\n\n');
+}
+
 function buildUpstreamPayload(program: ThemeProgram, moduleIndex: number, moduleOutputs: Record<string, string>) {
   const upstreamModules = program.promptModules
     .slice(0, moduleIndex)
     .map((module) => ({
       title: module.title,
-      output: moduleOutputs[buildModuleKey(program.id, module.id)]?.trim() ?? '',
+      output: combineModuleOutputs(program.id, module, moduleOutputs),
     }))
     .filter((item) => item.output.length > 0);
 
@@ -53,7 +95,12 @@ function buildUpstreamPayload(program: ThemeProgram, moduleIndex: number, module
 function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
   return Object.fromEntries(
     programs.flatMap((program) =>
-      program.promptModules.map((module) => [buildModuleKey(program.id, module.id), module.template]),
+      program.promptModules.flatMap((module) =>
+        Array.from({ length: getModuleOutputSlotCount(module) }, (_, slotIndex) => [
+          buildModuleSlotKey(program.id, module.id, slotIndex),
+          module.template,
+        ]),
+      ),
     ),
   );
 }
@@ -141,8 +188,8 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     }));
   };
 
-  const handleModuleOutputChange = (programId: string, moduleId: string, value: string) => {
-    const key = buildModuleKey(programId, moduleId);
+  const handleModuleOutputChange = (programId: string, moduleId: string, slotIndex: number, value: string) => {
+    const key = buildModuleSlotKey(programId, moduleId, slotIndex);
 
     setModuleOutputs((current) => ({
       ...current,
@@ -155,29 +202,40 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
       return;
     }
 
-    const key = buildModuleKey(programId, moduleId);
-    const templateSnapshot =
-      programs
-        .find((program) => program.id === programId)
-        ?.promptModules.find((module) => module.id === moduleId)?.template ?? '';
-    const nextOutputs = {
-      ...moduleOutputs,
-      [key]: moduleOutputs[key] ?? '',
-    };
+    const targetPromptModule = programs
+      .find((program) => program.id === programId)
+      ?.promptModules.find((item) => item.id === moduleId);
+
+    if (!targetPromptModule) {
+      return;
+    }
+
+    const moduleKey = buildModuleKey(programId, moduleId);
+    const nextOutputs = { ...moduleOutputs };
+
+    for (let slotIndex = 0; slotIndex < getModuleOutputSlotCount(targetPromptModule); slotIndex += 1) {
+      const slotKey = buildModuleSlotKey(programId, moduleId, slotIndex);
+      nextOutputs[slotKey] = moduleOutputs[slotKey] ?? '';
+    }
 
     const storedOutputs = Object.fromEntries(
       Object.entries(nextOutputs).map(([entryKey, value]) => [
         entryKey,
         {
           value,
-          templateSnapshot: entryKey === key ? templateSnapshot : buildTemplateSnapshotMap(programs)[entryKey] ?? '',
+          templateSnapshot: buildTemplateSnapshotMap(programs)[entryKey] ?? '',
         },
       ]),
     );
 
     window.localStorage.setItem(MODULE_OUTPUTS_STORAGE_KEY, JSON.stringify(storedOutputs));
     setModuleOutputs(nextOutputs);
-    setFeedback(key, '已儲存，可供後續步驟取用');
+    setFeedback(
+      moduleKey,
+      getModuleOutputSlotCount(targetPromptModule) > 1
+        ? '已儲存此步驟全部候選結果'
+        : '已儲存，可供後續步驟取用',
+    );
   };
 
   const handleCopyText = async (feedbackKey: string, value: string, successMessage: string) => {
@@ -197,7 +255,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
   const handleInsertUpstream = (program: ThemeProgram, moduleIndex: number) => {
     const targetModule = program.promptModules[moduleIndex];
     const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
-    const currentValue = moduleOutputs[buildModuleKey(program.id, targetModule.id)] ?? '';
+    const currentValue = moduleOutputs[buildModuleSlotKey(program.id, targetModule.id, 0)] ?? '';
 
     if (!upstreamPayload) {
       setFeedback(buildModuleKey(program.id, targetModule.id), '目前沒有已儲存的上游結果');
@@ -208,7 +266,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
       ? `${currentValue.trim()}\n\n===== 上游結果 =====\n\n${upstreamPayload}`
       : upstreamPayload;
 
-    handleModuleOutputChange(program.id, targetModule.id, nextValue);
+    handleModuleOutputChange(program.id, targetModule.id, 0, nextValue);
     setFeedback(buildModuleKey(program.id, targetModule.id), '已插入上游結果');
   };
 
@@ -281,6 +339,8 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                     const moduleKey = buildModuleKey(program.id, module.id);
                     const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
                     const feedback = feedbackMap[moduleKey];
+                    const slotCount = getModuleOutputSlotCount(module);
+                    const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);
 
                     return (
                       <div
@@ -321,13 +381,13 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                             onClick={() =>
                               handleCopyText(
                                 `${moduleKey}::output`,
-                                moduleOutputs[moduleKey] ?? '',
+                                combinedOutput,
                                 '此步驟結果已複製',
                               )
                             }
                             className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/14"
                           >
-                            複製此步驟結果
+                            複製此步驟全部結果
                           </button>
                         </div>
 
@@ -344,29 +404,61 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
 
                         <div className="mt-4">
                           <div className="flex items-center justify-between gap-3">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">此步驟輸出</p>
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
+                              {slotCount > 1 ? `此步驟輸出（${slotCount} 組候選）` : '此步驟輸出'}
+                            </p>
                             <span className="text-xs text-cyan-50/64">
                               {feedback ?? feedbackMap[`${moduleKey}::template`] ?? feedbackMap[`${moduleKey}::output`] ?? '可貼上 AI 生成結果'}
                             </span>
                           </div>
-                          <textarea
-                            value={moduleOutputs[moduleKey] ?? ''}
-                            onChange={(event) =>
-                              handleModuleOutputChange(program.id, module.id, event.target.value)
-                            }
-                            placeholder="把此步驟生成的結果貼在這裡，儲存後可供後面步驟直接插入或複製。"
-                            className="mt-3 min-h-40 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
-                          />
+                          <div className="mt-3 grid gap-3">
+                            {Array.from({ length: slotCount }, (_, slotIndex) => {
+                              const slotKey = buildModuleSlotKey(program.id, module.id, slotIndex);
+                              const slotLabel = getModuleOutputSlotLabel(module, slotIndex);
+
+                              return (
+                                <div
+                                  key={slotKey}
+                                  className="rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
+                                >
+                                  <div className="flex items-center justify-between gap-3">
+                                    <p className="text-xs uppercase tracking-[0.2em] text-white/48">{slotLabel}</p>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleCopyText(
+                                          `${slotKey}::output`,
+                                          moduleOutputs[slotKey] ?? '',
+                                          `${slotLabel} 已複製`,
+                                        )
+                                      }
+                                      className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
+                                    >
+                                      複製此框
+                                    </button>
+                                  </div>
+                                  <textarea
+                                    value={moduleOutputs[slotKey] ?? ''}
+                                    onChange={(event) =>
+                                      handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)
+                                    }
+                                    placeholder={`把 ${slotLabel} 貼在這裡，儲存後可供後面步驟直接插入或複製。`}
+                                    className="mt-3 min-h-40 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <button
                               type="button"
                               onClick={() => handleSaveModuleOutput(program.id, module.id)}
                               className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-50 transition hover:bg-cyan-300/16"
                             >
-                              儲存此步驟結果
+                              {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
                             </button>
                             <span className="text-xs text-white/45">
-                              儲存後，後續模組可直接取用這份內容。
+                              {slotCount > 1 ? '儲存後，後續模組可直接取用這兩組候選內容。' : '儲存後，後續模組可直接取用這份內容。'}
                             </span>
                           </div>
                         </div>
