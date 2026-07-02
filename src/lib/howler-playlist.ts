@@ -37,6 +37,7 @@ export class HowlerPlaylistController {
   private isCrossfading = false;
   private prefersBackgroundPlayback: boolean;
   private playbackEngine: PlaybackSnapshot["engine"];
+  private repeatEnabled = true;
 
   constructor(options: PlaylistControllerOptions = {}) {
     this.onStateChange = options.onStateChange;
@@ -136,8 +137,8 @@ export class HowlerPlaylistController {
       return;
     }
 
-    const nextIndex = this.currentIndex >= 0 ? this.currentIndex + 1 : 0;
-    if (nextIndex >= this.playlist.length) {
+    const nextIndex = this.getNextTrackIndex();
+    if (nextIndex === null) {
       return;
     }
 
@@ -149,8 +150,15 @@ export class HowlerPlaylistController {
       return;
     }
 
-    const previousIndex = this.currentIndex > 0 ? this.currentIndex - 1 : 0;
+    const previousIndex = this.getPreviousTrackIndex();
     this.startTrack(previousIndex);
+  }
+
+  setRepeatEnabled(enabled: boolean) {
+    this.repeatEnabled = enabled;
+    this.resetPreparedNextHowlIfMismatch();
+    this.primeUpcomingTrack();
+    this.emitState();
   }
 
   seekTo(seconds: number) {
@@ -270,8 +278,13 @@ export class HowlerPlaylistController {
     this.clearCrossfadeMonitor();
     this.clearCrossfadeFinalizeTimer();
 
-    const nextIndex = this.currentIndex + 1;
-    if (nextIndex < this.playlist.length) {
+    if (this.repeatEnabled && this.playlist.length === 1) {
+      this.startTrack(0);
+      return;
+    }
+
+    const nextIndex = this.getNextTrackIndex();
+    if (nextIndex !== null) {
       this.startTrack(nextIndex);
       return;
     }
@@ -309,7 +322,7 @@ export class HowlerPlaylistController {
 
       if (
         !this.isCrossfading &&
-        this.playlist[this.currentIndex + 1] &&
+        this.getNextTrackIndex() !== null &&
         duration > mixWindow &&
         duration - seek <= mixWindow
       ) {
@@ -325,7 +338,7 @@ export class HowlerPlaylistController {
 
     const currentHowl = this.currentHowl;
     const currentTrack = this.getCurrentTrack();
-    const nextTrack = this.playlist[this.currentIndex + 1];
+    const nextTrack = this.getNextTrack();
 
     if (!currentHowl || !currentTrack || !nextTrack || this.nextHowl) {
       return;
@@ -366,7 +379,7 @@ export class HowlerPlaylistController {
 
       this.currentHowl = incomingHowl;
       this.nextHowl = null;
-      this.currentIndex += 1;
+      this.currentIndex = this.getNextTrackIndex() ?? this.currentIndex;
       this.isCrossfading = false;
 
       this.primeUpcomingTrack();
@@ -451,7 +464,41 @@ export class HowlerPlaylistController {
   }
 
   private getNextTrack() {
-    return this.playlist[this.currentIndex + 1] ?? null;
+    const nextIndex = this.getNextTrackIndex();
+    return nextIndex === null ? null : this.playlist[nextIndex] ?? null;
+  }
+
+  private getNextTrackIndex() {
+    if (this.playlist.length === 0) {
+      return null;
+    }
+
+    const nextIndex = this.currentIndex >= 0 ? this.currentIndex + 1 : 0;
+    if (nextIndex < this.playlist.length) {
+      return nextIndex;
+    }
+
+    if (this.repeatEnabled && this.playlist.length > 1) {
+      return 0;
+    }
+
+    return null;
+  }
+
+  private getPreviousTrackIndex() {
+    if (this.playlist.length === 0) {
+      return 0;
+    }
+
+    if (this.currentIndex > 0) {
+      return this.currentIndex - 1;
+    }
+
+    if (this.repeatEnabled && this.playlist.length > 1) {
+      return this.playlist.length - 1;
+    }
+
+    return 0;
   }
 
   private isPlaying() {
@@ -531,10 +578,11 @@ export class HowlerPlaylistController {
     const currentHowl = this.currentHowl;
     const currentTrack = this.getCurrentTrack();
     const nextTrack = this.isCrossfading ? this.playlist[this.currentIndex + 1] : this.getNextTrack();
+    const crossfadeNextTrack = this.isCrossfading ? this.getNextTrack() : null;
 
     this.onStateChange({
       currentTrackId: currentTrack?.id ?? null,
-      nextTrackId: nextTrack?.id ?? null,
+      nextTrackId: (crossfadeNextTrack ?? nextTrack)?.id ?? null,
       currentTime: currentHowl ? Number(currentHowl.seek() || 0) : 0,
       duration: currentHowl?.duration() ?? 0,
       isPlaying: this.isPlaying(),
@@ -542,6 +590,7 @@ export class HowlerPlaylistController {
       crossfadeWindowSeconds: currentTrack?.transition.crossfadeSeconds ?? 4.36,
       engine: this.playbackEngine,
       prefersBackgroundPlayback: this.prefersBackgroundPlayback,
+      repeatEnabled: this.repeatEnabled,
     });
   }
 }

@@ -32,6 +32,7 @@ const initialPlaybackState: PlaybackSnapshot = {
   crossfadeWindowSeconds: 4.36,
   engine: "precision_web_audio",
   prefersBackgroundPlayback: false,
+  repeatEnabled: true,
 };
 
 function wait(ms: number) {
@@ -266,6 +267,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     controllerRef.current.play();
   };
 
+  const handleToggleRepeat = () => {
+    controllerRef.current?.setRepeatEnabled(!playback.repeatEnabled);
+  };
+
   const handlePlayTrack = (assetId: string) => {
     setIsPlayerOpen(true);
     setIsPlayerMinimized((current) => (isPlayerOpen ? current : true));
@@ -393,6 +398,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           isMinimized={isPlayerMinimized}
           mode={mode}
           onPlayPause={handlePlayPause}
+          onToggleRepeat={handleToggleRepeat}
           onPrevious={() => controllerRef.current?.previous()}
           onNext={() => controllerRef.current?.next()}
           onSeek={(seconds) => controllerRef.current?.seekTo(seconds)}

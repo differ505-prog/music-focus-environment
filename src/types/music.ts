@@ -136,4 +136,5 @@ export type PlaybackSnapshot = {
   crossfadeWindowSeconds: number;
   engine: PlaybackEngine;
   prefersBackgroundPlayback: boolean;
+  repeatEnabled: boolean;
 };

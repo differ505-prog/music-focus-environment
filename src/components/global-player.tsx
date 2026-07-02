@@ -10,6 +10,7 @@ import {
   Pause,
   Play,
   Redo2,
+  Repeat,
   SkipBack,
   SkipForward,
   Undo2,
@@ -27,6 +28,7 @@ type GlobalPlayerProps = {
   isMinimized: boolean;
   mode?: "public" | "admin";
   onPlayPause: () => void;
+  onToggleRepeat: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onSeek: (seconds: number) => void;
@@ -59,6 +61,7 @@ export function GlobalPlayer({
   isMinimized,
   mode = "public",
   onPlayPause,
+  onToggleRepeat,
   onPrevious,
   onNext,
   onSeek,
@@ -170,6 +173,19 @@ export function GlobalPlayer({
                 aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
               >
                 {playback.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </button>
+              <button
+                type="button"
+                onClick={onToggleRepeat}
+                disabled={playlist.length === 0}
+                className={`rounded-full border p-3 transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                  playback.repeatEnabled
+                    ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
+                    : "border-white/10 bg-white/8 text-white/75 hover:bg-white/12 hover:text-white"
+                }`}
+                aria-label={playback.repeatEnabled ? "關閉循環播放" : "開啟循環播放"}
+              >
+                <Repeat className="h-4 w-4" />
               </button>
               <button
                 type="button"
@@ -290,6 +306,7 @@ export function GlobalPlayer({
                 <div className="text-sm text-white/64">
                   清單共 {playlist.length} 首
                   {playback.isCrossfading ? ` · Crossfade 進行中（${playback.crossfadeWindowSeconds}s）` : ""}
+                  {playback.repeatEnabled ? " · 循環播放" : ""}
                 </div>
               </div>
               {currentTrack ? (
@@ -349,6 +366,19 @@ export function GlobalPlayer({
                 aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
               >
                 {playback.isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
+              </button>
+              <button
+                type="button"
+                onClick={onToggleRepeat}
+                disabled={playlist.length === 0}
+                className={`rounded-full border p-3 transition disabled:cursor-not-allowed disabled:opacity-40 ${
+                  playback.repeatEnabled
+                    ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
+                    : "border-white/10 bg-white/8 text-white hover:bg-white/12"
+                }`}
+                aria-label={playback.repeatEnabled ? "關閉循環播放" : "開啟循環播放"}
+              >
+                <Repeat className="h-4 w-4" />
               </button>
               <button
                 type="button"
