@@ -72,7 +72,6 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [isArtworkOpen, setIsArtworkOpen] = useState(false);
-  const [isArtworkFullscreen, setIsArtworkFullscreen] = useState(false);
   const artworkContainerRef = useRef<HTMLDivElement | null>(null);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
 
@@ -87,21 +86,15 @@ export function GlobalPlayer({
       return;
     }
 
-    const handleFullscreenChange = () => {
-      setIsArtworkFullscreen(document.fullscreenElement === artworkContainerRef.current);
-    };
-
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape" && document.fullscreenElement !== artworkContainerRef.current) {
         setIsArtworkOpen(false);
       }
     };
 
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
@@ -209,6 +202,7 @@ export function GlobalPlayer({
         {isArtworkOpen && currentTrack && artworkSrc ? (
           <div
             ref={artworkContainerRef}
+            onClick={() => void handleCloseArtwork()}
             className="fixed inset-0 z-50 flex items-center justify-center bg-[#02040a]/96 p-4 md:p-8"
           >
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)]" />
@@ -219,31 +213,12 @@ export function GlobalPlayer({
               className="object-cover opacity-22 blur-2xl"
               unoptimized
             />
-            <div className="relative z-10 flex h-full w-full max-w-7xl flex-col">
-              <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/32 px-4 py-3 text-white/80 backdrop-blur-xl">
-                <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/60">Artwork View</p>
-                  <h3 className="truncate font-serif text-lg text-white">{currentTrack.title}</h3>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleToggleArtworkFullscreen}
-                    className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-white transition hover:bg-white/12"
-                  >
-                    {isArtworkFullscreen ? "退出全螢幕" : "全螢幕"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleCloseArtwork}
-                    className="rounded-full border border-white/10 bg-white/8 p-2 text-white/75 transition hover:bg-white/12 hover:text-white"
-                    aria-label="關閉看圖模式"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-              <div className="relative mt-4 flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]">
+            <div className="relative z-10 flex h-full w-full max-w-7xl items-center justify-center">
+              <div
+                className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
+                onClick={(event) => event.stopPropagation()}
+                onDoubleClick={() => void handleToggleArtworkFullscreen()}
+              >
                 <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
               </div>
             </div>
@@ -460,7 +435,11 @@ export function GlobalPlayer({
         </div>
       </div>
       {isArtworkOpen && currentTrack && artworkSrc ? (
-        <div ref={artworkContainerRef} className="fixed inset-0 z-50 flex items-center justify-center bg-[#02040a]/96 p-4 md:p-8">
+        <div
+          ref={artworkContainerRef}
+          onClick={() => void handleCloseArtwork()}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#02040a]/96 p-4 md:p-8"
+        >
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)]" />
           <Image
             src={artworkSrc}
@@ -469,31 +448,12 @@ export function GlobalPlayer({
             className="object-cover opacity-22 blur-2xl"
             unoptimized
           />
-          <div className="relative z-10 flex h-full w-full max-w-7xl flex-col">
-            <div className="flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/32 px-4 py-3 text-white/80 backdrop-blur-xl">
-              <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/60">Artwork View</p>
-                <h3 className="truncate font-serif text-lg text-white">{currentTrack.title}</h3>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={handleToggleArtworkFullscreen}
-                  className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm text-white transition hover:bg-white/12"
-                >
-                  {isArtworkFullscreen ? "退出全螢幕" : "全螢幕"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleCloseArtwork}
-                  className="rounded-full border border-white/10 bg-white/8 p-2 text-white/75 transition hover:bg-white/12 hover:text-white"
-                  aria-label="關閉看圖模式"
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-            <div className="relative mt-4 flex-1 overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]">
+          <div className="relative z-10 flex h-full w-full max-w-7xl items-center justify-center">
+            <div
+              className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
+              onClick={(event) => event.stopPropagation()}
+              onDoubleClick={() => void handleToggleArtworkFullscreen()}
+            >
               <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
             </div>
           </div>
