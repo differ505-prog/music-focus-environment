@@ -469,11 +469,11 @@ Brief：
       "主打穩定步頻、輕推進、戶外夜跑與耐力慢跑場景，重點不是夜店接歌，而是步伐鎖定與續航感。",
     audience: "慢跑、跑步機、夜跑暖身、低壓耐力訓練",
     positioning:
-      "以固定 180 BPM 的腳步鎖定感為核心，先建立夜跑與耐力節奏世界觀，再量產適合長距離維持 cadence 的運動型內容。",
+      "不是聽放鬆的，這本質上是一個 BPM 180 的節拍器 (Metronome)。必須嚴格鎖定步頻，每一拍都要對齊腳步，作為維持長距離 cadence 的高強度實用工具。",
     operatingPrinciples: [
-      "共用骨架延續 no vocals、long-loop、平順轉場與 dark premium 視覺，但節奏任務改為步頻牽引，而不是深度思考。",
+      "共用骨架延續 no vocals、long-loop、平順轉場與 dark premium 視覺，但聽感絕對不能放鬆，必須有 relentless 的推進感。",
       "所有 prompt 與 metadata 固定 180 BPM，不做多車道，確保跑步時身體節奏不被拉扯。",
-      "優先描述腳步、呼吸、路面、霓虹反射與穩定推進感；禁止只把專注主題 prompt 換成跑步字眼。",
+      "優先描述腳步鎖定 (cadence lock)、節拍器般精準 (metronomic precision) 與高度功能性 (functional tool)。",
     ],
     layoutNotes: [
       "前台新增獨立主題卡，視覺偏霓虹跑道、城市夜霧、呼吸節奏線，而不是豪宅壁爐。",
@@ -528,10 +528,11 @@ Brief：
 8. 前後接歌氛圍描述
 
 固定規則：
-- 以 steady cadence、light propulsion、endurance friendly 為主
-- 從頭到尾必須有清晰鼓點，禁止無節拍的 Intro/Outro
+- 這不是用來放鬆的音樂，而是一個高度功能性的 BPM 180 節拍器
+- 以 strict cadence lock、metronomic precision、functional workout tool 為主
+- 從頭到尾必須有清晰且不間斷的鼓點，禁止無節拍的 Intro/Outro
 - 不要反問，直接補足缺漏
-- 適合長距離慢跑與跑步機維持節奏
+- 必須讓跑者每一步都能踩在拍子上
 
 輸入線索：
 【貼上跑道、城市、呼吸、體感、時間感】`,
@@ -546,16 +547,18 @@ Generate 3 English prompts for a BPM 180 Slow Jog instrumental track.
 
 Requirements:
 - exact 180 BPM
-- steady cadence lock
-- constant drum beat from start to finish
+- strict cadence lock, metronomic precision
+- highly functional running tool, NOT for relaxing
+- relentless four-on-the-floor or continuous drum beat from start to finish
 - immediate rhythm lock, NO ambient intros or beatless outros
-- light propulsion
-- clean transient
+- clean transient, strong attack on beats
 - no vocals
 - loop-friendly for long runs
-- supportive rather than aggressive
 
 Negative constraints:
+- no chillout elements
+- no relaxing or ambient textures
+- no syncopation that disrupts footing
 - no beatless sections
 - no ambient intro/outro
 - no chaotic percussion switch
@@ -625,8 +628,8 @@ Brief：
     acceptanceChecklist: [
       {
         id: "Check 01",
-        title: "跑感與節拍成立",
-        detail: "從頭到尾必須有明確鼓點節拍（嚴禁無鼓點的 Intro/Outro），整體聽感應服務腳步與呼吸，不可過度侵略。",
+        title: "純功能性節拍器",
+        detail: "這不是用來聽放鬆的。每一步都必須有明確鼓點對齊（Metronomic），沒有讓人想放慢腳步的 chill/ambient 感。",
       },
       {
         id: "Check 02",
