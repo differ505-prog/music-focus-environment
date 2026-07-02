@@ -5,11 +5,13 @@ import { useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Headphones, Sparkles } from "lucide-react";
 
 import { generatedSceneImageUrl } from "@/data/music-assets";
+import type { BpmCompatibility } from "@/lib/bpm-lanes";
 import type { Track } from "@/types/music";
 
 type MediaCardProps = {
   asset: Track;
   mode?: "public" | "admin";
+  compatibility?: BpmCompatibility | null;
   checked: boolean;
   isCurrent: boolean;
   isNext: boolean;
@@ -20,6 +22,7 @@ type MediaCardProps = {
 export function MediaCard({
   asset,
   mode = "public",
+  compatibility = null,
   checked,
   isCurrent,
   isNext,
@@ -33,6 +36,13 @@ export function MediaCard({
   const imageSrc = useMemo(() => {
     return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
   }, [asset.media.coverImageUrl, imageErrored]);
+
+  const compatibilityTone =
+    compatibility?.status === "exact"
+      ? "border-emerald-300/25 bg-emerald-300/12 text-emerald-100"
+      : compatibility?.status === "adjacent"
+        ? "border-amber-300/25 bg-amber-300/12 text-amber-100"
+        : "border-rose-300/25 bg-rose-300/12 text-rose-100";
 
   return (
     <article className="group relative overflow-hidden rounded-[30px] border border-fuchsia-400/12 bg-white/9 p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
@@ -142,6 +152,11 @@ export function MediaCard({
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white/78">
             <Check className="h-3.5 w-3.5" />
             已加入播放清單
+          </span>
+        ) : null}
+        {compatibility && !isCurrent ? (
+          <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${compatibilityTone}`}>
+            {compatibility.label}
           </span>
         ) : null}
       </div>

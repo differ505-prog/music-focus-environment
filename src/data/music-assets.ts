@@ -1,7 +1,11 @@
 import type { MixEvent, MixSession, Track, TrackTransitionProfile } from "@/types/music";
+import { bpmLaneOptions } from "@/lib/bpm-lanes";
 
-export const defaultMusicPrompt =
-  "Instrumental deep chillwave, melodic techno, dark atmospheric electronic, steady driving bassline, focused deep work rhythm for CEO mindset, tempo 110 BPM, constant tempo, subtle background fireplace crackling sounds, ambient, no vocals, cinematic, sophisticated.";
+function buildMusicPrompt(bpm: number) {
+  return `Instrumental deep chillwave, melodic techno, dark atmospheric electronic, steady driving bassline, focused deep work rhythm for CEO mindset, tempo ${bpm} BPM, constant tempo, subtle background fireplace crackling sounds, ambient, no vocals, cinematic, sophisticated.`;
+}
+
+export const defaultMusicPrompt = buildMusicPrompt(110);
 
 export const defaultImagePrompt =
   "Cinematic interior shot of a luxurious modern mansion in the mountains. Massive floor-to-ceiling windows revealing a dark, dense, and misty pine forest outside. A warm, roaring fireplace is burning in the living room. Sleek, sophisticated CEO workspace with a dark wood desk, moody ambient lighting, photorealistic, 8k resolution, architectural photography, cozy yet powerful and focused atmosphere.";
@@ -11,7 +15,6 @@ export const defaultVideoPrompt =
 
 export const generatedSceneImageUrl = `https://core-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(defaultImagePrompt)}&image_size=landscape_16_9`;
 
-const tempoLockedCrossfadeSeconds = 4.36;
 const targetLufs = -14.5;
 
 function dbToGain(db: number) {
@@ -19,74 +22,67 @@ function dbToGain(db: number) {
 }
 
 function createTransitionProfile(profile: {
+  bpm: number;
   introCueSeconds: number;
-  outroMixWindowSeconds: number;
-  crossfadeSeconds: number;
   sourceLufs: number;
   tempoLockBars: number;
-  beatDurationSeconds: number;
   mixInPointSeconds: number;
   mixOutPointSeconds: number;
 }): TrackTransitionProfile {
   const normalizationGainDb = Number((targetLufs - profile.sourceLufs).toFixed(2));
+  const beatDurationSeconds = Number((60 / profile.bpm).toFixed(3));
+  const crossfadeSeconds = Number((beatDurationSeconds * profile.tempoLockBars * 4).toFixed(2));
 
   return {
     ...profile,
+    outroMixWindowSeconds: crossfadeSeconds,
+    crossfadeSeconds,
     targetGain: dbToGain(normalizationGainDb),
     targetLufs,
     normalizationGainDb,
     fadeCurve: "equal_power",
+    beatDurationSeconds,
   };
 }
 
 const transitionProfiles: TrackTransitionProfile[] = [
   createTransitionProfile({
+    bpm: 110,
     introCueSeconds: 0.12,
-    outroMixWindowSeconds: 4.36,
-    crossfadeSeconds: 4.36,
     sourceLufs: -13.95,
     tempoLockBars: 2,
-    beatDurationSeconds: 0.545,
     mixInPointSeconds: 16,
     mixOutPointSeconds: 170,
   }),
   createTransitionProfile({
+    bpm: 105,
     introCueSeconds: 0.28,
-    outroMixWindowSeconds: 4.14,
-    crossfadeSeconds: 4.14,
     sourceLufs: -14.08,
     tempoLockBars: 2,
-    beatDurationSeconds: 0.545,
     mixInPointSeconds: 12,
     mixOutPointSeconds: 167,
   }),
   createTransitionProfile({
+    bpm: 110,
     introCueSeconds: 0.08,
-    outroMixWindowSeconds: 4.36,
-    crossfadeSeconds: 4.36,
     sourceLufs: -13.78,
     tempoLockBars: 2,
-    beatDurationSeconds: 0.545,
     mixInPointSeconds: 18,
     mixOutPointSeconds: 176,
   }),
   createTransitionProfile({
+    bpm: 115,
     introCueSeconds: 0.2,
-    outroMixWindowSeconds: 4.5,
-    crossfadeSeconds: 4.2,
     sourceLufs: -14.02,
     tempoLockBars: 2,
-    beatDurationSeconds: 0.545,
     mixInPointSeconds: 14,
     mixOutPointSeconds: 168,
   }),
   createTransitionProfile({
+    bpm: 120,
     introCueSeconds: 0.16,
-    outroMixWindowSeconds: tempoLockedCrossfadeSeconds,
-    crossfadeSeconds: tempoLockedCrossfadeSeconds,
     sourceLufs: -13.7,
     tempoLockBars: 2,
-    beatDurationSeconds: 0.545,
     mixInPointSeconds: 20,
     mixOutPointSeconds: 178,
   }),
@@ -102,6 +98,7 @@ const trackNarratives = [
     descriptionZh: "深夜決策節奏，適合需要穩定節拍與冷靜推進感的專注時段。",
     descriptionEn: "A disciplined night-work groove built for focused executive planning and steady strategic momentum.",
     themeScenario: "山中豪宅書房，壁爐旁的 CEO 深夜規劃季度策略。",
+    bpm: 110,
   },
   {
     title: "Ember Focus Drive",
@@ -112,6 +109,7 @@ const trackNarratives = [
     descriptionZh: "帶有壁爐暖度的推進型節奏，適合長時間 coding 與深度思考。",
     descriptionEn: "A warm but driven rhythm tuned for long coding blocks, deliberate thinking, and protected flow.",
     themeScenario: "壁爐火光映在深木桌面上，專注處理高壓但需要沉著的工作。",
+    bpm: 105,
   },
   {
     title: "Summit Rhythm Frame",
@@ -122,6 +120,7 @@ const trackNarratives = [
     descriptionZh: "視野打開後的穩定上升感，適合創作、統整與切入重要決策。",
     descriptionEn: "An expansive, upward pulse that supports ideation, synthesis, and high-stakes decision framing.",
     themeScenario: "站在山景玻璃前整理創作框架，視野遼闊但節奏仍然緊實。",
+    bpm: 110,
   },
   {
     title: "Obsidian Session Grid",
@@ -132,6 +131,7 @@ const trackNarratives = [
     descriptionZh: "偏理性與系統感的深色節奏，適合規劃流程、檢查清單與工作系統化。",
     descriptionEn: "A darker systems-minded pulse for operational reviews, checklists, and disciplined execution sessions.",
     themeScenario: "黑曜石色調的工作室內，逐項對齊流程、節點與目標。",
+    bpm: 115,
   },
   {
     title: "Nocturne Executive Flow",
@@ -142,6 +142,7 @@ const trackNarratives = [
     descriptionZh: "夜色中帶電影感的專注流，適合寫作、企劃與長時段沉浸工作。",
     descriptionEn: "A cinematic nocturne for writing, planning, and immersive work sessions that need refined tension.",
     themeScenario: "夜色壓低了外界聲響，只剩火光、森林與室內低頻節奏。",
+    bpm: 120,
   },
 ] as const;
 
@@ -149,7 +150,7 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
   id: item.slug.replace(/-/g, "-"),
   slug: item.slug,
   title: item.title,
-  bpm: 110,
+  bpm: item.bpm,
   durationSeconds: 198 + index * 4,
   musicalKey: item.musicalKey,
   energyLevel: item.energyLevel,
@@ -166,10 +167,10 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
     themeScenario: item.themeScenario,
   },
   prompts: {
-    musicPrompt: defaultMusicPrompt,
+    musicPrompt: buildMusicPrompt(item.bpm),
     imagePrompt: defaultImagePrompt,
     videoPrompt: defaultVideoPrompt,
-    generationPrompt: `情境：${item.themeScenario}。請先萃取情境關鍵字，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
+    generationPrompt: `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
   },
   transition: transitionProfiles[index],
   createdAt: `2026-07-0${index + 1}T21:00:00.000Z`,
@@ -275,29 +276,37 @@ export const mixEvents: MixEvent[] = [
   },
 ];
 
-export const bpmOptions = [90, 110, 120] as const;
+export const bpmOptions = bpmLaneOptions;
 
 export const promptWorkflowSteps = [
   {
     id: "Step 1",
     title: "情境母題設計",
-    purpose: "先定義這首歌的世界觀、場景與情緒，後面所有素材都以此為母體。",
+    purpose: "你只需填少量抽象畫面與情緒關鍵字，其餘缺漏由 LLM 自動補足成完整母題。",
     prompt: `你是一位擅長設計高級沉浸式音樂情境的創意策劃師。
 
-請根據我提供的核心想法，整理成可用於後續 AI 生成音樂、封面圖、背景影片與網站 metadata 的情境母題。
+我只會提供少量抽象線索，例如場景畫面、情緒、材質、光線、時間感。請主動補足缺漏，不要因為資訊不完整就停止。
+
+請根據我提供的少量線索，整理成可用於後續 AI 生成音樂、封面圖、背景影片與網站 metadata 的完整情境母題。
 
 請輸出：
 1. themeScenario
 2. 核心情緒（3-5 個）
 3. 使用場景
-4. 建議 BPM 範圍
+4. 建議 BPM（必須從 ${bpmLaneOptions.join(" / ")} 擇一，不能自創數值）
 5. 建議 energy level（1-10）
 6. 視覺關鍵字
 7. 音樂風格關鍵字
 8. 適合接歌的前後氛圍描述
 
-核心想法：
-【在這裡填你的想法】`,
+規則：
+- 優先保留我提供的意象
+- 如果資訊缺漏，請以 high-end、dark、immersive、CEO mindset、deep work 為方向自動補全
+- 不要反問我補資料，直接做出可執行版本
+- 請用結構化輸出，不要寫散文
+
+我提供的少量線索：
+【只要填抽象畫面、情緒、材質、時間感、場所關鍵字即可】`,
   },
   {
     id: "Step 2",
@@ -313,6 +322,7 @@ export const promptWorkflowSteps = [
 - 可 long loop
 - 適合 crossfade
 - cinematic、dark atmospheric、premium、sophisticated
+- BPM 只能從 ${bpmLaneOptions.join(" / ")} 擇一
 
 情境母題：
 【貼上 Step 1 結果】`,
@@ -352,7 +362,7 @@ export const promptWorkflowSteps = [
 5. moodTags（5 個）
 6. musicalKey 建議
 7. energyLevel（1-10）
-8. 建議 BPM
+8. 建議 BPM（只能從 ${bpmLaneOptions.join(" / ")} 選一個）
 
 情境母題：
 【貼上 Step 1 結果】

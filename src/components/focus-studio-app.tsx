@@ -12,12 +12,14 @@ import {
   tracks,
 } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
+import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { PromptWorkflowPanel } from "@/components/prompt-workflow-panel";
 import { SelectionActionBar } from "@/components/selection-action-bar";
 import { StudioNav } from "@/components/studio-nav";
+import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
 import type { PlaybackSnapshot } from "@/types/music";
 
@@ -75,6 +77,24 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const nextTrack = useMemo(() => {
     return tracks.find((asset) => asset.id === playback.nextTrackId) ?? null;
   }, [playback.nextTrackId]);
+
+  const bpmCompatibilityMap = useMemo(() => {
+    const entries = tracks.map((track) => {
+      if (!currentTrack || currentTrack.id === track.id) {
+        return [track.id, null] as const;
+      }
+
+      return [track.id, getBpmCompatibility(currentTrack.bpm, track.bpm)] as const;
+    });
+
+    return new Map(entries);
+  }, [currentTrack]);
+
+  const recommendedMixes = useMemo(() => {
+    return rankTracksForMixing(currentTrack, tracks)
+      .filter((item) => item.compatibility.isRecommended)
+      .slice(0, 3);
+  }, [currentTrack]);
 
   const mixInsights = useMemo(() => {
     const publicSessions = mixSessions.filter((session) => session.listenerMode === "public_mix");
@@ -282,6 +302,16 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           />
         </div>
 
+        {!isAdmin && currentTrack ? (
+          <div className="mt-6">
+            <BpmRecommendationPanel
+              currentTrack={currentTrack}
+              recommendations={recommendedMixes}
+              onPlayTrack={handlePlayTrack}
+            />
+          </div>
+        ) : null}
+
         {isAdmin ? (
           <div className="mt-6">
             <MixInsightsPanel {...mixInsights} />
@@ -300,6 +330,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               key={asset.id}
               asset={asset}
               mode={mode}
+              compatibility={bpmCompatibilityMap.get(asset.id) ?? null}
               checked={selectedIds.includes(asset.id)}
               isCurrent={playback.currentTrackId === asset.id}
               isNext={playback.nextTrackId === asset.id}
