@@ -1,3 +1,12 @@
+export type MusicTransitionProfile = {
+  introCueSeconds: number;
+  outroMixWindowSeconds: number;
+  crossfadeSeconds: number;
+  targetGain: number;
+  tempoLockBars: number;
+  beatDurationSeconds: number;
+};
+
 export type MusicAsset = {
   id: string;
   title: string;
@@ -6,6 +15,7 @@ export type MusicAsset = {
   imageUrl: string;
   musicPrompt: string;
   imagePrompt: string;
+  transition: MusicTransitionProfile;
 };
 
 export type PlaybackSnapshot = {

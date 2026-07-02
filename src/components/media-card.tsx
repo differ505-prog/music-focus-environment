@@ -75,6 +75,15 @@ export function MediaCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
+        <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
+          {asset.transition.tempoLockBars} Bars Lock
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+          Cue {asset.transition.introCueSeconds.toFixed(2)}s
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+          Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
+        </span>
         {isCurrent ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/12 px-3 py-1 text-xs text-emerald-100">
             <Headphones className="h-3.5 w-3.5" />

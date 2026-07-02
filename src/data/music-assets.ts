@@ -8,6 +8,51 @@ export const defaultImagePrompt =
 
 export const generatedSceneImageUrl = `https://core-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(defaultImagePrompt)}&image_size=landscape_16_9`;
 
+const tempoLockedCrossfadeSeconds = 4.36;
+
+const transitionProfiles: MusicAsset["transition"][] = [
+  {
+    introCueSeconds: 0.12,
+    outroMixWindowSeconds: 4.36,
+    crossfadeSeconds: 4.36,
+    targetGain: 0.94,
+    tempoLockBars: 2,
+    beatDurationSeconds: 0.545,
+  },
+  {
+    introCueSeconds: 0.28,
+    outroMixWindowSeconds: 4.14,
+    crossfadeSeconds: 4.14,
+    targetGain: 0.96,
+    tempoLockBars: 2,
+    beatDurationSeconds: 0.545,
+  },
+  {
+    introCueSeconds: 0.08,
+    outroMixWindowSeconds: 4.36,
+    crossfadeSeconds: 4.36,
+    targetGain: 0.92,
+    tempoLockBars: 2,
+    beatDurationSeconds: 0.545,
+  },
+  {
+    introCueSeconds: 0.2,
+    outroMixWindowSeconds: 4.5,
+    crossfadeSeconds: 4.2,
+    targetGain: 0.95,
+    tempoLockBars: 2,
+    beatDurationSeconds: 0.545,
+  },
+  {
+    introCueSeconds: 0.16,
+    outroMixWindowSeconds: tempoLockedCrossfadeSeconds,
+    crossfadeSeconds: tempoLockedCrossfadeSeconds,
+    targetGain: 0.93,
+    tempoLockBars: 2,
+    beatDurationSeconds: 0.545,
+  },
+];
+
 export const musicAssets: MusicAsset[] = [
   {
     id: "aurora-strategy",
@@ -17,6 +62,7 @@ export const musicAssets: MusicAsset[] = [
     imageUrl: "/img/demo.jpg",
     musicPrompt: defaultMusicPrompt,
     imagePrompt: defaultImagePrompt,
+    transition: transitionProfiles[0],
   },
   {
     id: "ember-focus",
@@ -26,6 +72,7 @@ export const musicAssets: MusicAsset[] = [
     imageUrl: "/img/demo.jpg",
     musicPrompt: defaultMusicPrompt,
     imagePrompt: defaultImagePrompt,
+    transition: transitionProfiles[1],
   },
   {
     id: "summit-rhythm",
@@ -35,6 +82,7 @@ export const musicAssets: MusicAsset[] = [
     imageUrl: "/img/demo.jpg",
     musicPrompt: defaultMusicPrompt,
     imagePrompt: defaultImagePrompt,
+    transition: transitionProfiles[2],
   },
   {
     id: "obsidian-session",
@@ -44,6 +92,7 @@ export const musicAssets: MusicAsset[] = [
     imageUrl: "/img/demo.jpg",
     musicPrompt: defaultMusicPrompt,
     imagePrompt: defaultImagePrompt,
+    transition: transitionProfiles[3],
   },
   {
     id: "nocturne-executive",
@@ -53,6 +102,7 @@ export const musicAssets: MusicAsset[] = [
     imageUrl: "/img/demo.jpg",
     musicPrompt: defaultMusicPrompt,
     imagePrompt: defaultImagePrompt,
+    transition: transitionProfiles[4],
   },
 ];
 

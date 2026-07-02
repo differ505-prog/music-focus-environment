@@ -2,8 +2,6 @@ import { Howl } from "howler";
 
 import type { MusicAsset, PlaybackSnapshot } from "@/types/music";
 
-const CROSSFADE_WINDOW_SECONDS = 4.36;
-const CROSSFADE_DURATION_MS = CROSSFADE_WINDOW_SECONDS * 1000;
 const PLAYBACK_POLL_MS = 200;
 
 type PlaylistControllerOptions = {
@@ -15,6 +13,8 @@ export class HowlerPlaylistController {
   private currentIndex = -1;
   private currentHowl: Howl | null = null;
   private nextHowl: Howl | null = null;
+  private preparedNextHowl: Howl | null = null;
+  private preparedNextTrackId: string | null = null;
   private crossfadeMonitor: ReturnType<typeof setInterval> | null = null;
   private crossfadeFinalizeTimer: ReturnType<typeof setTimeout> | null = null;
   private onStateChange?: (snapshot: PlaybackSnapshot) => void;
@@ -38,6 +38,8 @@ export class HowlerPlaylistController {
     }
 
     if (!currentTrackId) {
+      this.currentIndex = this.currentIndex >= 0 ? Math.min(this.currentIndex, nextPlaylist.length - 1) : -1;
+      this.primeUpcomingTrack();
       this.emitState();
       return;
     }
@@ -53,19 +55,14 @@ export class HowlerPlaylistController {
         return;
       }
 
+      this.primeUpcomingTrack();
       this.emitState();
       return;
     }
 
     this.currentIndex = nextCurrentIndex;
-
-    if (this.nextHowl) {
-      const nextTrackId = nextPlaylist[nextCurrentIndex + 1]?.id;
-      if (!nextTrackId) {
-        this.cleanupNextHowl();
-      }
-    }
-
+    this.resetPreparedNextHowlIfMismatch();
+    this.primeUpcomingTrack();
     this.emitState();
   }
 
@@ -104,7 +101,7 @@ export class HowlerPlaylistController {
       this.cleanupNextHowl();
       this.isCrossfading = false;
       this.clearCrossfadeFinalizeTimer();
-      this.currentHowl.volume(1);
+      this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
     }
 
     this.clearCrossfadeMonitor();
@@ -151,7 +148,7 @@ export class HowlerPlaylistController {
       this.cleanupNextHowl();
       this.isCrossfading = false;
       this.clearCrossfadeFinalizeTimer();
-      this.currentHowl.volume(1);
+      this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
     }
 
     if (this.currentHowl.playing()) {
@@ -185,19 +182,21 @@ export class HowlerPlaylistController {
     this.stopAndUnloadAll();
     this.currentIndex = index;
 
-    const howl = this.createHowl(track, 1);
+    const howl = this.createHowl(track, 1, track.transition.introCueSeconds);
     this.currentHowl = howl;
     howl.play();
+    this.primeUpcomingTrack();
     this.emitState();
   }
 
-  private createHowl(track: MusicAsset, volume: number) {
+  private createHowl(track: MusicAsset, volumeFactor: number, startAtSeconds = 0) {
     const howl = new Howl({
       src: [track.audioUrl],
       html5: false,
       preload: true,
-      volume,
+      volume: this.getTargetGain(track) * volumeFactor,
     });
+    let startCueApplied = false;
 
     howl.on("load", () => {
       if (howl === this.currentHowl && howl.playing()) {
@@ -207,6 +206,11 @@ export class HowlerPlaylistController {
     });
 
     howl.on("play", () => {
+      if (!startCueApplied && startAtSeconds > 0) {
+        howl.seek(startAtSeconds);
+        startCueApplied = true;
+      }
+
       if (howl === this.currentHowl) {
         this.scheduleCrossfadeMonitor();
       }
@@ -241,6 +245,7 @@ export class HowlerPlaylistController {
     }
 
     this.cleanupCurrentHowl();
+    this.cleanupPreparedNextHowl();
     this.emitState();
   }
 
@@ -253,7 +258,9 @@ export class HowlerPlaylistController {
 
     this.crossfadeMonitor = setInterval(() => {
       const currentHowl = this.currentHowl;
-      if (!currentHowl) {
+      const currentTrack = this.getCurrentTrack();
+
+      if (!currentHowl || !currentTrack) {
         return;
       }
 
@@ -264,14 +271,15 @@ export class HowlerPlaylistController {
 
       const duration = currentHowl.duration();
       const seek = Number(currentHowl.seek() || 0);
+      const mixWindow = currentTrack.transition.outroMixWindowSeconds;
 
       this.emitState();
 
       if (
         !this.isCrossfading &&
         this.playlist[this.currentIndex + 1] &&
-        duration > CROSSFADE_WINDOW_SECONDS &&
-        duration - seek <= CROSSFADE_WINDOW_SECONDS
+        duration > mixWindow &&
+        duration - seek <= mixWindow
       ) {
         this.startCrossfade();
       }
@@ -280,21 +288,33 @@ export class HowlerPlaylistController {
 
   private startCrossfade() {
     const currentHowl = this.currentHowl;
+    const currentTrack = this.getCurrentTrack();
     const nextTrack = this.playlist[this.currentIndex + 1];
 
-    if (!currentHowl || !nextTrack || this.nextHowl) {
+    if (!currentHowl || !currentTrack || !nextTrack || this.nextHowl) {
       return;
     }
 
     this.isCrossfading = true;
     this.clearCrossfadeMonitor();
 
-    const nextHowl = this.createHowl(nextTrack, 0);
+    const fadeDurationSeconds = Math.min(
+      currentTrack.transition.outroMixWindowSeconds,
+      nextTrack.transition.crossfadeSeconds,
+    );
+    const fadeDurationMs = fadeDurationSeconds * 1000;
+    const nextHowl =
+      this.preparedNextTrackId === nextTrack.id && this.preparedNextHowl
+        ? this.preparedNextHowl
+        : this.createHowl(nextTrack, 0, nextTrack.transition.introCueSeconds);
+
     this.nextHowl = nextHowl;
+    this.preparedNextHowl = null;
+    this.preparedNextTrackId = null;
 
     nextHowl.play();
-    nextHowl.fade(0, 1, CROSSFADE_DURATION_MS);
-    currentHowl.fade(currentHowl.volume(), 0, CROSSFADE_DURATION_MS);
+    nextHowl.fade(0, this.getTargetGain(nextTrack), fadeDurationMs);
+    currentHowl.fade(currentHowl.volume(), 0, fadeDurationMs);
 
     this.crossfadeFinalizeTimer = setTimeout(() => {
       const outgoingHowl = this.currentHowl;
@@ -312,9 +332,10 @@ export class HowlerPlaylistController {
       this.currentIndex += 1;
       this.isCrossfading = false;
 
+      this.primeUpcomingTrack();
       this.scheduleCrossfadeMonitor();
       this.emitState();
-    }, CROSSFADE_DURATION_MS + 50);
+    }, fadeDurationMs + 50);
 
     this.emitState();
   }
@@ -325,6 +346,7 @@ export class HowlerPlaylistController {
     this.isCrossfading = false;
     this.cleanupCurrentHowl();
     this.cleanupNextHowl();
+    this.cleanupPreparedNextHowl();
   }
 
   private cleanupCurrentHowl() {
@@ -345,6 +367,18 @@ export class HowlerPlaylistController {
     this.nextHowl.stop();
     this.nextHowl.unload();
     this.nextHowl = null;
+  }
+
+  private cleanupPreparedNextHowl() {
+    if (!this.preparedNextHowl) {
+      this.preparedNextTrackId = null;
+      return;
+    }
+
+    this.preparedNextHowl.stop();
+    this.preparedNextHowl.unload();
+    this.preparedNextHowl = null;
+    this.preparedNextTrackId = null;
   }
 
   private clearCrossfadeMonitor() {
@@ -377,6 +411,35 @@ export class HowlerPlaylistController {
     return Boolean(this.currentHowl?.playing() || this.nextHowl?.playing());
   }
 
+  private getTargetGain(track: MusicAsset | null) {
+    return track?.transition.targetGain ?? 1;
+  }
+
+  private primeUpcomingTrack() {
+    const nextTrack = this.getNextTrack();
+
+    if (!nextTrack) {
+      this.cleanupPreparedNextHowl();
+      return;
+    }
+
+    if (this.preparedNextTrackId === nextTrack.id && this.preparedNextHowl) {
+      return;
+    }
+
+    this.cleanupPreparedNextHowl();
+    this.preparedNextTrackId = nextTrack.id;
+    this.preparedNextHowl = this.createHowl(nextTrack, 0, nextTrack.transition.introCueSeconds);
+  }
+
+  private resetPreparedNextHowlIfMismatch() {
+    const nextTrackId = this.getNextTrack()?.id ?? null;
+
+    if (this.preparedNextTrackId && this.preparedNextTrackId !== nextTrackId) {
+      this.cleanupPreparedNextHowl();
+    }
+  }
+
   private emitState() {
     if (!this.onStateChange) {
       return;
@@ -393,7 +456,7 @@ export class HowlerPlaylistController {
       duration: currentHowl?.duration() ?? 0,
       isPlaying: this.isPlaying(),
       isCrossfading: this.isCrossfading,
-      crossfadeWindowSeconds: CROSSFADE_WINDOW_SECONDS,
+      crossfadeWindowSeconds: currentTrack?.transition.crossfadeSeconds ?? 4.36,
     });
   }
 }
