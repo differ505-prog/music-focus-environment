@@ -55,7 +55,7 @@ const transitionProfiles: TrackTransitionProfile[] = [
     mixOutPointSeconds: 170,
   }),
   createTransitionProfile({
-    bpm: 105,
+    bpm: 85,
     introCueSeconds: 0.28,
     sourceLufs: -14.08,
     tempoLockBars: 2,
@@ -104,12 +104,12 @@ const trackNarratives = [
     title: "Ember Focus Drive",
     slug: "ember-focus-drive",
     musicalKey: "F Minor",
-    energyLevel: 7.6,
-    moodTags: ["focus", "fireplace", "flow-state"],
-    descriptionZh: "帶有壁爐暖度的推進型節奏，適合長時間 coding 與深度思考。",
-    descriptionEn: "A warm but driven rhythm tuned for long coding blocks, deliberate thinking, and protected flow.",
-    themeScenario: "壁爐火光映在深木桌面上，專注處理高壓但需要沉著的工作。",
-    bpm: 105,
+    energyLevel: 6.8,
+    moodTags: ["slow-focus", "fireplace", "flow-state"],
+    descriptionZh: "更慢、更穩的深度工作節奏，適合低壓長時段閱讀、研究與沉靜整理。",
+    descriptionEn: "A slower cadence for research, deliberate reading, and calm long-form focus without rushing the mind.",
+    themeScenario: "壁爐火光映在深木桌面上，以更慢的呼吸節奏整理資訊、閱讀與思考。",
+    bpm: 85,
   },
   {
     title: "Summit Rhythm Frame",
@@ -404,5 +404,84 @@ export const promptWorkflowSteps = [
 
 原始資料：
 【貼上歌名、描述、prompts、檔案路徑等】`,
+  },
+] as const;
+
+export const themePrograms = [
+  {
+    id: "ceo-focus-lanes",
+    label: "CEO Deep Focus",
+    title: "多車道深度專注主題",
+    bpmDisplay: "85 / 100 / 105 / 110 / 115 / 120 BPM",
+    summary:
+      "主打夜間決策、寫作、coding 與高密度思考，維持可平順接歌的 BPM 車道與穩定情緒弧線。",
+    audience: "深度工作、策略規劃、長時間沉浸專注",
+    layoutNotes: [
+      "前台主視覺維持深黑玻璃與霓虹紫冷青藍，卡片資訊偏精準、理性、低干擾。",
+      "播放器以播放清單、Crossfade、BPM 相容提示為核心，強調無痕切換。",
+      "後台工作流保留低輸入母題設計與固定 BPM 選擇題，方便規律上架。",
+    ],
+    workflow: [
+      {
+        id: "Focus 01",
+        title: "情境母題",
+        detail: "輸入豪宅書房、壁爐、玻璃、夜景、決策感等抽象詞，交由 LLM 補完整體情境。",
+      },
+      {
+        id: "Focus 02",
+        title: "BPM 車道決策",
+        detail: "只允許 85 / 100 / 105 / 110 / 115 / 120，85 負責慢速深度工作，其餘車道維持原本可接歌策略。",
+      },
+      {
+        id: "Focus 03",
+        title: "音樂與視覺生成",
+        detail: "同步產出 loop 友善的電子音樂 prompt、封面圖 prompt、背景影片 prompt。",
+      },
+      {
+        id: "Focus 04",
+        title: "Track 上架與接歌校正",
+        detail: "整理 metadata、transition profile、LUFS 與 crossfade cue，再進後台收數據。",
+      },
+    ],
+    promptSeed:
+      "高級豪宅書房、玻璃窗外霧林、低亮壁爐、深夜季度規劃、冷靜推進、沉著高壓、黑曜石木質、CEO deep work",
+  },
+  {
+    id: "slow-jog-180",
+    label: "BPM 180 Slow Jog",
+    title: "180 慢跑節奏主題",
+    bpmDisplay: "180 BPM",
+    summary:
+      "主打穩定步頻、輕推進、戶外夜跑與耐力慢跑場景，重點不是夜店接歌，而是步伐鎖定與續航感。",
+    audience: "慢跑、跑步機、夜跑暖身、低壓耐力訓練",
+    layoutNotes: [
+      "前台新增獨立主題卡，視覺偏霓虹跑道、城市夜霧、呼吸節奏線，而不是豪宅壁爐。",
+      "資訊排版要把步頻、跑感、適用距離、建議配速感放在前段，讓運動情境一眼成立。",
+      "後台 workflow 應固定 180 BPM，不走多車道，而是強調 cadence 穩定、低人聲、長時循環。",
+    ],
+    workflow: [
+      {
+        id: "Run 01",
+        title: "跑步情境母題",
+        detail: "輸入夜跑路面、城市霓虹、微汗、冷風、腳步節奏、穩定呼吸等抽象詞，生成完整跑步場景。",
+      },
+      {
+        id: "Run 02",
+        title: "180 BPM 固定策略",
+        detail: "所有 prompt 與 metadata 鎖定 180 BPM，不允許自由變動，確保步頻一致。",
+      },
+      {
+        id: "Run 03",
+        title: "跑感導向生成",
+        detail: "音樂 prompt 需強調 steady cadence、light propulsion、long-run friendly、no vocals、clean transient。",
+      },
+      {
+        id: "Run 04",
+        title: "跑步版面與上架",
+        detail: "卡片與後台要突出步頻、公里感、運動用途與視覺場景，形成與專注主題不同的內容線。",
+      },
+    ],
+    promptSeed:
+      "180 BPM slow jog, neon city night run, wet asphalt reflections, cool air, even cadence, light propulsion, endurance focus, no vocals",
   },
 ] as const;

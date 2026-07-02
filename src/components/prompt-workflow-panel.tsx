@@ -17,7 +17,8 @@ export function PromptWorkflowPanel({ steps }: PromptWorkflowPanelProps) {
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">AI 生成操作流程</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-white/66">
           後台集中放你日後高頻切換的提示詞流程，從情境母題、音樂 prompt、視覺 prompt 到 Track JSON
-          整理，都能直接複製使用。Step 1 已改成低輸入模式，你只填少量抽象畫面詞即可。
+          整理，都能直接複製使用。Step 1 已改成低輸入模式，你只填少量抽象畫面詞即可；上方主題藍圖則負責把
+          CEO Deep Focus 與 BPM180 慢跑兩條內容線分開管理。
         </p>
       </div>
 

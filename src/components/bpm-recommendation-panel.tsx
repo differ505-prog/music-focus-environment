@@ -46,27 +46,36 @@ export function BpmRecommendationPanel({
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-          {recommendations.map(({ track, compatibility }) => (
-            <button
-              key={track.id}
-              type="button"
-              onClick={() => onPlayTrack(track.id)}
-              className="rounded-[22px] border border-white/10 bg-black/18 p-4 text-left transition hover:border-white/20 hover:bg-white/8"
-            >
-              <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">{track.bpm} BPM</p>
-              <h3 className="mt-3 font-medium text-white">{track.title}</h3>
-              <span
-                className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs ${getCompatibilityTone(
-                  compatibility.status,
-                )}`}
+        {recommendations.length > 0 ? (
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+            {recommendations.map(({ track, compatibility }) => (
+              <button
+                key={track.id}
+                type="button"
+                onClick={() => onPlayTrack(track.id)}
+                className="rounded-[22px] border border-white/10 bg-black/18 p-4 text-left transition hover:border-white/20 hover:bg-white/8"
               >
-                {compatibility.label}
-              </span>
-              <p className="mt-3 text-sm leading-6 text-white/58">{compatibility.description}</p>
-            </button>
-          ))}
-        </div>
+                <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">{track.bpm} BPM</p>
+                <h3 className="mt-3 font-medium text-white">{track.title}</h3>
+                <span
+                  className={`mt-3 inline-flex rounded-full border px-3 py-1 text-xs ${getCompatibilityTone(
+                    compatibility.status,
+                  )}`}
+                >
+                  {compatibility.label}
+                </span>
+                <p className="mt-3 text-sm leading-6 text-white/58">{compatibility.description}</p>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+            <p className="text-sm leading-7 text-white/62">
+              目前這首屬於較獨立的節奏車道，系統暫時不建議直接接到其他曲目。若要保留慢速深度工作氛圍，
+              建議延續同 BPM 系列再上架。
+            </p>
+          </div>
+        )}
       </div>
     </section>
   );

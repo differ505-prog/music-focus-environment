@@ -9,6 +9,7 @@ import {
   mixEvents,
   mixSessions,
   promptWorkflowSteps,
+  themePrograms,
   tracks,
 } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
@@ -19,6 +20,7 @@ import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { PromptWorkflowPanel } from "@/components/prompt-workflow-panel";
 import { SelectionActionBar } from "@/components/selection-action-bar";
 import { StudioNav } from "@/components/studio-nav";
+import { ThemeProgramPanel } from "@/components/theme-program-panel";
 import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
 import type { PlaybackSnapshot } from "@/types/music";
@@ -51,7 +53,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(true);
-  const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
@@ -269,7 +271,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
   const handlePlayTrack = (assetId: string) => {
     setIsPlayerOpen(true);
-    setIsPlayerMinimized(false);
+    setIsPlayerMinimized((current) => (isPlayerOpen ? current : true));
 
     if (!selectedIds.includes(assetId)) {
       setSelectedIds((current: string[]) => {
@@ -285,8 +287,8 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
   const heroDescription = isAdmin
-    ? "集中管理提示詞流程、轉場參數、生成資料與 mix 數據，讓你可以一邊產歌、一邊調整接歌與網站資產。"
-    : "以 100 / 105 / 110 / 115 / 120 BPM 車道為基礎，整合沉浸式氛圍、播放清單、精準 crossfade 與批次下載，讓每段深度工作都像高階主管的夜間決策室。";
+    ? "集中管理提示詞流程、轉場參數、生成資料與 mix 數據，現在同時支援 CEO 深度專注主題與 BPM180 慢跑主題兩條內容線。"
+    : "以 CEO Deep Focus 與 BPM180 慢跑兩條內容線為核心，整合沉浸式氛圍、播放清單、精準 crossfade 與批次下載，讓不同使用情境都能擁有完整主題體驗。";
 
   return (
     <main
@@ -344,6 +346,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
           />
+        </div>
+
+        <div className="mt-6">
+          <ThemeProgramPanel mode={mode} programs={themePrograms} />
         </div>
 
         {!isAdmin && currentTrack ? (
@@ -407,7 +413,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           onToggleMinimize={() => setIsPlayerMinimized((current) => !current)}
           onClose={() => {
             setIsPlayerOpen(false);
-            setIsPlayerMinimized(false);
+            setIsPlayerMinimized(true);
           }}
         />
       ) : (
@@ -415,7 +421,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           type="button"
           onClick={() => {
             setIsPlayerOpen(true);
-            setIsPlayerMinimized(false);
+            setIsPlayerMinimized(true);
           }}
           className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/28 bg-[#0a0814]/88 px-4 py-3 text-sm font-medium text-fuchsia-50 shadow-[0_24px_60px_rgba(84,12,112,0.38)] backdrop-blur-2xl transition hover:bg-[#100d1d]"
         >
