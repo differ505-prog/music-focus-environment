@@ -80,6 +80,7 @@ export function GlobalPlayer({
   const [isProjectionHudVisible, setIsProjectionHudVisible] = useState(true);
   const [isProjectionCursorHidden, setIsProjectionCursorHidden] = useState(false);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
+  const isPureProjection = isProjectionMode && isArtworkFullscreen;
 
   useEffect(() => {
     if (!currentTrack) {
@@ -213,7 +214,7 @@ export function GlobalPlayer({
   const artworkStage = currentTrack && artworkSrc ? (
     <div
       ref={artworkContainerRef}
-      onClick={() => void handleCloseArtwork()}
+      onClick={!isProjectionMode && !isArtworkFullscreen ? () => void handleCloseArtwork() : undefined}
       onMouseMove={revealProjectionHud}
       onTouchStart={revealProjectionHud}
       className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02040a]/96 p-4 md:p-8 ${isProjectionMode && isProjectionCursorHidden ? "cursor-none" : ""}`}
@@ -234,16 +235,28 @@ export function GlobalPlayer({
         }`}
       >
         <span>{isProjectionMode ? "Projection Mode" : "Artwork View"}</span>
-        <span>{isProjectionMode ? "閒置隱藏 HUD / Cursor" : "雙擊全螢幕"}</span>
+        <span>{isProjectionMode ? "Esc 退出 / 雙擊切換全螢幕" : "雙擊全螢幕"}</span>
       </div>
       <div className="relative z-10 flex h-full w-full items-center justify-center">
         <div
-          className={`projection-stage relative aspect-[16/9] w-full max-w-[min(92vw,180vh)] overflow-hidden rounded-[32px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)] ${isProjectionMode ? "projection-stage-drift" : ""}`}
-          onClick={(event) => event.stopPropagation()}
+          className={`projection-stage relative aspect-[16/9] w-full max-w-[min(92vw,180vh)] overflow-hidden bg-black/28 ${
+            isPureProjection
+              ? "h-full w-full max-w-none rounded-none border-none shadow-none"
+              : "rounded-[32px] border border-white/10 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
+          } ${isProjectionMode ? "projection-stage-drift" : ""}`}
           onDoubleClick={() => void handleToggleArtworkFullscreen()}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,transparent_72%,rgba(255,255,255,0.03))]" />
-          <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
+          {!isPureProjection ? (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,transparent_72%,rgba(255,255,255,0.03))]" />
+          ) : null}
+          <Image
+            src={artworkSrc}
+            alt={currentTrack.title}
+            fill
+            className={isPureProjection ? "object-contain projection-pure-drift" : "object-contain"}
+            unoptimized
+            priority
+          />
         </div>
       </div>
       <div
@@ -267,7 +280,7 @@ export function GlobalPlayer({
             {playback.repeatEnabled ? " · Loop On" : ""}
           </p>
           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
-            {nextTrack ? `Next ${nextTrack.title}` : isProjectionMode ? "Projection Ready" : "Esc 關閉，背景點擊退出"}
+            {nextTrack ? `Next ${nextTrack.title}` : isProjectionMode ? "Projection Ready" : "Esc 關閉"}
           </p>
         </div>
       </div>

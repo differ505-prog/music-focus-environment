@@ -81,6 +81,25 @@ img {
   }
 }
 
+@keyframes projection-stage-drift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+
+  25% {
+    transform: translate3d(0.45%, -0.35%, 0) scale(1.008);
+  }
+
+  50% {
+    transform: translate3d(-0.35%, 0.4%, 0) scale(1.012);
+  }
+
+  75% {
+    transform: translate3d(0.3%, 0.2%, 0) scale(1.006);
+  }
+}
+
 .animate-projection-breathe {
   animation: projection-breathe 12s ease-in-out infinite;
 }
@@ -91,4 +110,14 @@ img {
 
 .projection-stage {
   max-height: min(84vh, 56.25vw);
+}
+
+.projection-stage-drift {
+  animation: projection-stage-drift 46s ease-in-out infinite;
+  will-change: transform;
+}
+
+.projection-pure-drift {
+  animation: projection-stage-drift 72s ease-in-out infinite;
+  will-change: transform;
 }
