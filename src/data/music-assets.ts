@@ -360,7 +360,7 @@ export const themePrograms: ThemeProgram[] = [
         purpose: "把 brief 轉為可直接生成的英文音樂提示詞。",
         template: `You are a professional AI music prompt designer.
 
-Generate 3 English prompts for CEO Deep Focus instrumental electronic music.
+Generate 2 English prompts for CEO Deep Focus instrumental electronic music.
 
 Requirements:
 - dark atmospheric
@@ -543,7 +543,7 @@ Brief：
         purpose: "建立專屬於 180 慢跑的英文音樂生成模板。",
         template: `You are a professional AI music prompt designer for running playlists.
 
-Generate 3 English prompts for a BPM 180 Slow Jog instrumental track.
+Generate 1 English prompt for a BPM 180 Slow Jog instrumental track.
 
 Requirements:
 - exact 180 BPM
