@@ -404,6 +404,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           nextTrack={nextTrack}
           playback={playback}
           isMinimized={isPlayerMinimized}
+          mode={mode}
           onPlayPause={handlePlayPause}
           onPrevious={() => controllerRef.current?.previous()}
           onNext={() => controllerRef.current?.next()}

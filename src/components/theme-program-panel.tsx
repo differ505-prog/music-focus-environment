@@ -60,33 +60,46 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
             <p className="mt-3 text-xs uppercase tracking-[0.24em] text-white/42">適用場景</p>
             <p className="mt-2 text-sm leading-6 text-white/74">{program.audience}</p>
 
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              {program.layoutNotes.map((note) => (
-                <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
-                  <p className="text-xs leading-6 text-white/65">{note}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-5">
-              <p className="text-xs uppercase tracking-[0.24em] text-white/42">Workflow</p>
-              <div className="mt-3 grid gap-3">
-                {program.workflow.map((step) => (
-                  <div
-                    key={step.id}
-                    className="rounded-[18px] border border-fuchsia-400/10 bg-[#0a0817]/88 p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
-                        {step.id}
-                      </span>
-                      <h4 className="text-sm font-medium text-white">{step.title}</h4>
-                    </div>
-                    <p className="mt-2 text-xs leading-6 text-white/62">{step.detail}</p>
+            {isAdmin ? (
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {program.layoutNotes.map((note) => (
+                  <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
+                    <p className="text-xs leading-6 text-white/65">{note}</p>
                   </div>
                 ))}
               </div>
-            </div>
+            ) : (
+              <div className="mt-4 rounded-[18px] border border-white/8 bg-white/6 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/42">主題定位</p>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  {program.id === 'slow-jog-180'
+                    ? '主打穩定步頻、耐力慢跑與夜跑節奏，適合想維持呼吸與腳步一致性的運動情境。'
+                    : '主打深度工作、沉浸思考與夜間專注，適合寫作、策略規劃與長時間低干擾工作。'}
+                </p>
+              </div>
+            )}
+
+            {isAdmin ? (
+              <div className="mt-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/42">Workflow</p>
+                <div className="mt-3 grid gap-3">
+                  {program.workflow.map((step) => (
+                    <div
+                      key={step.id}
+                      className="rounded-[18px] border border-fuchsia-400/10 bg-[#0a0817]/88 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
+                          {step.id}
+                        </span>
+                        <h4 className="text-sm font-medium text-white">{step.title}</h4>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-white/62">{step.detail}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {isAdmin ? (
               <div className="mt-5 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">

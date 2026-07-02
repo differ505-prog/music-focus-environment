@@ -22,6 +22,7 @@ type GlobalPlayerProps = {
   nextTrack: Track | null;
   playback: PlaybackSnapshot;
   isMinimized: boolean;
+  mode?: "public" | "admin";
   onPlayPause: () => void;
   onPrevious: () => void;
   onNext: () => void;
@@ -53,6 +54,7 @@ export function GlobalPlayer({
   nextTrack,
   playback,
   isMinimized,
+  mode = "public",
   onPlayPause,
   onPrevious,
   onNext,
@@ -62,6 +64,8 @@ export function GlobalPlayer({
   onToggleMinimize,
   onClose,
 }: GlobalPlayerProps) {
+  const showAdminDetails = mode === "admin";
+
   if (isMinimized) {
     return (
       <div className="fixed bottom-4 right-4 z-40 w-[min(92vw,22rem)] rounded-[28px] border border-fuchsia-400/25 bg-[#080510]/88 p-4 shadow-[0_18px_70px_rgba(84,12,112,0.45)] backdrop-blur-3xl">
@@ -158,24 +162,30 @@ export function GlobalPlayer({
           </div>
           {currentTrack ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
-              {playback.prefersBackgroundPlayback ? (
+              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
+              </span>
+              {showAdminDetails ? (
+                <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
+                  {currentTrack.transition.sourceLufs.toFixed(1)} → {currentTrack.transition.targetLufs.toFixed(1)} LUFS
+                </span>
+              ) : null}
+              {showAdminDetails ? (
+                <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                  Norm {currentTrack.transition.normalizationGainDb > 0 ? "+" : ""}
+                  {currentTrack.transition.normalizationGainDb.toFixed(2)} dB
+                </span>
+              ) : null}
+              {showAdminDetails ? (
+                <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
+                  {playback.prefersBackgroundPlayback ? "HTML5 Audio" : "Equal-Power Fade"}
+                </span>
+              ) : null}
+              {showAdminDetails && playback.prefersBackgroundPlayback ? (
                 <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
                   背景播放優化模式
                 </span>
               ) : null}
-              <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
-                {currentTrack.transition.sourceLufs.toFixed(1)} → {currentTrack.transition.targetLufs.toFixed(1)} LUFS
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                Norm {currentTrack.transition.normalizationGainDb > 0 ? "+" : ""}
-                {currentTrack.transition.normalizationGainDb.toFixed(2)} dB
-              </span>
-              <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
-                {playback.prefersBackgroundPlayback ? "HTML5 Audio" : "Equal-Power Fade"}
-              </span>
-              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
-              </span>
             </div>
           ) : null}
         </div>
