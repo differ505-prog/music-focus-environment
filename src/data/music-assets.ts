@@ -407,9 +407,24 @@ Brief：
         id: "Module 04",
         title: "上架 JSON 模組",
         purpose: "把生成結果整理成網站可直接使用的 Track 資產。",
+        inputMode: "low_input_auto_context",
+        supplementalLabel: "少量補充資料",
+        supplementalPlaceholder:
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds，或你想指定的 title / slug。",
+        autoAssembleNote:
+          "這一步不需要你重貼前面所有資料。系統會自動抓取已儲存的 Brief、音樂 Prompt、視覺 Prompt；你只需少量補外部資源或特別指定欄位。",
         template: `你是一位 TypeScript 音樂資料整理助手。
 
-請把以下資料整理成 Track JSON 與 transition 補充欄位：
+請優先使用我上游已提供的 Brief、音樂 prompt、封面 prompt、背景影片 prompt，自動補完整體 Track JSON。
+
+若我有補充資料，只把它視為少量覆寫資訊，例如：
+- audioUrl
+- coverImageUrl
+- backgroundVideoUrl
+- durationSeconds
+- 指定 title / slug
+
+請整理成 Track JSON 與 transition 補充欄位：
 - title
 - slug
 - bpm
@@ -434,9 +449,11 @@ Brief：
 - 只輸出 JSON
 - 欄位不可省略
 - transition 需符合該 BPM 車道的平順接歌邏輯
+- 若上游已有足夠資訊，請主動生成 title、slug、descriptionZh、descriptionEn、moodTags、musicalKey、energyLevel
+- 若我有補充外部資源欄位，請直接覆蓋對應欄位
 
-原始資料：
-【貼上已選 prompt、音檔資訊、封面、影片與描述】`,
+少量補充資料（可為空）：
+【只貼外部資源或你想覆寫的欄位】`,
       },
     ],
     acceptanceChecklist: [
@@ -595,7 +612,22 @@ Brief：
         id: "Module 04",
         title: "運動上架 JSON",
         purpose: "把跑步內容整理成可直接貼入專案的資產資料。",
+        inputMode: "low_input_auto_context",
+        supplementalLabel: "少量補充資料",
+        supplementalPlaceholder:
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds，或你想指定的 title / slug。",
+        autoAssembleNote:
+          "這一步會自動沿用前面已儲存的跑步 Brief、音樂 Prompt、視覺 Prompt。你只補外部資源或少量指定欄位即可。",
         template: `你是一位 TypeScript 運動音樂資料整理助手。
+
+請優先使用我上游已提供的跑步 Brief、音樂 prompt、封面 prompt、背景影片 prompt，自動補完整體 Track JSON。
+
+若我有補充資料，只把它視為少量覆寫資訊，例如：
+- audioUrl
+- coverImageUrl
+- backgroundVideoUrl
+- durationSeconds
+- 指定 title / slug
 
 請把以下資料整理成 Track JSON 與運動用途補充描述：
 - title
@@ -622,9 +654,11 @@ Brief：
 - 只輸出 JSON
 - BPM 必須為 180
 - 文案需突出 cadence、耐力、夜跑或跑步機用途
+- 若上游已有足夠資訊，請主動生成 title、slug、descriptionZh、descriptionEn、moodTags、musicalKey、energyLevel
+- 若我有補充外部資源欄位，請直接覆蓋對應欄位
 
-原始資料：
-【貼上已選 prompt、音檔資訊、封面、影片與描述】`,
+少量補充資料（可為空）：
+【只貼外部資源或你想覆寫的欄位】`,
       },
     ],
     acceptanceChecklist: [

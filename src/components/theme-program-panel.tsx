@@ -14,6 +14,7 @@ type SectionKey = 'strategy' | 'notes' | 'workflow' | 'seed' | 'checklist';
 type SectionState = Record<SectionKey, boolean>;
 
 type FeedbackMap = Record<string, string>;
+type SupplementalInputMap = Record<string, string>;
 
 type StoredModuleOutput = {
   value: string;
@@ -23,6 +24,7 @@ type StoredModuleOutput = {
 type StoredModuleOutputMap = Record<string, StoredModuleOutput>;
 
 const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v2';
+const MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY = 'theme-manual-module-supplemental-inputs-v1';
 
 const defaultSectionState = (): SectionState => ({
   strategy: true,
@@ -105,11 +107,29 @@ function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
   );
 }
 
+function buildLowInputAssembly(
+  program: ThemeProgram,
+  moduleIndex: number,
+  moduleOutputs: Record<string, string>,
+  supplementalInput: string,
+) {
+  const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
+
+  return [
+    '以下是已自動整理的上游結果，請直接使用，不要要求我重新貼一次：',
+    upstreamPayload || '目前沒有已儲存的上游結果。',
+    '',
+    '以下是少量補充資料（可能為空，僅在有提供時覆寫對應欄位）：',
+    supplementalInput.trim() || '無',
+  ].join('\n');
+}
+
 export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPanelProps) {
   const isAdmin = mode === 'admin';
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
+  const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
 
   useEffect(() => {
     setCollapsedSections((current) => {
@@ -171,6 +191,25 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     }
   }, [programs]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    try {
+      const saved = window.localStorage.getItem(MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY);
+
+      if (!saved) {
+        return;
+      }
+
+      const parsed = JSON.parse(saved) as SupplementalInputMap;
+      setSupplementalInputs(parsed);
+    } catch {
+      window.localStorage.removeItem(MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY);
+    }
+  }, []);
+
   const setFeedback = (key: string, message: string) => {
     setFeedbackMap((current) => ({
       ...current,
@@ -195,6 +234,23 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
       ...current,
       [key]: value,
     }));
+  };
+
+  const handleSupplementalInputChange = (programId: string, moduleId: string, value: string) => {
+    const key = buildModuleKey(programId, moduleId);
+
+    setSupplementalInputs((current) => {
+      const nextInputs = {
+        ...current,
+        [key]: value,
+      };
+
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY, JSON.stringify(nextInputs));
+      }
+
+      return nextInputs;
+    });
   };
 
   const handleSaveModuleOutput = (programId: string, moduleId: string) => {
@@ -270,6 +326,20 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     setFeedback(buildModuleKey(program.id, targetModule.id), '已插入上游結果');
   };
 
+  const handleAssembleLowInput = (program: ThemeProgram, moduleIndex: number) => {
+    const targetModule = program.promptModules[moduleIndex];
+    const moduleKey = buildModuleKey(program.id, targetModule.id);
+    const assembledInput = buildLowInputAssembly(
+      program,
+      moduleIndex,
+      moduleOutputs,
+      supplementalInputs[moduleKey] ?? '',
+    );
+
+    handleModuleOutputChange(program.id, targetModule.id, 0, assembledInput);
+    setFeedback(moduleKey, '已自動組裝低輸入內容');
+  };
+
   const renderSectionToggle = (programId: string, section: SectionKey, label: string) => {
     const isCollapsed = (collapsedSections[programId] ?? defaultSectionState())[section];
 
@@ -341,6 +411,8 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                     const feedback = feedbackMap[moduleKey];
                     const slotCount = getModuleOutputSlotCount(module);
                     const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);
+                    const supplementalInput = supplementalInputs[moduleKey] ?? '';
+                    const isLowInputModule = module.inputMode === 'low_input_auto_context';
 
                     return (
                       <div
@@ -358,6 +430,34 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                           <code>{module.template}</code>
                         </pre>
 
+                        {isLowInputModule ? (
+                          <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
+                              Low Input Mode
+                            </p>
+                            <p className="mt-2 text-xs leading-6 text-amber-50/76">
+                              {module.autoAssembleNote ??
+                                '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
+                            </p>
+                            <div className="mt-4">
+                              <p className="text-xs uppercase tracking-[0.2em] text-white/48">
+                                {module.supplementalLabel ?? '少量補充資料'}
+                              </p>
+                              <textarea
+                                value={supplementalInput}
+                                onChange={(event) =>
+                                  handleSupplementalInputChange(program.id, module.id, event.target.value)
+                                }
+                                placeholder={
+                                  module.supplementalPlaceholder ??
+                                  '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'
+                                }
+                                className="mt-3 min-h-28 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
+                              />
+                            </div>
+                          </div>
+                        ) : null}
+
                         <div className="mt-4 flex flex-wrap gap-2">
                           <button
                             type="button"
@@ -370,11 +470,15 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleInsertUpstream(program, moduleIndex)}
+                            onClick={() =>
+                              isLowInputModule
+                                ? handleAssembleLowInput(program, moduleIndex)
+                                : handleInsertUpstream(program, moduleIndex)
+                            }
                             className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-xs text-fuchsia-50/82 transition hover:bg-fuchsia-400/14 disabled:cursor-not-allowed disabled:opacity-45"
                             disabled={!upstreamPayload}
                           >
-                            插入上游結果
+                            {isLowInputModule ? '一鍵組裝低輸入內容' : '插入上游結果'}
                           </button>
                           <button
                             type="button"
@@ -397,7 +501,9 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                               上游已儲存內容
                             </p>
                             <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
-                              已偵測到前面步驟的儲存結果，可直接插入本步驟，避免重複貼資料。
+                              {isLowInputModule
+                                ? '已偵測到前面步驟的儲存結果，可直接自動組裝進這一步，避免你手工整理原始資料。'
+                                : '已偵測到前面步驟的儲存結果，可直接插入本步驟，避免重複貼資料。'}
                             </p>
                           </div>
                         ) : null}
@@ -405,7 +511,11 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                         <div className="mt-4">
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
-                              {slotCount > 1 ? `此步驟輸出（${slotCount} 組候選）` : '此步驟輸出'}
+                              {isLowInputModule
+                                ? '組裝後輸入／工作區'
+                                : slotCount > 1
+                                  ? `此步驟輸出（${slotCount} 組候選）`
+                                  : '此步驟輸出'}
                             </p>
                             <span className="text-xs text-cyan-50/64">
                               {feedback ?? feedbackMap[`${moduleKey}::template`] ?? feedbackMap[`${moduleKey}::output`] ?? '可貼上 AI 生成結果'}
