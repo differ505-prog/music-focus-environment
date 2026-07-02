@@ -1,6 +1,18 @@
 'use client';
 
-import { ListMusic, Pause, Play, Redo2, SkipBack, SkipForward, Undo2, Waves, X } from "lucide-react";
+import {
+  ChevronUp,
+  ListMusic,
+  Minimize2,
+  Pause,
+  Play,
+  Redo2,
+  SkipBack,
+  SkipForward,
+  Undo2,
+  Waves,
+  X,
+} from "lucide-react";
 
 import type { PlaybackSnapshot, Track } from "@/types/music";
 
@@ -9,12 +21,14 @@ type GlobalPlayerProps = {
   currentTrack: Track | null;
   nextTrack: Track | null;
   playback: PlaybackSnapshot;
+  isMinimized: boolean;
   onPlayPause: () => void;
   onPrevious: () => void;
   onNext: () => void;
   onSeek: (seconds: number) => void;
   onSeekBy: (deltaSeconds: number) => void;
   onPlayTrack: (assetId: string) => void;
+  onToggleMinimize: () => void;
   onClose: () => void;
 };
 
@@ -38,31 +52,95 @@ export function GlobalPlayer({
   currentTrack,
   nextTrack,
   playback,
+  isMinimized,
   onPlayPause,
   onPrevious,
   onNext,
   onSeek,
   onSeekBy,
   onPlayTrack,
+  onToggleMinimize,
   onClose,
 }: GlobalPlayerProps) {
-  return (
-    <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-6xl rounded-[30px] border border-white/12 bg-[#050b12]/86 p-4 shadow-[0_34px_90px_rgba(0,0,0,0.45)] backdrop-blur-3xl">
-      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-cyan-100/60">
+  if (isMinimized) {
+    return (
+      <div className="fixed bottom-4 right-4 z-40 w-[min(92vw,22rem)] rounded-[28px] border border-fuchsia-400/25 bg-[#080510]/88 p-4 shadow-[0_18px_70px_rgba(84,12,112,0.45)] backdrop-blur-3xl">
+        <div className="absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.2),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.14),transparent_38%)]" />
+        <div className="relative flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
               <Waves className="h-4 w-4" />
-              Global Focus Player
-            </div>
+              Mini Player
+            </p>
+            <h3 className="mt-2 truncate font-serif text-lg text-white">
+              {currentTrack?.title ?? "尚未選擇播放曲目"}
+            </h3>
+            <p className="mt-1 truncate text-xs text-white/55">
+              {nextTrack ? `下一首：${nextTrack.title}` : "勾選素材後即可建立播放清單"}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={onPlayPause}
+              disabled={playlist.length === 0}
+              className="rounded-full border border-cyan-300/25 bg-cyan-300/14 p-3 text-cyan-50 transition hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:opacity-40"
+              aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
+            >
+              {playback.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={onToggleMinimize}
+              className="rounded-full border border-white/10 bg-white/8 p-3 text-white/75 transition hover:bg-white/12 hover:text-white"
+              aria-label="展開播放器"
+            >
+              <ChevronUp className="h-4 w-4" />
+            </button>
             <button
               type="button"
               onClick={onClose}
-              className="rounded-full border border-white/10 bg-white/8 p-2 text-white/70 transition hover:bg-white/12 hover:text-white"
+              className="rounded-full border border-white/10 bg-white/8 p-3 text-white/75 transition hover:bg-white/12 hover:text-white"
               aria-label="關閉播放器"
             >
               <X className="h-4 w-4" />
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-6xl overflow-hidden rounded-[32px] border border-fuchsia-400/20 bg-[#050612]/86 p-4 shadow-[0_34px_110px_rgba(15,23,42,0.62)] backdrop-blur-3xl">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_25%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.14),transparent_38%)]" />
+      <div className="relative">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-fuchsia-100/60">
+              <Waves className="h-4 w-4" />
+              Neon Focus Player
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onToggleMinimize}
+                className="rounded-full border border-white/10 bg-white/8 p-2 text-white/70 transition hover:bg-white/12 hover:text-white"
+                aria-label="縮小播放器"
+              >
+                <Minimize2 className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                className="rounded-full border border-white/10 bg-white/8 p-2 text-white/70 transition hover:bg-white/12 hover:text-white"
+                aria-label="關閉播放器"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
           <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div className="min-w-0">
@@ -120,7 +198,7 @@ export function GlobalPlayer({
             type="button"
             onClick={onPlayPause}
             disabled={playlist.length === 0}
-            className="rounded-full border border-cyan-300/30 bg-cyan-300/16 p-4 text-cyan-50 transition hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full border border-fuchsia-400/30 bg-fuchsia-400/18 p-4 text-fuchsia-50 transition hover:bg-fuchsia-400/26 disabled:cursor-not-allowed disabled:opacity-40"
             aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
           >
             {playback.isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
@@ -156,7 +234,7 @@ export function GlobalPlayer({
           onInput={(event) => onSeek(Number((event.target as HTMLInputElement).value))}
           onChange={(event) => onSeek(Number(event.target.value))}
           disabled={playback.duration <= 0}
-          className="h-2 w-full cursor-pointer accent-cyan-300 disabled:cursor-not-allowed"
+          className="h-2 w-full cursor-pointer accent-fuchsia-400 disabled:cursor-not-allowed"
           aria-label="快轉播放進度"
         />
         <div className="mt-2 flex items-center justify-between text-xs text-white/50">
@@ -166,7 +244,7 @@ export function GlobalPlayer({
       </div>
 
       <div className="mt-4 rounded-[24px] border border-white/10 bg-white/6 p-3">
-        <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-cyan-100/58">
+        <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/58">
           <ListMusic className="h-4 w-4" />
           播放清單
         </div>
@@ -201,6 +279,7 @@ export function GlobalPlayer({
             })}
           </div>
         )}
+      </div>
       </div>
     </div>
   );

@@ -30,7 +30,7 @@ export function StudioNav() {
             href={item.href}
             className={`rounded-full border px-4 py-2 text-sm transition ${
               isActive
-                ? "border-cyan-300/45 bg-cyan-300/16 text-cyan-50 shadow-[0_0_24px_rgba(116,227,255,0.14)]"
+                ? "border-fuchsia-300/45 bg-fuchsia-400/18 text-fuchsia-50 shadow-[0_0_24px_rgba(217,70,239,0.22)]"
                 : "border-white/12 bg-white/8 text-white/72 hover:border-white/20 hover:bg-white/12 hover:text-white"
             }`}
           >

@@ -47,6 +47,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
   const [isPlayerOpen, setIsPlayerOpen] = useState(true);
+  const [isPlayerMinimized, setIsPlayerMinimized] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
@@ -204,6 +205,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
   const handlePlayTrack = (assetId: string) => {
     setIsPlayerOpen(true);
+    setIsPlayerMinimized(false);
 
     if (!selectedIds.includes(assetId)) {
       setSelectedIds((current: string[]) => {
@@ -226,39 +228,41 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     <main
       className="relative min-h-screen overflow-hidden bg-[#02060b] text-white"
       style={{
-        backgroundImage: `linear-gradient(180deg, rgba(2,6,11,0.72), rgba(2,6,11,0.92)), url("${generatedSceneImageUrl}")`,
+        backgroundImage: `linear-gradient(180deg, rgba(5,3,11,0.66), rgba(2,5,15,0.94)), url("${generatedSceneImageUrl}")`,
         backgroundSize: "cover",
         backgroundPosition: "center",
       }}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(91,164,191,0.18),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.22),transparent_28%),radial-gradient(circle_at_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_28%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,transparent_22%,transparent_80%,rgba(255,255,255,0.03)_100%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-[31rem] pt-8 md:px-8 md:pb-[24rem] md:pt-12">
         <StudioNav />
 
-        <section className="rounded-[36px] border border-white/12 bg-black/22 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.45)] backdrop-blur-3xl md:p-10">
+        <section className="relative rounded-[36px] border border-fuchsia-400/18 bg-black/26 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.52)] backdrop-blur-3xl md:p-10">
+          <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/45 to-transparent" />
           <div className="max-w-3xl">
-            <p className="text-xs uppercase tracking-[0.38em] text-cyan-100/58">
+            <p className="text-xs uppercase tracking-[0.38em] text-fuchsia-100/58">
               {isAdmin ? "Internal Studio Workspace" : "CEO Mindset Environment"}
             </p>
-            <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight text-white md:text-6xl">
+            <h1 className="mt-4 max-w-2xl bg-gradient-to-r from-white via-fuchsia-100 to-cyan-100 bg-clip-text font-serif text-4xl leading-tight text-transparent md:text-6xl">
               {heroTitle}
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-7 text-white/70 md:text-base">
               {heroDescription}
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
-              <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
+              <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
                 Dark Mode
               </span>
-              <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
+              <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
                 Glassmorphism
               </span>
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
                 Howler.js Crossfade
               </span>
               {isAdmin ? (
-                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2">
+                <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2">
                   Prompt Workflow
                 </span>
               ) : null}
@@ -318,19 +322,27 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           currentTrack={currentTrack}
           nextTrack={nextTrack}
           playback={playback}
+          isMinimized={isPlayerMinimized}
           onPlayPause={handlePlayPause}
           onPrevious={() => controllerRef.current?.previous()}
           onNext={() => controllerRef.current?.next()}
           onSeek={(seconds) => controllerRef.current?.seekTo(seconds)}
           onSeekBy={(deltaSeconds) => controllerRef.current?.seekBy(deltaSeconds)}
           onPlayTrack={handlePlayTrack}
-          onClose={() => setIsPlayerOpen(false)}
+          onToggleMinimize={() => setIsPlayerMinimized((current) => !current)}
+          onClose={() => {
+            setIsPlayerOpen(false);
+            setIsPlayerMinimized(false);
+          }}
         />
       ) : (
         <button
           type="button"
-          onClick={() => setIsPlayerOpen(true)}
-          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-cyan-300/28 bg-[#07111d]/88 px-4 py-3 text-sm font-medium text-cyan-50 shadow-[0_24px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl transition hover:bg-[#0b1827]"
+          onClick={() => {
+            setIsPlayerOpen(true);
+            setIsPlayerMinimized(false);
+          }}
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/28 bg-[#0a0814]/88 px-4 py-3 text-sm font-medium text-fuchsia-50 shadow-[0_24px_60px_rgba(84,12,112,0.38)] backdrop-blur-2xl transition hover:bg-[#100d1d]"
         >
           <Waves className="h-4 w-4" />
           打開播放器

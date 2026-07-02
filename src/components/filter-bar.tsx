@@ -20,10 +20,11 @@ export function FilterBar({
   onClearSelection,
 }: FilterBarProps) {
   return (
-    <section className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[0_32px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl md:p-6">
+    <section className="relative rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(6,8,20,0.44)] backdrop-blur-2xl md:p-6">
+      <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/35 to-transparent" />
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/60">
+          <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">
             Executive Tempo Filter
           </p>
           <div className="flex flex-wrap gap-3">
@@ -37,7 +38,7 @@ export function FilterBar({
                   onClick={() => onToggleBpm(bpm)}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     isActive
-                      ? "border-cyan-300/70 bg-cyan-300/18 text-cyan-50 shadow-[0_0_24px_rgba(116,227,255,0.18)]"
+                      ? "border-fuchsia-300/70 bg-fuchsia-400/18 text-fuchsia-50 shadow-[0_0_24px_rgba(217,70,239,0.24)]"
                       : "border-white/10 bg-black/20 text-white/70 hover:border-white/20 hover:bg-white/8 hover:text-white"
                   }`}
                   aria-pressed={isActive}
@@ -54,7 +55,7 @@ export function FilterBar({
             <button
               type="button"
               onClick={onSelectAll}
-              className="rounded-full border border-white/12 bg-white/10 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/14"
+              className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/18"
             >
               全選
             </button>

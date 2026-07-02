@@ -18,10 +18,10 @@ export function MixInsightsPanel({
   topTransitionCount,
 }: MixInsightsPanelProps) {
   return (
-    <section className="rounded-[28px] border border-white/12 bg-white/8 p-5 shadow-[0_32px_80px_rgba(0,0,0,0.35)] backdrop-blur-2xl md:p-6">
+    <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(7,10,24,0.48)] backdrop-blur-2xl md:p-6">
       <div className="flex flex-col gap-5">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/60">
+          <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">
             Mix Data Blueprint
           </p>
           <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">
@@ -54,10 +54,10 @@ export function MixInsightsPanel({
             <p className="mt-3 text-3xl font-semibold text-white">{avgCompletionRate}%</p>
             <p className="mt-2 text-sm text-white/58">衡量混音耐聽度與停留品質</p>
           </div>
-          <div className="rounded-[22px] border border-cyan-300/18 bg-cyan-300/10 p-4">
-            <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">Top Transition</p>
-            <p className="mt-3 text-lg font-semibold text-cyan-50">{topTransitionLabel}</p>
-            <p className="mt-2 text-sm text-cyan-50/68">出現 {topTransitionCount} 次，可作為熱門混剪候選</p>
+          <div className="rounded-[22px] border border-fuchsia-400/18 bg-fuchsia-400/10 p-4">
+            <p className="text-[11px] uppercase tracking-[0.28em] text-fuchsia-100/60">Top Transition</p>
+            <p className="mt-3 text-lg font-semibold text-fuchsia-50">{topTransitionLabel}</p>
+            <p className="mt-2 text-sm text-fuchsia-50/68">出現 {topTransitionCount} 次，可作為熱門混剪候選</p>
           </div>
         </div>
       </div>

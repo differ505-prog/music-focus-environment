@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Check, Headphones, Sparkles } from "lucide-react";
+import { Check, ChevronDown, ChevronUp, Headphones, Sparkles } from "lucide-react";
 
 import { generatedSceneImageUrl } from "@/data/music-assets";
 import type { Track } from "@/types/music";
@@ -28,13 +28,16 @@ export function MediaCard({
 }: MediaCardProps) {
   const [imageErrored, setImageErrored] = useState(false);
   const showAdminDetails = mode === "admin";
+  const [isAdminExpanded, setIsAdminExpanded] = useState(false);
 
   const imageSrc = useMemo(() => {
     return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
   }, [asset.media.coverImageUrl, imageErrored]);
 
   return (
-    <article className="group relative overflow-hidden rounded-[30px] border border-white/12 bg-white/9 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
+    <article className="group relative overflow-hidden rounded-[30px] border border-fuchsia-400/12 bg-white/9 p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_32%)]" />
+      <div className="relative">
       <div className="relative overflow-hidden rounded-[24px]">
         <Image
           src={imageSrc}
@@ -45,7 +48,7 @@ export function MediaCard({
           onError={() => setImageErrored(true)}
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#03070d] via-[#03070d]/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#03070d] via-[#03070d]/18 to-transparent" />
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
           <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
             {asset.bpm} BPM
@@ -143,7 +146,22 @@ export function MediaCard({
         ) : null}
       </div>
 
-      <div className="mt-5 grid gap-4 text-sm text-white/72">
+      {showAdminDetails ? (
+        <button
+          type="button"
+          onClick={() => setIsAdminExpanded((current) => !current)}
+          className="mt-5 inline-flex w-full items-center justify-between rounded-[20px] border border-fuchsia-400/16 bg-[#0c0b17]/70 px-4 py-3 text-left text-sm text-white/76 transition hover:bg-[#120f21]"
+        >
+          <span>歌曲庫資訊欄</span>
+          <span className="inline-flex items-center gap-2 text-fuchsia-100/70">
+            {isAdminExpanded ? "收合" : "展開"}
+            {isAdminExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </span>
+        </button>
+      ) : null}
+
+      {!showAdminDetails || isAdminExpanded ? (
+        <div className="mt-5 grid gap-4 text-sm text-white/72">
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
             Track Identity
@@ -179,6 +197,8 @@ export function MediaCard({
             <p className="mt-3 line-clamp-3 leading-6 text-white/45">{asset.prompts.videoPrompt}</p>
           </div>
         ) : null}
+      </div>
+      ) : null}
       </div>
     </article>
   );
