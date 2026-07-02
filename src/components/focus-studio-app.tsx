@@ -8,7 +8,6 @@ import {
   generatedSceneImageUrl,
   mixEvents,
   mixSessions,
-  promptWorkflowSteps,
   themePrograms,
   tracks,
 } from "@/data/music-assets";
@@ -17,7 +16,6 @@ import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
-import { PromptWorkflowPanel } from "@/components/prompt-workflow-panel";
 import { SelectionActionBar } from "@/components/selection-action-bar";
 import { StudioNav } from "@/components/studio-nav";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
@@ -287,7 +285,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
   const heroDescription = isAdmin
-    ? "集中管理提示詞流程、轉場參數、生成資料與 mix 數據，現在同時支援 CEO 深度專注主題與 BPM180 慢跑主題兩條內容線。"
+    ? "集中管理主題作戰手冊、轉場參數、生成資料與 mix 數據，現在每條內容線都內建自己的策略藍圖、SOP、Prompt 模組與驗收清單。"
     : "以 CEO Deep Focus 與 BPM180 慢跑兩條內容線為核心，整合沉浸式氛圍、播放清單、精準 crossfade 與批次下載，讓不同使用情境都能擁有完整主題體驗。";
 
   return (
@@ -329,7 +327,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               </span>
               {isAdmin ? (
                 <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2">
-                  Prompt Workflow
+                  Theme Operations Manual
                 </span>
               ) : null}
             </div>
@@ -365,12 +363,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
         {isAdmin ? (
           <div className="mt-6">
             <MixInsightsPanel {...mixInsights} />
-          </div>
-        ) : null}
-
-        {isAdmin ? (
-          <div className="mt-6">
-            <PromptWorkflowPanel steps={promptWorkflowSteps.map((step) => ({ ...step }))} />
           </div>
         ) : null}
 

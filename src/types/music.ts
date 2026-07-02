@@ -53,6 +53,42 @@ export type Track = {
   createdAt: string;
 };
 
+export type ThemeWorkflowStep = {
+  id: string;
+  title: string;
+  detail: string;
+  deliverable: string;
+};
+
+export type ThemePromptModule = {
+  id: string;
+  title: string;
+  purpose: string;
+  template: string;
+};
+
+export type ThemeChecklistItem = {
+  id: string;
+  title: string;
+  detail: string;
+};
+
+export type ThemeProgram = {
+  id: string;
+  label: string;
+  title: string;
+  bpmDisplay: string;
+  summary: string;
+  audience: string;
+  positioning: string;
+  operatingPrinciples: string[];
+  layoutNotes: string[];
+  workflow: ThemeWorkflowStep[];
+  promptSeed: string;
+  promptModules: ThemePromptModule[];
+  acceptanceChecklist: ThemeChecklistItem[];
+};
+
 export type MixEventType =
   | "play"
   | "transition_complete"

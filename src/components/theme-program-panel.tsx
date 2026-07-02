@@ -1,20 +1,6 @@
 'use client';
 
-type ThemeProgram = {
-  id: string;
-  label: string;
-  title: string;
-  bpmDisplay: string;
-  summary: string;
-  audience: string;
-  layoutNotes: readonly string[];
-  workflow: ReadonlyArray<{
-    id: string;
-    title: string;
-    detail: string;
-  }>;
-  promptSeed: string;
-};
+import type { ThemeProgram } from "@/types/music";
 
 type ThemeProgramPanelProps = {
   mode?: 'public' | 'admin';
@@ -28,14 +14,14 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="mb-5">
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">
-          {isAdmin ? 'Theme Blueprint' : 'Theme Programs'}
+          {isAdmin ? 'Theme Operations Manual' : 'Theme Programs'}
         </p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">
-          {isAdmin ? '主題工作流藍圖' : '內容主題雙主線'}
+          {isAdmin ? '主題作戰手冊' : '內容主題雙主線'}
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-white/66">
           {isAdmin
-            ? '後台把每一條內容線拆成獨立 workflow，方便你之後同時經營專注型與運動型音樂資產。'
+            ? '每個主題卡片都直接整合策略藍圖、操作流程、Prompt 模組與驗收清單，方便你依主題做半自動高品質量產。'
             : '前台先把網站的兩條內容主線建立出來，讓深度專注與 BPM180 慢跑各自擁有清楚定位與視覺節奏。'}
         </p>
       </div>
@@ -61,23 +47,38 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
             <p className="mt-2 text-sm leading-6 text-white/74">{program.audience}</p>
 
             {isAdmin ? (
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {program.layoutNotes.map((note) => (
-                  <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
-                    <p className="text-xs leading-6 text-white/65">{note}</p>
-                  </div>
-                ))}
+              <div className="mt-4 rounded-[20px] border border-white/8 bg-white/6 p-4">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/42">戰略定位</p>
+                <p className="mt-2 text-sm leading-7 text-white/74">{program.positioning}</p>
+                <div className="mt-4 grid gap-3">
+                  {program.operatingPrinciples.map((principle) => (
+                    <div key={principle} className="rounded-[18px] border border-white/8 bg-black/20 p-3">
+                      <p className="text-xs leading-6 text-white/68">{principle}</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="mt-4 rounded-[18px] border border-white/8 bg-white/6 p-4">
                 <p className="text-xs uppercase tracking-[0.24em] text-white/42">主題定位</p>
                 <p className="mt-2 text-sm leading-6 text-white/68">
-                  {program.id === 'slow-jog-180'
-                    ? '主打穩定步頻、耐力慢跑與夜跑節奏，適合想維持呼吸與腳步一致性的運動情境。'
-                    : '主打深度工作、沉浸思考與夜間專注，適合寫作、策略規劃與長時間低干擾工作。'}
+                  {program.positioning}
                 </p>
               </div>
             )}
+
+            {isAdmin ? (
+              <div className="mt-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-white/42">介面與內容原則</p>
+                <div className="mt-3 grid gap-3 md:grid-cols-3">
+                  {program.layoutNotes.map((note) => (
+                    <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
+                      <p className="text-xs leading-6 text-white/65">{note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             {isAdmin ? (
               <div className="mt-5">
@@ -95,6 +96,10 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                         <h4 className="text-sm font-medium text-white">{step.title}</h4>
                       </div>
                       <p className="mt-2 text-xs leading-6 text-white/62">{step.detail}</p>
+                      <p className="mt-3 text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
+                        交付物
+                      </p>
+                      <p className="mt-2 text-xs leading-6 text-fuchsia-50/76">{step.deliverable}</p>
                     </div>
                   ))}
                 </div>
@@ -102,11 +107,54 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
             ) : null}
 
             {isAdmin ? (
-              <div className="mt-5 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">Prompt Seed</p>
-                <pre className="mt-3 overflow-x-auto text-xs leading-6 text-cyan-50/82">
-                  <code>{program.promptSeed}</code>
-                </pre>
+              <div className="mt-5">
+                <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">Prompt Modules</p>
+                <div className="mt-3 grid gap-3">
+                  {program.promptModules.map((module) => (
+                    <div
+                      key={module.id}
+                      className="rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-50/72">
+                          {module.id}
+                        </span>
+                        <h4 className="text-sm font-medium text-white">{module.title}</h4>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-cyan-50/70">{module.purpose}</p>
+                      <pre className="mt-3 overflow-x-auto rounded-[16px] border border-white/8 bg-black/18 p-4 text-xs leading-6 text-cyan-50/82">
+                        <code>{module.template}</code>
+                      </pre>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+
+            {isAdmin ? (
+              <div className="mt-5 grid gap-3 xl:grid-cols-[0.95fr_1.05fr]">
+                <div className="rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">Prompt Seed</p>
+                  <pre className="mt-3 overflow-x-auto text-xs leading-6 text-cyan-50/82">
+                    <code>{program.promptSeed}</code>
+                  </pre>
+                </div>
+                <div className="rounded-[18px] border border-emerald-300/12 bg-[#07130f]/88 p-4">
+                  <p className="text-xs uppercase tracking-[0.24em] text-emerald-100/60">驗收清單</p>
+                  <div className="mt-3 grid gap-3">
+                    {program.acceptanceChecklist.map((item) => (
+                      <div key={item.id} className="rounded-[16px] border border-white/8 bg-black/18 p-3">
+                        <div className="flex items-center gap-3">
+                          <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
+                            {item.id}
+                          </span>
+                          <h4 className="text-sm font-medium text-white">{item.title}</h4>
+                        </div>
+                        <p className="mt-2 text-xs leading-6 text-emerald-50/72">{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             ) : null}
           </article>
