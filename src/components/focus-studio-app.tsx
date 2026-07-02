@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Waves } from "lucide-react";
+import { useMemo, useState } from "react";
 
 import {
   bpmOptions,
@@ -13,27 +12,12 @@ import {
 } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
-import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
+import { usePlayback } from "@/components/playback-provider";
 import { StudioNav } from "@/components/studio-nav";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
 import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
-import { HowlerPlaylistController } from "@/lib/howler-playlist";
-import type { PlaybackSnapshot } from "@/types/music";
-
-const initialPlaybackState: PlaybackSnapshot = {
-  currentTrackId: null,
-  nextTrackId: null,
-  currentTime: 0,
-  duration: 0,
-  isPlaying: false,
-  isCrossfading: false,
-  crossfadeWindowSeconds: 4.36,
-  engine: "precision_web_audio",
-  prefersBackgroundPlayback: false,
-  repeatEnabled: true,
-};
 
 function wait(ms: number) {
   return new Promise((resolve) => {
@@ -46,14 +30,9 @@ type FocusStudioAppProps = {
 };
 
 export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
-  const controllerRef = useRef<HowlerPlaylistController | null>(null);
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
-  const [isPlayerOpen, setIsPlayerOpen] = useState(true);
-  const [isPlayerMinimized, setIsPlayerMinimized] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
-  const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
+  const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack } = usePlayback();
 
   const trackMap = useMemo(() => {
     return new Map(tracks.map((track) => [track.id, track]));
@@ -66,19 +45,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
     return tracks.filter((asset) => activeBpms.includes(asset.bpm));
   }, [activeBpms]);
-
-  const selectedAssets = useMemo(() => {
-    const selectedSet = new Set(selectedIds);
-    return tracks.filter((asset) => selectedSet.has(asset.id));
-  }, [selectedIds]);
-
-  const currentTrack = useMemo(() => {
-    return tracks.find((asset) => asset.id === playback.currentTrackId) ?? null;
-  }, [playback.currentTrackId]);
-
-  const nextTrack = useMemo(() => {
-    return tracks.find((asset) => asset.id === playback.nextTrackId) ?? null;
-  }, [playback.nextTrackId]);
 
   const bpmCompatibilityMap = useMemo(() => {
     const entries = tracks.map((track) => {
@@ -138,85 +104,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     };
   }, [trackMap]);
 
-  useEffect(() => {
-    controllerRef.current = new HowlerPlaylistController({
-      onStateChange: setPlayback,
-    });
-
-    return () => {
-      controllerRef.current?.destroy();
-      controllerRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) {
-      return;
-    }
-
-    if (typeof MediaMetadata !== "undefined") {
-      const artworkSrc = currentTrack?.media.coverImageUrl
-        ? new URL(currentTrack.media.coverImageUrl, window.location.origin).toString()
-        : generatedSceneImageUrl;
-
-      navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack?.title ?? "音樂創作與專注力環境",
-        artist: "Music Focus Studio",
-        album: "CEO Mindset Environment",
-        artwork: [{ src: artworkSrc, sizes: "512x512", type: "image/jpeg" }],
-      });
-    }
-
-    navigator.mediaSession.playbackState = playback.isPlaying ? "playing" : "paused";
-    navigator.mediaSession.setActionHandler("play", () => controllerRef.current?.play());
-    navigator.mediaSession.setActionHandler("pause", () => controllerRef.current?.pause());
-    navigator.mediaSession.setActionHandler("previoustrack", () => controllerRef.current?.previous());
-    navigator.mediaSession.setActionHandler("nexttrack", () => controllerRef.current?.next());
-    navigator.mediaSession.setActionHandler("seekbackward", () => controllerRef.current?.seekBy(-10));
-    navigator.mediaSession.setActionHandler("seekforward", () => controllerRef.current?.seekBy(10));
-    navigator.mediaSession.setActionHandler("seekto", (details) => {
-      if (typeof details.seekTime === "number") {
-        controllerRef.current?.seekTo(details.seekTime);
-      }
-    });
-
-    return () => {
-      navigator.mediaSession.setActionHandler("play", null);
-      navigator.mediaSession.setActionHandler("pause", null);
-      navigator.mediaSession.setActionHandler("previoustrack", null);
-      navigator.mediaSession.setActionHandler("nexttrack", null);
-      navigator.mediaSession.setActionHandler("seekbackward", null);
-      navigator.mediaSession.setActionHandler("seekforward", null);
-      navigator.mediaSession.setActionHandler("seekto", null);
-    };
-  }, [currentTrack, playback.isPlaying]);
-
-  useEffect(() => {
-    controllerRef.current?.setPlaylist(selectedAssets);
-  }, [selectedAssets]);
-
-  useEffect(() => {
-    if (!pendingPlayId) {
-      return;
-    }
-
-    if (!selectedAssets.some((asset) => asset.id === pendingPlayId)) {
-      return;
-    }
-
-    controllerRef.current?.play(pendingPlayId);
-    setPendingPlayId(null);
-  }, [pendingPlayId, selectedAssets]);
-
   const toggleBpm = (bpm: number) => {
     setActiveBpms((current: number[]) => {
       return current.includes(bpm) ? current.filter((item) => item !== bpm) : [...current, bpm];
-    });
-  };
-
-  const toggleAsset = (assetId: string) => {
-    setSelectedIds((current: string[]) => {
-      return current.includes(assetId) ? current.filter((item) => item !== assetId) : [...current, assetId];
     });
   };
 
@@ -252,38 +142,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     } finally {
       setIsDownloading(false);
     }
-  };
-
-  const handlePlayPause = () => {
-    if (!controllerRef.current) {
-      return;
-    }
-
-    if (playback.isPlaying) {
-      controllerRef.current.pause();
-      return;
-    }
-
-    controllerRef.current.play();
-  };
-
-  const handleToggleRepeat = () => {
-    controllerRef.current?.setRepeatEnabled(!playback.repeatEnabled);
-  };
-
-  const handlePlayTrack = (assetId: string) => {
-    setIsPlayerOpen(true);
-    setIsPlayerMinimized((current) => (isPlayerOpen ? current : true));
-
-    if (!selectedIds.includes(assetId)) {
-      setSelectedIds((current: string[]) => {
-        return [...current, assetId];
-      });
-      setPendingPlayId(assetId);
-      return;
-    }
-
-    controllerRef.current?.play(assetId);
   };
 
   const isAdmin = mode === "admin";
@@ -361,7 +219,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <BpmRecommendationPanel
               currentTrack={currentTrack}
               recommendations={recommendedMixes}
-              onPlayTrack={handlePlayTrack}
+              onPlayTrack={playTrack}
             />
           </div>
         ) : null}
@@ -383,46 +241,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               isCurrent={playback.currentTrackId === asset.id}
               isNext={playback.nextTrackId === asset.id}
               onToggle={toggleAsset}
-              onPlayTrack={handlePlayTrack}
+              onPlayTrack={playTrack}
             />
           ))}
         </section>
       </div>
-
-      {isPlayerOpen ? (
-        <GlobalPlayer
-          playlist={selectedAssets}
-          currentTrack={currentTrack}
-          nextTrack={nextTrack}
-          playback={playback}
-          isMinimized={isPlayerMinimized}
-          mode={mode}
-          onPlayPause={handlePlayPause}
-          onToggleRepeat={handleToggleRepeat}
-          onPrevious={() => controllerRef.current?.previous()}
-          onNext={() => controllerRef.current?.next()}
-          onSeek={(seconds) => controllerRef.current?.seekTo(seconds)}
-          onSeekBy={(deltaSeconds) => controllerRef.current?.seekBy(deltaSeconds)}
-          onPlayTrack={handlePlayTrack}
-          onToggleMinimize={() => setIsPlayerMinimized((current) => !current)}
-          onClose={() => {
-            setIsPlayerOpen(false);
-            setIsPlayerMinimized(true);
-          }}
-        />
-      ) : (
-        <button
-          type="button"
-          onClick={() => {
-            setIsPlayerOpen(true);
-            setIsPlayerMinimized(true);
-          }}
-          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-fuchsia-400/28 bg-[#0a0814]/88 px-4 py-3 text-sm font-medium text-fuchsia-50 shadow-[0_24px_60px_rgba(84,12,112,0.38)] backdrop-blur-2xl transition hover:bg-[#100d1d]"
-        >
-          <Waves className="h-4 w-4" />
-          打開播放器
-        </button>
-      )}
     </main>
   );
 }

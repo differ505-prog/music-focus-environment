@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 
+import { PlaybackProvider } from "@/components/playback-provider";
 import "./globals.css";
 
 const displayFont = Cormorant_Garamond({
@@ -29,7 +30,7 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant">
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`}>
-        {children}
+        <PlaybackProvider>{children}</PlaybackProvider>
       </body>
     </html>
   );
