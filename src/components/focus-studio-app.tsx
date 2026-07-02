@@ -16,7 +16,6 @@ import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
-import { SelectionActionBar } from "@/components/selection-action-bar";
 import { StudioNav } from "@/components/studio-nav";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
 import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
@@ -340,9 +339,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             activeBpms={activeBpms}
             visibleCount={filteredAssets.length}
             selectedCount={selectedAssets.length}
+            isDownloading={isDownloading}
             onToggleBpm={toggleBpm}
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
+            onDownload={handleDownload}
           />
         </div>
 
@@ -382,12 +383,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           ))}
         </section>
       </div>
-
-      <SelectionActionBar
-        selectedCount={selectedAssets.length}
-        isDownloading={isDownloading}
-        onDownload={handleDownload}
-      />
 
       {isPlayerOpen ? (
         <GlobalPlayer

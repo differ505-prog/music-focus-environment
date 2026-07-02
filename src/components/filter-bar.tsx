@@ -1,13 +1,17 @@
 'use client';
 
+import { Download, LoaderCircle } from "lucide-react";
+
 type FilterBarProps = {
   bpmOptions: readonly number[];
   activeBpms: number[];
   visibleCount: number;
   selectedCount: number;
+  isDownloading: boolean;
   onToggleBpm: (bpm: number) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
+  onDownload: () => void;
 };
 
 export function FilterBar({
@@ -15,9 +19,11 @@ export function FilterBar({
   activeBpms,
   visibleCount,
   selectedCount,
+  isDownloading,
   onToggleBpm,
   onSelectAll,
   onClearSelection,
+  onDownload,
 }: FilterBarProps) {
   return (
     <section className="relative rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(6,8,20,0.44)] backdrop-blur-2xl md:p-6">
@@ -65,6 +71,24 @@ export function FilterBar({
               className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
             >
               取消全選
+            </button>
+            <button
+              type="button"
+              onClick={onDownload}
+              disabled={selectedCount === 0 || isDownloading}
+              className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/18 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-400/24 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isDownloading ? (
+                <>
+                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                  下載中...
+                </>
+              ) : (
+                <>
+                  <Download className="h-4 w-4" />
+                  下載已選取
+                </>
+              )}
             </button>
           </div>
           <p className="text-sm text-white/64">
