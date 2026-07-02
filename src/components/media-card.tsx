@@ -5,10 +5,10 @@ import { useMemo, useState } from "react";
 import { Check, Headphones, Sparkles } from "lucide-react";
 
 import { generatedSceneImageUrl } from "@/data/music-assets";
-import type { MusicAsset } from "@/types/music";
+import type { Track } from "@/types/music";
 
 type MediaCardProps = {
-  asset: MusicAsset;
+  asset: Track;
   checked: boolean;
   isCurrent: boolean;
   isNext: boolean;
@@ -27,8 +27,8 @@ export function MediaCard({
   const [imageErrored, setImageErrored] = useState(false);
 
   const imageSrc = useMemo(() => {
-    return imageErrored ? generatedSceneImageUrl : asset.imageUrl;
-  }, [asset.imageUrl, imageErrored]);
+    return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
+  }, [asset.media.coverImageUrl, imageErrored]);
 
   return (
     <article className="group relative overflow-hidden rounded-[30px] border border-white/12 bg-white/9 p-4 shadow-[0_28px_80px_rgba(0,0,0,0.32)] backdrop-blur-2xl">
@@ -85,6 +85,9 @@ export function MediaCard({
           Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+          Mix {asset.transition.mixInPointSeconds}s / {asset.transition.mixOutPointSeconds}s
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
           {asset.transition.sourceLufs.toFixed(1)} LUFS
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-100/85">
@@ -117,15 +120,33 @@ export function MediaCard({
       <div className="mt-5 grid gap-4 text-sm text-white/72">
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            Music Prompt
+            Track Identity
           </p>
-          <p className="line-clamp-4 leading-6">{asset.musicPrompt}</p>
+          <p className="leading-6">{asset.copy.descriptionZh}</p>
+          <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            {asset.moodTags.map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/58"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            Image Prompt
+            Generation Prompt
           </p>
-          <p className="line-clamp-4 leading-6">{asset.imagePrompt}</p>
+          <p className="line-clamp-4 leading-6">{asset.prompts.generationPrompt}</p>
+        </div>
+        <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+          <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+            Prompt Assets
+          </p>
+          <p className="line-clamp-3 leading-6">{asset.prompts.musicPrompt}</p>
+          <p className="mt-3 line-clamp-3 leading-6 text-white/55">{asset.prompts.imagePrompt}</p>
         </div>
       </div>
     </article>

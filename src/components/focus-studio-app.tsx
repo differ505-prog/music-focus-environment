@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Waves } from "lucide-react";
 
-import { bpmOptions, generatedSceneImageUrl, musicAssets } from "@/data/music-assets";
+import { bpmOptions, generatedSceneImageUrl, mixEvents, mixSessions, tracks } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
+import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { SelectionActionBar } from "@/components/selection-action-bar";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
 import type { PlaybackSnapshot } from "@/types/music";
@@ -36,26 +37,70 @@ export function FocusStudioApp() {
   const [isDownloading, setIsDownloading] = useState(false);
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
+  const trackMap = useMemo(() => {
+    return new Map(tracks.map((track) => [track.id, track]));
+  }, []);
+
   const filteredAssets = useMemo(() => {
     if (activeBpms.length === 0) {
-      return musicAssets;
+      return tracks;
     }
 
-    return musicAssets.filter((asset) => activeBpms.includes(asset.bpm));
+    return tracks.filter((asset) => activeBpms.includes(asset.bpm));
   }, [activeBpms]);
 
   const selectedAssets = useMemo(() => {
     const selectedSet = new Set(selectedIds);
-    return musicAssets.filter((asset) => selectedSet.has(asset.id));
+    return tracks.filter((asset) => selectedSet.has(asset.id));
   }, [selectedIds]);
 
   const currentTrack = useMemo(() => {
-    return musicAssets.find((asset) => asset.id === playback.currentTrackId) ?? null;
+    return tracks.find((asset) => asset.id === playback.currentTrackId) ?? null;
   }, [playback.currentTrackId]);
 
   const nextTrack = useMemo(() => {
-    return musicAssets.find((asset) => asset.id === playback.nextTrackId) ?? null;
+    return tracks.find((asset) => asset.id === playback.nextTrackId) ?? null;
   }, [playback.nextTrackId]);
+
+  const mixInsights = useMemo(() => {
+    const publicSessions = mixSessions.filter((session) => session.listenerMode === "public_mix");
+    const savedMixCount = mixEvents.filter((event) => event.type === "save_mix").length;
+    const avgCompletionRate = publicSessions.length
+      ? Math.round(
+          (publicSessions.reduce((sum, session) => sum + session.completionRate, 0) / publicSessions.length) * 100,
+        )
+      : 0;
+
+    const transitionCounter = new Map<string, { label: string; count: number }>();
+    for (const event of mixEvents) {
+      if (event.type !== "transition_complete" || !event.fromTrackId || !event.toTrackId) {
+        continue;
+      }
+
+      const fromTrack = trackMap.get(event.fromTrackId);
+      const toTrack = trackMap.get(event.toTrackId);
+      const key = `${event.fromTrackId}:${event.toTrackId}`;
+      const current = transitionCounter.get(key);
+      const label = fromTrack && toTrack ? `${fromTrack.title} -> ${toTrack.title}` : key;
+
+      transitionCounter.set(key, {
+        label,
+        count: (current?.count ?? 0) + 1,
+      });
+    }
+
+    const topTransition =
+      Array.from(transitionCounter.values()).sort((left, right) => right.count - left.count)[0] ?? null;
+
+    return {
+      publishedCount: tracks.filter((track) => track.status === "published").length,
+      publicSessionCount: publicSessions.length,
+      savedMixCount,
+      avgCompletionRate,
+      topTransitionLabel: topTransition?.label ?? "尚無資料",
+      topTransitionCount: topTransition?.count ?? 0,
+    };
+  }, [trackMap]);
 
   useEffect(() => {
     controllerRef.current = new HowlerPlaylistController({
@@ -118,7 +163,7 @@ export function FocusStudioApp() {
     try {
       for (const asset of selectedAssets) {
         const link = document.createElement("a");
-        link.href = asset.audioUrl;
+        link.href = asset.media.audioUrl;
         link.download = `${asset.title.toLowerCase().replace(/\s+/g, "-")}.mp3`;
         link.rel = "noopener";
         document.body.append(link);
@@ -206,6 +251,10 @@ export function FocusStudioApp() {
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
           />
+        </div>
+
+        <div className="mt-6">
+          <MixInsightsPanel {...mixInsights} />
         </div>
 
         <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">

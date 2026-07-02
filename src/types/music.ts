@@ -1,4 +1,27 @@
-export type MusicTransitionProfile = {
+export type FadeCurve = "equal_power";
+
+export type TrackStatus = "draft" | "ready" | "published";
+
+export type TrackMedia = {
+  audioUrl: string;
+  coverImageUrl: string;
+  backgroundVideoUrl: string;
+};
+
+export type TrackCopy = {
+  descriptionZh: string;
+  descriptionEn: string;
+  themeScenario: string;
+};
+
+export type TrackPrompts = {
+  musicPrompt: string;
+  imagePrompt: string;
+  videoPrompt: string;
+  generationPrompt: string;
+};
+
+export type TrackTransitionProfile = {
   introCueSeconds: number;
   outroMixWindowSeconds: number;
   crossfadeSeconds: number;
@@ -6,20 +29,57 @@ export type MusicTransitionProfile = {
   sourceLufs: number;
   targetLufs: number;
   normalizationGainDb: number;
-  fadeCurve: "equal_power";
+  fadeCurve: FadeCurve;
   tempoLockBars: number;
   beatDurationSeconds: number;
+  mixInPointSeconds: number;
+  mixOutPointSeconds: number;
 };
 
-export type MusicAsset = {
+export type Track = {
   id: string;
+  slug: string;
   title: string;
-  bpm: 110;
-  audioUrl: string;
-  imageUrl: string;
-  musicPrompt: string;
-  imagePrompt: string;
-  transition: MusicTransitionProfile;
+  bpm: number;
+  durationSeconds: number;
+  musicalKey: string;
+  energyLevel: number;
+  moodTags: string[];
+  status: TrackStatus;
+  media: TrackMedia;
+  copy: TrackCopy;
+  prompts: TrackPrompts;
+  transition: TrackTransitionProfile;
+  createdAt: string;
+};
+
+export type MixEventType =
+  | "play"
+  | "transition_complete"
+  | "seek"
+  | "skip"
+  | "save_mix"
+  | "share";
+
+export type MixEvent = {
+  id: string;
+  sessionId: string;
+  type: MixEventType;
+  trackId: string;
+  fromTrackId?: string;
+  toTrackId?: string;
+  value?: number;
+  occurredAt: string;
+};
+
+export type MixSession = {
+  id: string;
+  listenerMode: "private_studio" | "public_mix";
+  startedAt: string;
+  endedAt: string;
+  trackSequence: string[];
+  savedMixTitle?: string;
+  completionRate: number;
 };
 
 export type PlaybackSnapshot = {

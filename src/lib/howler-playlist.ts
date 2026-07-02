@@ -1,6 +1,6 @@
 import { Howl } from "howler";
 
-import type { MusicAsset, PlaybackSnapshot } from "@/types/music";
+import type { PlaybackSnapshot, Track } from "@/types/music";
 
 const PLAYBACK_POLL_MS = 200;
 const EQUAL_POWER_TICK_MS = 40;
@@ -10,7 +10,7 @@ type PlaylistControllerOptions = {
 };
 
 export class HowlerPlaylistController {
-  private playlist: MusicAsset[] = [];
+  private playlist: Track[] = [];
   private currentIndex = -1;
   private currentHowl: Howl | null = null;
   private nextHowl: Howl | null = null;
@@ -26,7 +26,7 @@ export class HowlerPlaylistController {
     this.onStateChange = options.onStateChange;
   }
 
-  setPlaylist(nextPlaylist: MusicAsset[]) {
+  setPlaylist(nextPlaylist: Track[]) {
     const currentTrackId = this.getCurrentTrack()?.id ?? null;
     const isPlaying = this.isPlaying();
 
@@ -202,9 +202,9 @@ export class HowlerPlaylistController {
     this.emitState();
   }
 
-  private createHowl(track: MusicAsset, volumeFactor: number, startAtSeconds = 0) {
+  private createHowl(track: Track, volumeFactor: number, startAtSeconds = 0) {
     const howl = new Howl({
-      src: [track.audioUrl],
+      src: [track.media.audioUrl],
       html5: false,
       preload: true,
       volume: this.getTargetGain(track) * volumeFactor,
@@ -435,15 +435,15 @@ export class HowlerPlaylistController {
     return Boolean(this.currentHowl?.playing() || this.nextHowl?.playing());
   }
 
-  private getTargetGain(track: MusicAsset | null) {
+  private getTargetGain(track: Track | null) {
     return track?.transition.targetGain ?? 1;
   }
 
   private runEqualPowerCurve(
     currentHowl: Howl,
     nextHowl: Howl,
-    currentTrack: MusicAsset,
-    nextTrack: MusicAsset,
+    currentTrack: Track,
+    nextTrack: Track,
     fadeDurationMs: number,
   ) {
     this.clearEqualPowerCurveTimer();

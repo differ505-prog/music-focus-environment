@@ -2,12 +2,12 @@
 
 import { ListMusic, Pause, Play, Redo2, SkipBack, SkipForward, Undo2, Waves, X } from "lucide-react";
 
-import type { MusicAsset, PlaybackSnapshot } from "@/types/music";
+import type { PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
-  playlist: MusicAsset[];
-  currentTrack: MusicAsset | null;
-  nextTrack: MusicAsset | null;
+  playlist: Track[];
+  currentTrack: Track | null;
+  nextTrack: Track | null;
   playback: PlaybackSnapshot;
   onPlayPause: () => void;
   onPrevious: () => void;
@@ -89,6 +89,9 @@ export function GlobalPlayer({
               </span>
               <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
                 Equal-Power Fade
+              </span>
+              <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
               </span>
             </div>
           ) : null}
