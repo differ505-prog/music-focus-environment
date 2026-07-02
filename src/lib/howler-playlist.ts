@@ -3,6 +3,7 @@ import { Howl } from "howler";
 import type { MusicAsset, PlaybackSnapshot } from "@/types/music";
 
 const PLAYBACK_POLL_MS = 200;
+const EQUAL_POWER_TICK_MS = 40;
 
 type PlaylistControllerOptions = {
   onStateChange?: (snapshot: PlaybackSnapshot) => void;
@@ -16,6 +17,7 @@ export class HowlerPlaylistController {
   private preparedNextHowl: Howl | null = null;
   private preparedNextTrackId: string | null = null;
   private crossfadeMonitor: ReturnType<typeof setInterval> | null = null;
+  private equalPowerCurveTimer: ReturnType<typeof setInterval> | null = null;
   private crossfadeFinalizeTimer: ReturnType<typeof setTimeout> | null = null;
   private onStateChange?: (snapshot: PlaybackSnapshot) => void;
   private isCrossfading = false;
@@ -100,6 +102,7 @@ export class HowlerPlaylistController {
     if (this.nextHowl) {
       this.cleanupNextHowl();
       this.isCrossfading = false;
+      this.clearEqualPowerCurveTimer();
       this.clearCrossfadeFinalizeTimer();
       this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
     }
@@ -136,6 +139,7 @@ export class HowlerPlaylistController {
       return;
     }
 
+    const wasPlaying = this.currentHowl.playing();
     const duration = this.currentHowl.duration();
     if (!Number.isFinite(duration) || duration <= 0) {
       return;
@@ -147,11 +151,20 @@ export class HowlerPlaylistController {
     if (this.nextHowl) {
       this.cleanupNextHowl();
       this.isCrossfading = false;
+      this.clearEqualPowerCurveTimer();
       this.clearCrossfadeFinalizeTimer();
       this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
     }
 
-    if (this.currentHowl.playing()) {
+    if (wasPlaying) {
+      this.clearCrossfadeMonitor();
+      this.currentHowl.pause();
+    }
+
+    this.currentHowl.seek(boundedSeconds);
+
+    if (wasPlaying) {
+      this.currentHowl.play();
       this.scheduleCrossfadeMonitor();
     }
 
@@ -313,8 +326,9 @@ export class HowlerPlaylistController {
     this.preparedNextTrackId = null;
 
     nextHowl.play();
-    nextHowl.fade(0, this.getTargetGain(nextTrack), fadeDurationMs);
-    currentHowl.fade(currentHowl.volume(), 0, fadeDurationMs);
+    nextHowl.volume(0);
+    currentHowl.volume(this.getTargetGain(currentTrack));
+    this.runEqualPowerCurve(currentHowl, nextHowl, currentTrack, nextTrack, fadeDurationMs);
 
     this.crossfadeFinalizeTimer = setTimeout(() => {
       const outgoingHowl = this.currentHowl;
@@ -342,6 +356,7 @@ export class HowlerPlaylistController {
 
   private stopAndUnloadAll() {
     this.clearCrossfadeMonitor();
+    this.clearEqualPowerCurveTimer();
     this.clearCrossfadeFinalizeTimer();
     this.isCrossfading = false;
     this.cleanupCurrentHowl();
@@ -390,6 +405,15 @@ export class HowlerPlaylistController {
     this.crossfadeMonitor = null;
   }
 
+  private clearEqualPowerCurveTimer() {
+    if (!this.equalPowerCurveTimer) {
+      return;
+    }
+
+    clearInterval(this.equalPowerCurveTimer);
+    this.equalPowerCurveTimer = null;
+  }
+
   private clearCrossfadeFinalizeTimer() {
     if (!this.crossfadeFinalizeTimer) {
       return;
@@ -413,6 +437,37 @@ export class HowlerPlaylistController {
 
   private getTargetGain(track: MusicAsset | null) {
     return track?.transition.targetGain ?? 1;
+  }
+
+  private runEqualPowerCurve(
+    currentHowl: Howl,
+    nextHowl: Howl,
+    currentTrack: MusicAsset,
+    nextTrack: MusicAsset,
+    fadeDurationMs: number,
+  ) {
+    this.clearEqualPowerCurveTimer();
+
+    const startedAt = Date.now();
+    const currentTargetGain = this.getTargetGain(currentTrack);
+    const nextTargetGain = this.getTargetGain(nextTrack);
+
+    const updateCurve = () => {
+      const elapsed = Date.now() - startedAt;
+      const progress = Math.min(elapsed / fadeDurationMs, 1);
+      const outgoingGain = Math.cos((progress * Math.PI) / 2) * currentTargetGain;
+      const incomingGain = Math.sin((progress * Math.PI) / 2) * nextTargetGain;
+
+      currentHowl.volume(outgoingGain);
+      nextHowl.volume(incomingGain);
+
+      if (progress >= 1) {
+        this.clearEqualPowerCurveTimer();
+      }
+    };
+
+    updateCurve();
+    this.equalPowerCurveTimer = setInterval(updateCurve, EQUAL_POWER_TICK_MS);
   }
 
   private primeUpcomingTrack() {

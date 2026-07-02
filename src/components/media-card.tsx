@@ -84,6 +84,16 @@ export function MediaCard({
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
           Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
         </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+          {asset.transition.sourceLufs.toFixed(1)} LUFS
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-100/85">
+          Norm {asset.transition.normalizationGainDb > 0 ? "+" : ""}
+          {asset.transition.normalizationGainDb.toFixed(2)} dB
+        </span>
+        <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
+          Equal-Power
+        </span>
         {isCurrent ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/12 px-3 py-1 text-xs text-emerald-100">
             <Headphones className="h-3.5 w-3.5" />

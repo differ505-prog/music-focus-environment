@@ -9,48 +9,72 @@ export const defaultImagePrompt =
 export const generatedSceneImageUrl = `https://core-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent(defaultImagePrompt)}&image_size=landscape_16_9`;
 
 const tempoLockedCrossfadeSeconds = 4.36;
+const targetLufs = -14.5;
+
+function dbToGain(db: number) {
+  return Number(Math.pow(10, db / 20).toFixed(3));
+}
+
+function createTransitionProfile(profile: {
+  introCueSeconds: number;
+  outroMixWindowSeconds: number;
+  crossfadeSeconds: number;
+  sourceLufs: number;
+  tempoLockBars: number;
+  beatDurationSeconds: number;
+}): MusicAsset["transition"] {
+  const normalizationGainDb = Number((targetLufs - profile.sourceLufs).toFixed(2));
+
+  return {
+    ...profile,
+    targetGain: dbToGain(normalizationGainDb),
+    targetLufs,
+    normalizationGainDb,
+    fadeCurve: "equal_power",
+  };
+}
 
 const transitionProfiles: MusicAsset["transition"][] = [
-  {
+  createTransitionProfile({
     introCueSeconds: 0.12,
     outroMixWindowSeconds: 4.36,
     crossfadeSeconds: 4.36,
-    targetGain: 0.94,
+    sourceLufs: -13.95,
     tempoLockBars: 2,
     beatDurationSeconds: 0.545,
-  },
-  {
+  }),
+  createTransitionProfile({
     introCueSeconds: 0.28,
     outroMixWindowSeconds: 4.14,
     crossfadeSeconds: 4.14,
-    targetGain: 0.96,
+    sourceLufs: -14.08,
     tempoLockBars: 2,
     beatDurationSeconds: 0.545,
-  },
-  {
+  }),
+  createTransitionProfile({
     introCueSeconds: 0.08,
     outroMixWindowSeconds: 4.36,
     crossfadeSeconds: 4.36,
-    targetGain: 0.92,
+    sourceLufs: -13.78,
     tempoLockBars: 2,
     beatDurationSeconds: 0.545,
-  },
-  {
+  }),
+  createTransitionProfile({
     introCueSeconds: 0.2,
     outroMixWindowSeconds: 4.5,
     crossfadeSeconds: 4.2,
-    targetGain: 0.95,
+    sourceLufs: -14.02,
     tempoLockBars: 2,
     beatDurationSeconds: 0.545,
-  },
-  {
+  }),
+  createTransitionProfile({
     introCueSeconds: 0.16,
     outroMixWindowSeconds: tempoLockedCrossfadeSeconds,
     crossfadeSeconds: tempoLockedCrossfadeSeconds,
-    targetGain: 0.93,
+    sourceLufs: -13.7,
     tempoLockBars: 2,
     beatDurationSeconds: 0.545,
-  },
+  }),
 ];
 
 export const musicAssets: MusicAsset[] = [

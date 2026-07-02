@@ -3,6 +3,10 @@ export type MusicTransitionProfile = {
   outroMixWindowSeconds: number;
   crossfadeSeconds: number;
   targetGain: number;
+  sourceLufs: number;
+  targetLufs: number;
+  normalizationGainDb: number;
+  fadeCurve: "equal_power";
   tempoLockBars: number;
   beatDurationSeconds: number;
 };
