@@ -3,12 +3,21 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Waves } from "lucide-react";
 
-import { bpmOptions, generatedSceneImageUrl, mixEvents, mixSessions, tracks } from "@/data/music-assets";
+import {
+  bpmOptions,
+  generatedSceneImageUrl,
+  mixEvents,
+  mixSessions,
+  promptWorkflowSteps,
+  tracks,
+} from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { GlobalPlayer } from "@/components/global-player";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
+import { PromptWorkflowPanel } from "@/components/prompt-workflow-panel";
 import { SelectionActionBar } from "@/components/selection-action-bar";
+import { StudioNav } from "@/components/studio-nav";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
 import type { PlaybackSnapshot } from "@/types/music";
 
@@ -28,7 +37,11 @@ function wait(ms: number) {
   });
 }
 
-export function FocusStudioApp() {
+type FocusStudioAppProps = {
+  mode?: "public" | "admin";
+};
+
+export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const controllerRef = useRef<HowlerPlaylistController | null>(null);
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -203,6 +216,12 @@ export function FocusStudioApp() {
     controllerRef.current?.play(assetId);
   };
 
+  const isAdmin = mode === "admin";
+  const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
+  const heroDescription = isAdmin
+    ? "集中管理提示詞流程、轉場參數、生成資料與 mix 數據，讓你可以一邊產歌、一邊調整接歌與網站資產。"
+    : "以 110 BPM 深度節奏為核心，整合沉浸式氛圍、播放清單、4.36 秒 crossfade 與批次下載，讓每段深度工作都像高階主管的夜間決策室。";
+
   return (
     <main
       className="relative min-h-screen overflow-hidden bg-[#02060b] text-white"
@@ -215,17 +234,18 @@ export function FocusStudioApp() {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(91,164,191,0.18),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]" />
 
       <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-[31rem] pt-8 md:px-8 md:pb-[24rem] md:pt-12">
+        <StudioNav />
+
         <section className="rounded-[36px] border border-white/12 bg-black/22 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.45)] backdrop-blur-3xl md:p-10">
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.38em] text-cyan-100/58">
-              CEO Mindset Environment
+              {isAdmin ? "Internal Studio Workspace" : "CEO Mindset Environment"}
             </p>
             <h1 className="mt-4 max-w-2xl font-serif text-4xl leading-tight text-white md:text-6xl">
-              音樂創作與專注力環境
+              {heroTitle}
             </h1>
             <p className="mt-5 max-w-2xl text-sm leading-7 text-white/70 md:text-base">
-              以 110 BPM 深度節奏為核心，整合沉浸式氛圍、播放清單、4.36 秒 crossfade 與批次下載，
-              讓每段深度工作都像高階主管的夜間決策室。
+              {heroDescription}
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
@@ -237,6 +257,11 @@ export function FocusStudioApp() {
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
                 Howler.js Crossfade
               </span>
+              {isAdmin ? (
+                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-4 py-2">
+                  Prompt Workflow
+                </span>
+              ) : null}
             </div>
           </div>
         </section>
@@ -253,15 +278,24 @@ export function FocusStudioApp() {
           />
         </div>
 
-        <div className="mt-6">
-          <MixInsightsPanel {...mixInsights} />
-        </div>
+        {isAdmin ? (
+          <div className="mt-6">
+            <MixInsightsPanel {...mixInsights} />
+          </div>
+        ) : null}
+
+        {isAdmin ? (
+          <div className="mt-6">
+            <PromptWorkflowPanel steps={promptWorkflowSteps.map((step) => ({ ...step }))} />
+          </div>
+        ) : null}
 
         <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
           {filteredAssets.map((asset) => (
             <MediaCard
               key={asset.id}
               asset={asset}
+              mode={mode}
               checked={selectedIds.includes(asset.id)}
               isCurrent={playback.currentTrackId === asset.id}
               isNext={playback.nextTrackId === asset.id}

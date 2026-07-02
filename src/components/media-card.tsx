@@ -9,6 +9,7 @@ import type { Track } from "@/types/music";
 
 type MediaCardProps = {
   asset: Track;
+  mode?: "public" | "admin";
   checked: boolean;
   isCurrent: boolean;
   isNext: boolean;
@@ -18,6 +19,7 @@ type MediaCardProps = {
 
 export function MediaCard({
   asset,
+  mode = "public",
   checked,
   isCurrent,
   isNext,
@@ -25,6 +27,7 @@ export function MediaCard({
   onPlayTrack,
 }: MediaCardProps) {
   const [imageErrored, setImageErrored] = useState(false);
+  const showAdminDetails = mode === "admin";
 
   const imageSrc = useMemo(() => {
     return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
@@ -76,27 +79,50 @@ export function MediaCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
-          {asset.transition.tempoLockBars} Bars Lock
+          {asset.musicalKey}
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          Cue {asset.transition.introCueSeconds.toFixed(2)}s
+          Energy {asset.energyLevel.toFixed(1)}
         </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
+          {Math.round(asset.durationSeconds / 60)} min loop
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          Mix {asset.transition.mixInPointSeconds}s / {asset.transition.mixOutPointSeconds}s
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          {asset.transition.sourceLufs.toFixed(1)} LUFS
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-100/85">
-          Norm {asset.transition.normalizationGainDb > 0 ? "+" : ""}
-          {asset.transition.normalizationGainDb.toFixed(2)} dB
-        </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
-          Equal-Power
-        </span>
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
+            {asset.transition.tempoLockBars} Bars Lock
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+            Cue {asset.transition.introCueSeconds.toFixed(2)}s
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+            Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+            Mix {asset.transition.mixInPointSeconds}s / {asset.transition.mixOutPointSeconds}s
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+            {asset.transition.sourceLufs.toFixed(1)} LUFS
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-100/85">
+            Norm {asset.transition.normalizationGainDb > 0 ? "+" : ""}
+            {asset.transition.normalizationGainDb.toFixed(2)} dB
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
+            Equal-Power
+          </span>
+        ) : null}
         {isCurrent ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/25 bg-emerald-300/12 px-3 py-1 text-xs text-emerald-100">
             <Headphones className="h-3.5 w-3.5" />
@@ -135,19 +161,24 @@ export function MediaCard({
             ))}
           </div>
         </div>
-        <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
-          <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            Generation Prompt
-          </p>
-          <p className="line-clamp-4 leading-6">{asset.prompts.generationPrompt}</p>
-        </div>
-        <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
-          <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            Prompt Assets
-          </p>
-          <p className="line-clamp-3 leading-6">{asset.prompts.musicPrompt}</p>
-          <p className="mt-3 line-clamp-3 leading-6 text-white/55">{asset.prompts.imagePrompt}</p>
-        </div>
+        {showAdminDetails ? (
+          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+              Generation Prompt
+            </p>
+            <p className="line-clamp-4 leading-6">{asset.prompts.generationPrompt}</p>
+          </div>
+        ) : null}
+        {showAdminDetails ? (
+          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+              Prompt Assets
+            </p>
+            <p className="line-clamp-3 leading-6">{asset.prompts.musicPrompt}</p>
+            <p className="mt-3 line-clamp-3 leading-6 text-white/55">{asset.prompts.imagePrompt}</p>
+            <p className="mt-3 line-clamp-3 leading-6 text-white/45">{asset.prompts.videoPrompt}</p>
+          </div>
+        ) : null}
       </div>
     </article>
   );
