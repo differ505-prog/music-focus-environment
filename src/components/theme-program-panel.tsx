@@ -15,7 +15,14 @@ type SectionState = Record<SectionKey, boolean>;
 
 type FeedbackMap = Record<string, string>;
 
-const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v1';
+type StoredModuleOutput = {
+  value: string;
+  templateSnapshot: string;
+};
+
+type StoredModuleOutputMap = Record<string, StoredModuleOutput>;
+
+const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v2';
 
 const defaultSectionState = (): SectionState => ({
   strategy: true,
@@ -43,6 +50,14 @@ function buildUpstreamPayload(program: ThemeProgram, moduleIndex: number, module
     .join('\n\n--------------------\n\n');
 }
 
+function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
+  return Object.fromEntries(
+    programs.flatMap((program) =>
+      program.promptModules.map((module) => [buildModuleKey(program.id, module.id), module.template]),
+    ),
+  );
+}
+
 export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPanelProps) {
   const isAdmin = mode === 'admin';
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
@@ -68,17 +83,46 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
 
     try {
       const saved = window.localStorage.getItem(MODULE_OUTPUTS_STORAGE_KEY);
+      const templateSnapshots = buildTemplateSnapshotMap(programs);
 
       if (!saved) {
         return;
       }
 
-      const parsed = JSON.parse(saved) as Record<string, string>;
-      setModuleOutputs(parsed);
+      const parsed = JSON.parse(saved) as StoredModuleOutputMap;
+      const nextOutputs = Object.fromEntries(
+        Object.entries(parsed)
+          .filter((entry): entry is [string, StoredModuleOutput] => {
+            const [key, item] = entry;
+
+            return (
+              typeof item?.value === 'string' &&
+              typeof item?.templateSnapshot === 'string' &&
+              item.templateSnapshot === templateSnapshots[key]
+            );
+          })
+          .map(([key, item]) => [key, item.value]),
+      );
+
+      setModuleOutputs(nextOutputs);
+      window.localStorage.setItem(
+        MODULE_OUTPUTS_STORAGE_KEY,
+        JSON.stringify(
+          Object.fromEntries(
+            Object.entries(nextOutputs).map(([key, value]) => [
+              key,
+              {
+                value,
+                templateSnapshot: templateSnapshots[key],
+              },
+            ]),
+          ),
+        ),
+      );
     } catch {
       window.localStorage.removeItem(MODULE_OUTPUTS_STORAGE_KEY);
     }
-  }, []);
+  }, [programs]);
 
   const setFeedback = (key: string, message: string) => {
     setFeedbackMap((current) => ({
@@ -112,12 +156,26 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     }
 
     const key = buildModuleKey(programId, moduleId);
+    const templateSnapshot =
+      programs
+        .find((program) => program.id === programId)
+        ?.promptModules.find((module) => module.id === moduleId)?.template ?? '';
     const nextOutputs = {
       ...moduleOutputs,
       [key]: moduleOutputs[key] ?? '',
     };
 
-    window.localStorage.setItem(MODULE_OUTPUTS_STORAGE_KEY, JSON.stringify(nextOutputs));
+    const storedOutputs = Object.fromEntries(
+      Object.entries(nextOutputs).map(([entryKey, value]) => [
+        entryKey,
+        {
+          value,
+          templateSnapshot: entryKey === key ? templateSnapshot : buildTemplateSnapshotMap(programs)[entryKey] ?? '',
+        },
+      ]),
+    );
+
+    window.localStorage.setItem(MODULE_OUTPUTS_STORAGE_KEY, JSON.stringify(storedOutputs));
     setModuleOutputs(nextOutputs);
     setFeedback(key, '已儲存，可供後續步驟取用');
   };
