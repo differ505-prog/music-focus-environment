@@ -17,6 +17,22 @@ export const generatedSceneImageUrl = `https://core-normal.trae.ai/api/ide/v1/te
 
 const targetLufs = -14.5;
 
+type TrackNarrativeSeed = {
+  title: string;
+  slug: string;
+  musicalKey: string;
+  energyLevel: number;
+  moodTags: string[];
+  descriptionZh: string;
+  descriptionEn: string;
+  themeScenario: string;
+  bpm: number;
+  durationSeconds?: number;
+  media?: Partial<Track["media"]>;
+  prompts?: Partial<Track["prompts"]>;
+  createdAt?: string;
+};
+
 function dbToGain(db: number) {
   return Number(Math.pow(10, db / 20).toFixed(3));
 }
@@ -86,9 +102,25 @@ const transitionProfiles: TrackTransitionProfile[] = [
     mixInPointSeconds: 20,
     mixOutPointSeconds: 178,
   }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.24,
+    sourceLufs: -14.22,
+    tempoLockBars: 2,
+    mixInPointSeconds: 18,
+    mixOutPointSeconds: 288,
+  }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.3,
+    sourceLufs: -14.34,
+    tempoLockBars: 2,
+    mixInPointSeconds: 16,
+    mixOutPointSeconds: 268,
+  }),
 ];
 
-const trackNarratives = [
+const trackNarratives: TrackNarrativeSeed[] = [
   {
     title: "Aurora Strategy Loop",
     slug: "aurora-strategy-loop",
@@ -144,6 +176,62 @@ const trackNarratives = [
     themeScenario: "夜色壓低了外界聲響，只剩火光、森林與室內低頻節奏。",
     bpm: 120,
   },
+  {
+    title: "Skyline Ember Ledger",
+    slug: "skyline-ember-ledger",
+    musicalKey: "B Minor",
+    energyLevel: 6.7,
+    moodTags: ["skyline", "firelight", "deep-work"],
+    descriptionZh: "高樓夜景與壁爐火光交疊出的 85 BPM 深度工作節奏，適合寫作、規劃與長時間低壓沉浸。",
+    descriptionEn: "An 85 BPM executive focus groove shaped by city-light tension and fireplace warmth, designed for writing, planning, and extended low-pressure immersion.",
+    themeScenario: "高樓書桌前的深色辦公室裡，城市燈海鋪在窗外，火光把節奏壓進更安靜、更穩定的夜間專注狀態。",
+    bpm: 85,
+    durationSeconds: 320,
+    media: {
+      audioUrl: "/audio/skyline-ember-ledger.mp3",
+      coverImageUrl: "/img/skyline-ember-ledger-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, dark premium atmosphere, 85 BPM exact tempo, steady low-pressure groove, warm fireplace texture, subtle nocturnal skyline ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+      imagePrompt:
+        "Photorealistic executive office at night with a dark desk, warm fireplace on the left, floor-to-ceiling glass revealing a vast city skyline, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and deeply focused atmosphere.",
+      videoPrompt:
+        "Slow cinematic shot inside a dark premium executive office at night, warm fireplace glow, wide glass windows overlooking a city skyline, subtle motion, low-key lighting, disciplined deep work atmosphere.",
+      generationPrompt:
+        "情境：高樓夜景、深色辦公室、黑木桌面、壁爐火光、長時間低壓深度工作。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade、低干擾且沉著的 CEO Deep Focus 聽感。",
+    },
+    createdAt: "2026-07-02T22:45:00.000Z",
+  },
+  {
+    title: "Harbor Afterglow Study",
+    slug: "harbor-afterglow-study",
+    musicalKey: "D Minor",
+    energyLevel: 6.4,
+    moodTags: ["harbor", "night-study", "glassmorphism"],
+    descriptionZh: "河岸夜景、壁爐暖光與低亮客廳所構成的 85 BPM 夜讀節奏，適合閱讀、整理與靜態思考。",
+    descriptionEn: "An 85 BPM late-night study loop with harbor lights, fireplace warmth, and a restrained lounge atmosphere for reading, reflection, and deliberate note-taking.",
+    themeScenario: "面向河岸燈火的深色客廳中，沙發、酒杯與燭光維持安靜秩序，讓思緒在穩定節拍裡延長停留。",
+    bpm: 85,
+    durationSeconds: 299,
+    media: {
+      audioUrl: "/audio/harbor-afterglow-study.mp3",
+      coverImageUrl: "/img/harbor-afterglow-study-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep work electronic, 85 BPM exact tempo, warm low-saturation groove, fireplace ambience, distant harbor night atmosphere, no vocals, long-form loop friendly, soft but stable pulse, elegant and controlled.",
+      imagePrompt:
+        "Photorealistic dark luxury lounge at night with a fireplace, sofa, candlelit marble table, floor-to-ceiling windows overlooking a harbor skyline, moody cinematic lighting, calm premium deep work atmosphere.",
+      videoPrompt:
+        "Slow cinematic interior shot of a dark luxury lounge at night, fireplace flicker, harbor skyline beyond large windows, candlelight reflections, subtle motion, quiet late-night study atmosphere.",
+      generationPrompt:
+        "情境：河岸夜景、深色客廳、沙發、燭光、壁爐暖光與夜讀工作。BPM 固定 85，不可漂移；需支援閱讀型沉浸、long-loop、no vocals、equal-power crossfade 與穩定低壓節奏。",
+    },
+    createdAt: "2026-07-02T22:52:00.000Z",
+  },
 ] as const;
 
 export const tracks: Track[] = trackNarratives.map((item, index) => ({
@@ -151,15 +239,15 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
   slug: item.slug,
   title: item.title,
   bpm: item.bpm,
-  durationSeconds: 198 + index * 4,
+  durationSeconds: item.durationSeconds ?? 198 + index * 4,
   musicalKey: item.musicalKey,
   energyLevel: item.energyLevel,
   moodTags: [...item.moodTags],
   status: "published",
   media: {
-    audioUrl: "/audio/demo.mp3",
-    coverImageUrl: "/img/demo.jpg",
-    backgroundVideoUrl: "/video/demo.mp4",
+    audioUrl: item.media?.audioUrl ?? "/audio/demo.mp3",
+    coverImageUrl: item.media?.coverImageUrl ?? "/img/demo.jpg",
+    backgroundVideoUrl: item.media?.backgroundVideoUrl ?? "",
   },
   copy: {
     descriptionZh: item.descriptionZh,
@@ -167,13 +255,15 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
     themeScenario: item.themeScenario,
   },
   prompts: {
-    musicPrompt: buildMusicPrompt(item.bpm),
-    imagePrompt: defaultImagePrompt,
-    videoPrompt: defaultVideoPrompt,
-    generationPrompt: `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
+    musicPrompt: item.prompts?.musicPrompt ?? buildMusicPrompt(item.bpm),
+    imagePrompt: item.prompts?.imagePrompt ?? defaultImagePrompt,
+    videoPrompt: item.prompts?.videoPrompt ?? defaultVideoPrompt,
+    generationPrompt:
+      item.prompts?.generationPrompt ??
+      `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
   },
   transition: transitionProfiles[index],
-  createdAt: `2026-07-0${index + 1}T21:00:00.000Z`,
+  createdAt: item.createdAt ?? `2026-07-0${index + 1}T21:00:00.000Z`,
 }));
 
 export const mixSessions: MixSession[] = [
