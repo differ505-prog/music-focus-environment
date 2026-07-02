@@ -158,6 +158,11 @@ export function GlobalPlayer({
           </div>
           {currentTrack ? (
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              {playback.prefersBackgroundPlayback ? (
+                <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                  背景播放優化模式
+                </span>
+              ) : null}
               <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
                 {currentTrack.transition.sourceLufs.toFixed(1)} → {currentTrack.transition.targetLufs.toFixed(1)} LUFS
               </span>
@@ -166,7 +171,7 @@ export function GlobalPlayer({
                 {currentTrack.transition.normalizationGainDb.toFixed(2)} dB
               </span>
               <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
-                Equal-Power Fade
+                {playback.prefersBackgroundPlayback ? "HTML5 Audio" : "Equal-Power Fade"}
               </span>
               <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
                 {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}

@@ -31,6 +31,8 @@ const initialPlaybackState: PlaybackSnapshot = {
   isPlaying: false,
   isCrossfading: false,
   crossfadeWindowSeconds: 4.36,
+  engine: "precision_web_audio",
+  prefersBackgroundPlayback: false,
 };
 
 function wait(ms: number) {
@@ -148,6 +150,48 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   }, []);
 
   useEffect(() => {
+    if (typeof navigator === "undefined" || !("mediaSession" in navigator)) {
+      return;
+    }
+
+    if (typeof MediaMetadata !== "undefined") {
+      const artworkSrc = currentTrack?.media.coverImageUrl
+        ? new URL(currentTrack.media.coverImageUrl, window.location.origin).toString()
+        : generatedSceneImageUrl;
+
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: currentTrack?.title ?? "音樂創作與專注力環境",
+        artist: "Music Focus Studio",
+        album: "CEO Mindset Environment",
+        artwork: [{ src: artworkSrc, sizes: "512x512", type: "image/jpeg" }],
+      });
+    }
+
+    navigator.mediaSession.playbackState = playback.isPlaying ? "playing" : "paused";
+    navigator.mediaSession.setActionHandler("play", () => controllerRef.current?.play());
+    navigator.mediaSession.setActionHandler("pause", () => controllerRef.current?.pause());
+    navigator.mediaSession.setActionHandler("previoustrack", () => controllerRef.current?.previous());
+    navigator.mediaSession.setActionHandler("nexttrack", () => controllerRef.current?.next());
+    navigator.mediaSession.setActionHandler("seekbackward", () => controllerRef.current?.seekBy(-10));
+    navigator.mediaSession.setActionHandler("seekforward", () => controllerRef.current?.seekBy(10));
+    navigator.mediaSession.setActionHandler("seekto", (details) => {
+      if (typeof details.seekTime === "number") {
+        controllerRef.current?.seekTo(details.seekTime);
+      }
+    });
+
+    return () => {
+      navigator.mediaSession.setActionHandler("play", null);
+      navigator.mediaSession.setActionHandler("pause", null);
+      navigator.mediaSession.setActionHandler("previoustrack", null);
+      navigator.mediaSession.setActionHandler("nexttrack", null);
+      navigator.mediaSession.setActionHandler("seekbackward", null);
+      navigator.mediaSession.setActionHandler("seekforward", null);
+      navigator.mediaSession.setActionHandler("seekto", null);
+    };
+  }, [currentTrack, playback.isPlaying]);
+
+  useEffect(() => {
     controllerRef.current?.setPlaylist(selectedAssets);
   }, [selectedAssets]);
 
@@ -242,7 +286,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
   const heroDescription = isAdmin
     ? "集中管理提示詞流程、轉場參數、生成資料與 mix 數據，讓你可以一邊產歌、一邊調整接歌與網站資產。"
-    : "以 110 BPM 深度節奏為核心，整合沉浸式氛圍、播放清單、4.36 秒 crossfade 與批次下載，讓每段深度工作都像高階主管的夜間決策室。";
+    : "以 100 / 105 / 110 / 115 / 120 BPM 車道為基礎，整合沉浸式氛圍、播放清單、精準 crossfade 與批次下載，讓每段深度工作都像高階主管的夜間決策室。";
 
   return (
     <main

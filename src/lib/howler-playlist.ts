@@ -7,7 +7,21 @@ const EQUAL_POWER_TICK_MS = 40;
 
 type PlaylistControllerOptions = {
   onStateChange?: (snapshot: PlaybackSnapshot) => void;
+  preferBackgroundPlayback?: boolean;
 };
+
+function detectBackgroundPlaybackPreference() {
+  if (typeof navigator === "undefined") {
+    return false;
+  }
+
+  const userAgent = navigator.userAgent;
+  const platform = navigator.platform;
+  const isIosDevice = /iPhone|iPad|iPod/i.test(userAgent);
+  const isIpadOs = platform === "MacIntel" && navigator.maxTouchPoints > 1;
+
+  return isIosDevice || isIpadOs;
+}
 
 export class HowlerPlaylistController {
   private playlist: Track[] = [];
@@ -21,9 +35,14 @@ export class HowlerPlaylistController {
   private crossfadeFinalizeTimer: ReturnType<typeof setTimeout> | null = null;
   private onStateChange?: (snapshot: PlaybackSnapshot) => void;
   private isCrossfading = false;
+  private prefersBackgroundPlayback: boolean;
+  private playbackEngine: PlaybackSnapshot["engine"];
 
   constructor(options: PlaylistControllerOptions = {}) {
     this.onStateChange = options.onStateChange;
+    this.prefersBackgroundPlayback =
+      options.preferBackgroundPlayback ?? detectBackgroundPlaybackPreference();
+    this.playbackEngine = this.prefersBackgroundPlayback ? "background_safe_html5" : "precision_web_audio";
   }
 
   setPlaylist(nextPlaylist: Track[]) {
@@ -205,7 +224,7 @@ export class HowlerPlaylistController {
   private createHowl(track: Track, volumeFactor: number, startAtSeconds = 0) {
     const howl = new Howl({
       src: [track.media.audioUrl],
-      html5: false,
+      html5: this.prefersBackgroundPlayback,
       preload: true,
       volume: this.getTargetGain(track) * volumeFactor,
     });
@@ -265,7 +284,7 @@ export class HowlerPlaylistController {
   private scheduleCrossfadeMonitor() {
     this.clearCrossfadeMonitor();
 
-    if (!this.currentHowl || !this.currentHowl.playing()) {
+    if (this.prefersBackgroundPlayback || !this.currentHowl || !this.currentHowl.playing()) {
       return;
     }
 
@@ -300,6 +319,10 @@ export class HowlerPlaylistController {
   }
 
   private startCrossfade() {
+    if (this.prefersBackgroundPlayback) {
+      return;
+    }
+
     const currentHowl = this.currentHowl;
     const currentTrack = this.getCurrentTrack();
     const nextTrack = this.playlist[this.currentIndex + 1];
@@ -471,6 +494,11 @@ export class HowlerPlaylistController {
   }
 
   private primeUpcomingTrack() {
+    if (this.prefersBackgroundPlayback) {
+      this.cleanupPreparedNextHowl();
+      return;
+    }
+
     const nextTrack = this.getNextTrack();
 
     if (!nextTrack) {
@@ -512,6 +540,8 @@ export class HowlerPlaylistController {
       isPlaying: this.isPlaying(),
       isCrossfading: this.isCrossfading,
       crossfadeWindowSeconds: currentTrack?.transition.crossfadeSeconds ?? 4.36,
+      engine: this.playbackEngine,
+      prefersBackgroundPlayback: this.prefersBackgroundPlayback,
     });
   }
 }

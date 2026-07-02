@@ -82,6 +82,8 @@ export type MixSession = {
   completionRate: number;
 };
 
+export type PlaybackEngine = "precision_web_audio" | "background_safe_html5";
+
 export type PlaybackSnapshot = {
   currentTrackId: string | null;
   nextTrackId: string | null;
@@ -90,4 +92,6 @@ export type PlaybackSnapshot = {
   isPlaying: boolean;
   isCrossfading: boolean;
   crossfadeWindowSeconds: number;
+  engine: PlaybackEngine;
+  prefersBackgroundPlayback: boolean;
 };
