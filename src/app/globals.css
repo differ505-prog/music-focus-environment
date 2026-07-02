@@ -54,3 +54,41 @@ img {
   background: rgba(217, 70, 239, 0.28);
   color: white;
 }
+
+@keyframes projection-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.92;
+  }
+
+  50% {
+    transform: scale(1.04);
+    opacity: 1;
+  }
+}
+
+@keyframes projection-glow {
+  0%,
+  100% {
+    transform: scale(1);
+    filter: blur(28px);
+  }
+
+  50% {
+    transform: scale(1.03);
+    filter: blur(36px);
+  }
+}
+
+.animate-projection-breathe {
+  animation: projection-breathe 12s ease-in-out infinite;
+}
+
+.projection-artwork-glow {
+  animation: projection-glow 16s ease-in-out infinite;
+}
+
+.projection-stage {
+  max-height: min(84vh, 56.25vw);
+}

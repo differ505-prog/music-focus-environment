@@ -73,6 +73,8 @@ export function GlobalPlayer({
   const showAdminDetails = mode === "admin";
   const [isArtworkOpen, setIsArtworkOpen] = useState(false);
   const artworkContainerRef = useRef<HTMLDivElement | null>(null);
+  const hudHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isProjectionHudVisible, setIsProjectionHudVisible] = useState(true);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
 
   useEffect(() => {
@@ -80,6 +82,14 @@ export function GlobalPlayer({
       setIsArtworkOpen(false);
     }
   }, [currentTrack]);
+
+  useEffect(() => {
+    return () => {
+      if (hudHideTimerRef.current) {
+        clearTimeout(hudHideTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") {
@@ -105,6 +115,7 @@ export function GlobalPlayer({
     }
 
     setIsArtworkOpen(true);
+    setIsProjectionHudVisible(true);
   };
 
   const handleCloseArtwork = async () => {
@@ -127,6 +138,88 @@ export function GlobalPlayer({
 
     await artworkContainerRef.current.requestFullscreen();
   };
+
+  const revealProjectionHud = () => {
+    setIsProjectionHudVisible(true);
+
+    if (hudHideTimerRef.current) {
+      clearTimeout(hudHideTimerRef.current);
+    }
+
+    hudHideTimerRef.current = setTimeout(() => {
+      setIsProjectionHudVisible(false);
+    }, 2200);
+  };
+
+  useEffect(() => {
+    if (!isArtworkOpen) {
+      setIsProjectionHudVisible(true);
+      if (hudHideTimerRef.current) {
+        clearTimeout(hudHideTimerRef.current);
+      }
+      return;
+    }
+
+    revealProjectionHud();
+  }, [isArtworkOpen]);
+
+  const artworkStage = currentTrack && artworkSrc ? (
+    <div
+      ref={artworkContainerRef}
+      onClick={() => void handleCloseArtwork()}
+      onMouseMove={revealProjectionHud}
+      onTouchStart={revealProjectionHud}
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02040a]/96 p-4 md:p-8"
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)] animate-projection-breathe" />
+      <Image
+        src={artworkSrc}
+        alt={currentTrack.title}
+        fill
+        className="projection-artwork-glow object-cover opacity-22 blur-2xl"
+        unoptimized
+      />
+      <div
+        className={`pointer-events-none absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/22 px-4 py-3 text-[11px] uppercase tracking-[0.26em] text-white/52 backdrop-blur-xl transition duration-500 md:left-8 md:right-8 ${
+          isProjectionHudVisible ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 -translate-y-3"
+        }`}
+      >
+        <span>Projection Mode</span>
+        <span>雙擊全螢幕</span>
+      </div>
+      <div className="relative z-10 flex h-full w-full items-center justify-center">
+        <div
+          className="projection-stage relative aspect-[16/9] w-full max-w-[min(92vw,180vh)] overflow-hidden rounded-[32px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
+          onClick={(event) => event.stopPropagation()}
+          onDoubleClick={() => void handleToggleArtworkFullscreen()}
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,transparent_72%,rgba(255,255,255,0.03))]" />
+          <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
+        </div>
+      </div>
+      <div
+        className={`pointer-events-none absolute bottom-4 left-4 right-4 z-20 flex justify-center transition duration-500 md:bottom-8 ${
+          isProjectionHudVisible ? "opacity-100 translate-y-0" : "pointer-events-none opacity-0 translate-y-3"
+        }`}
+      >
+        <div className="max-w-4xl rounded-[28px] border border-white/10 bg-black/26 px-5 py-4 text-center backdrop-blur-xl">
+          <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/52">Now Displaying</p>
+          <h3 className="mt-3 font-serif text-2xl text-white md:text-4xl">{currentTrack.title}</h3>
+          <p className="mt-2 text-sm text-white/56 md:text-base">
+            {currentTrack.bpm} BPM
+            {" · "}
+            {currentTrack.musicalKey}
+            {" · "}
+            Energy {currentTrack.energyLevel.toFixed(1)}
+            {playback.repeatEnabled ? " · Loop On" : ""}
+          </p>
+          <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
+            {nextTrack ? `Next ${nextTrack.title}` : "Esc 關閉，背景點擊退出"}
+          </p>
+        </div>
+      </div>
+    </div>
+  ) : null;
 
   if (isMinimized) {
     return (
@@ -199,31 +292,7 @@ export function GlobalPlayer({
             </div>
           </div>
         </div>
-        {isArtworkOpen && currentTrack && artworkSrc ? (
-          <div
-            ref={artworkContainerRef}
-            onClick={() => void handleCloseArtwork()}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#02040a]/96 p-4 md:p-8"
-          >
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)]" />
-            <Image
-              src={artworkSrc}
-              alt={currentTrack.title}
-              fill
-              className="object-cover opacity-22 blur-2xl"
-              unoptimized
-            />
-            <div className="relative z-10 flex h-full w-full max-w-7xl items-center justify-center">
-              <div
-                className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
-                onClick={(event) => event.stopPropagation()}
-                onDoubleClick={() => void handleToggleArtworkFullscreen()}
-              >
-                <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
-              </div>
-            </div>
-          </div>
-        ) : null}
+        {isArtworkOpen ? artworkStage : null}
       </>
     );
   }
@@ -434,31 +503,7 @@ export function GlobalPlayer({
           </div>
         </div>
       </div>
-      {isArtworkOpen && currentTrack && artworkSrc ? (
-        <div
-          ref={artworkContainerRef}
-          onClick={() => void handleCloseArtwork()}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#02040a]/96 p-4 md:p-8"
-        >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)]" />
-          <Image
-            src={artworkSrc}
-            alt={currentTrack.title}
-            fill
-            className="object-cover opacity-22 blur-2xl"
-            unoptimized
-          />
-          <div className="relative z-10 flex h-full w-full max-w-7xl items-center justify-center">
-            <div
-              className="relative h-full w-full overflow-hidden rounded-[28px] border border-white/10 bg-black/28 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
-              onClick={(event) => event.stopPropagation()}
-              onDoubleClick={() => void handleToggleArtworkFullscreen()}
-            >
-              <Image src={artworkSrc} alt={currentTrack.title} fill className="object-contain" unoptimized priority />
-            </div>
-          </div>
-        </div>
-      ) : null}
+      {isArtworkOpen ? artworkStage : null}
     </>
   );
 }
