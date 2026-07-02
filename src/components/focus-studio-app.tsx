@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Waves } from "lucide-react";
 
 import { bpmOptions, generatedSceneImageUrl, musicAssets } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
@@ -31,6 +32,7 @@ export function FocusStudioApp() {
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(true);
   const [isDownloading, setIsDownloading] = useState(false);
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
@@ -143,6 +145,8 @@ export function FocusStudioApp() {
   };
 
   const handlePlayTrack = (assetId: string) => {
+    setIsPlayerOpen(true);
+
     if (!selectedIds.includes(assetId)) {
       setSelectedIds((current: string[]) => {
         return [...current, assetId];
@@ -165,7 +169,7 @@ export function FocusStudioApp() {
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(91,164,191,0.18),transparent_36%),radial-gradient(circle_at_bottom_right,rgba(255,255,255,0.08),transparent_30%)]" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-56 pt-8 md:px-8 md:pb-44 md:pt-12">
+      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-[31rem] pt-8 md:px-8 md:pb-[24rem] md:pt-12">
         <section className="rounded-[36px] border border-white/12 bg-black/22 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.45)] backdrop-blur-3xl md:p-10">
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.38em] text-cyan-100/58">
@@ -225,15 +229,30 @@ export function FocusStudioApp() {
         onDownload={handleDownload}
       />
 
-      <GlobalPlayer
-        playlist={selectedAssets}
-        currentTrack={currentTrack}
-        nextTrack={nextTrack}
-        playback={playback}
-        onPlayPause={handlePlayPause}
-        onPrevious={() => controllerRef.current?.previous()}
-        onNext={() => controllerRef.current?.next()}
-      />
+      {isPlayerOpen ? (
+        <GlobalPlayer
+          playlist={selectedAssets}
+          currentTrack={currentTrack}
+          nextTrack={nextTrack}
+          playback={playback}
+          onPlayPause={handlePlayPause}
+          onPrevious={() => controllerRef.current?.previous()}
+          onNext={() => controllerRef.current?.next()}
+          onSeek={(seconds) => controllerRef.current?.seekTo(seconds)}
+          onSeekBy={(deltaSeconds) => controllerRef.current?.seekBy(deltaSeconds)}
+          onPlayTrack={handlePlayTrack}
+          onClose={() => setIsPlayerOpen(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsPlayerOpen(true)}
+          className="fixed bottom-4 right-4 z-40 inline-flex items-center gap-2 rounded-full border border-cyan-300/28 bg-[#07111d]/88 px-4 py-3 text-sm font-medium text-cyan-50 shadow-[0_24px_60px_rgba(0,0,0,0.38)] backdrop-blur-2xl transition hover:bg-[#0b1827]"
+        >
+          <Waves className="h-4 w-4" />
+          打開播放器
+        </button>
+      )}
     </main>
   );
 }

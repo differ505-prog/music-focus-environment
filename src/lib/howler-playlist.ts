@@ -134,6 +134,42 @@ export class HowlerPlaylistController {
     this.startTrack(previousIndex);
   }
 
+  seekTo(seconds: number) {
+    if (!this.currentHowl) {
+      return;
+    }
+
+    const duration = this.currentHowl.duration();
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return;
+    }
+
+    const boundedSeconds = Math.min(Math.max(seconds, 0), duration);
+    this.currentHowl.seek(boundedSeconds);
+
+    if (this.nextHowl) {
+      this.cleanupNextHowl();
+      this.isCrossfading = false;
+      this.clearCrossfadeFinalizeTimer();
+      this.currentHowl.volume(1);
+    }
+
+    if (this.currentHowl.playing()) {
+      this.scheduleCrossfadeMonitor();
+    }
+
+    this.emitState();
+  }
+
+  seekBy(deltaSeconds: number) {
+    if (!this.currentHowl) {
+      return;
+    }
+
+    const currentSeconds = Number(this.currentHowl.seek() || 0);
+    this.seekTo(currentSeconds + deltaSeconds);
+  }
+
   destroy() {
     this.stopAndUnloadAll();
     this.currentIndex = -1;
