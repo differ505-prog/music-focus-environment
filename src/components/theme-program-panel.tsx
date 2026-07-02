@@ -137,12 +137,12 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
   };
 
   const handleInsertUpstream = (program: ThemeProgram, moduleIndex: number) => {
-    const module = program.promptModules[moduleIndex];
+    const targetModule = program.promptModules[moduleIndex];
     const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
-    const currentValue = moduleOutputs[buildModuleKey(program.id, module.id)] ?? '';
+    const currentValue = moduleOutputs[buildModuleKey(program.id, targetModule.id)] ?? '';
 
     if (!upstreamPayload) {
-      setFeedback(buildModuleKey(program.id, module.id), '目前沒有已儲存的上游結果');
+      setFeedback(buildModuleKey(program.id, targetModule.id), '目前沒有已儲存的上游結果');
       return;
     }
 
@@ -150,8 +150,8 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
       ? `${currentValue.trim()}\n\n===== 上游結果 =====\n\n${upstreamPayload}`
       : upstreamPayload;
 
-    handleModuleOutputChange(program.id, module.id, nextValue);
-    setFeedback(buildModuleKey(program.id, module.id), '已插入上游結果');
+    handleModuleOutputChange(program.id, targetModule.id, nextValue);
+    setFeedback(buildModuleKey(program.id, targetModule.id), '已插入上游結果');
   };
 
   const renderSectionToggle = (programId: string, section: SectionKey, label: string) => {

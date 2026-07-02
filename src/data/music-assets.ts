@@ -529,6 +529,7 @@ Brief：
 
 固定規則：
 - 以 steady cadence、light propulsion、endurance friendly 為主
+- 從頭到尾必須有清晰鼓點，禁止無節拍的 Intro/Outro
 - 不要反問，直接補足缺漏
 - 適合長距離慢跑與跑步機維持節奏
 
@@ -546,6 +547,8 @@ Generate 3 English prompts for a BPM 180 Slow Jog instrumental track.
 Requirements:
 - exact 180 BPM
 - steady cadence lock
+- constant drum beat from start to finish
+- immediate rhythm lock, NO ambient intros or beatless outros
 - light propulsion
 - clean transient
 - no vocals
@@ -553,6 +556,8 @@ Requirements:
 - supportive rather than aggressive
 
 Negative constraints:
+- no beatless sections
+- no ambient intro/outro
 - no chaotic percussion switch
 - no heavy EDM drop
 - no distracting melody spotlight
@@ -620,8 +625,8 @@ Brief：
     acceptanceChecklist: [
       {
         id: "Check 01",
-        title: "跑感成立",
-        detail: "整體聽感應服務腳步與呼吸，不可過度侵略或娛樂導向到破壞耐力節奏。",
+        title: "跑感與節拍成立",
+        detail: "從頭到尾必須有明確鼓點節拍（嚴禁無鼓點的 Intro/Outro），整體聽感應服務腳步與呼吸，不可過度侵略。",
       },
       {
         id: "Check 02",
