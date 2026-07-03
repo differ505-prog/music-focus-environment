@@ -251,7 +251,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
+                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
                   {publicThemeEntries.map(({ program, programTracks, primaryCollection }) => {
                     const hasPublishedTracks = programTracks.length > 0;
                     const totalMinutes = Math.max(
@@ -262,7 +262,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                     return (
                       <article
                         key={program.id}
-                        className="rounded-[26px] border border-white/10 bg-black/18 p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8 2xl:p-4"
+                        className="rounded-[26px] border border-white/10 bg-black/18 p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8 xl:p-4"
                       >
                         <div className="flex flex-wrap items-center gap-2 text-xs text-white/62">
                           <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
@@ -275,21 +275,21 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                             {hasPublishedTracks ? `約 ${totalMinutes} 分鐘` : "即將推出"}
                           </span>
                         </div>
-                        <h3 className="mt-4 font-serif text-2xl text-white 2xl:text-xl">{program.title}</h3>
-                        <p className="mt-3 text-sm leading-6 text-white/68 2xl:text-[13px] 2xl:leading-5">{program.summary}</p>
-                        <div className="mt-5 flex flex-wrap gap-3 2xl:flex-col">
+                        <h3 className="mt-4 font-serif text-2xl text-white xl:text-xl">{program.title}</h3>
+                        <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{program.summary}</p>
+                        <div className="mt-5 flex flex-wrap gap-3 xl:flex-col">
                           <button
                             type="button"
                             onClick={() => handleStartThemeSession(program.id)}
                             disabled={!hasPublishedTracks}
-                            className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45 2xl:w-full"
+                            className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45 xl:w-full"
                           >
                             {hasPublishedTracks ? "立即開始" : "即將推出"}
                           </button>
                           {primaryCollection ? (
                             <Link
                               href={`/collections/${primaryCollection.id}`}
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white 2xl:w-full"
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
                             >
                               查看系列
                             </Link>
@@ -297,14 +297,14 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                             <button
                               type="button"
                               onClick={() => handleBrowseTheme(program.id)}
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white 2xl:w-full"
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
                             >
                               瀏覽曲目
                             </button>
                           ) : (
                             <a
                               href="#theme-routes-detail"
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white 2xl:w-full"
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
                             >
                               查看主題說明
                             </a>

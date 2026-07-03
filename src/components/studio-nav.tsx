@@ -49,13 +49,19 @@ export function StudioNav() {
 
   if (!isAdminPage) {
     return (
-      <nav className="mb-6 flex flex-wrap gap-3">
+      <nav className="mb-6 flex flex-wrap items-center gap-3">
         <Link
           href="/"
           onClick={handleSecretClick}
           className="select-none rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-white/78 transition hover:border-white/20 hover:bg-white/12 hover:text-white"
         >
           OmniSonic
+        </Link>
+        <Link
+          href="/admin"
+          className="rounded-full border border-white/8 bg-black/18 px-3 py-2 text-xs text-white/52 transition hover:border-white/16 hover:bg-white/10 hover:text-white/78"
+        >
+          管理入口
         </Link>
       </nav>
     );
