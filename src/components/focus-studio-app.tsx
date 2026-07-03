@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import { generatedSceneImageUrl, mixEvents, mixSessions, trackBatches, trackCollections, themePrograms, tracks } from "@/data/music-assets";
+import { generatedSceneImageUrl, mixEvents, mixSessions, trackCollections, themePrograms, tracks } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
@@ -59,14 +59,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
   const availableBpmOptions = useMemo(() => {
     return Array.from(new Set(tracks.map((track) => track.bpm))).sort((left, right) => left - right);
-  }, []);
-
-  const featuredTrackCount = useMemo(() => {
-    return tracks.filter((track) => track.featured).length;
-  }, []);
-
-  const latestBatch = useMemo(() => {
-    return [...trackBatches].sort((left, right) => right.publishedAt.localeCompare(left.publishedAt))[0] ?? null;
   }, []);
 
   const publicThemeEntries = useMemo(() => {
@@ -332,18 +324,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">已上架路線</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列入口</h2>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  這裡放的是目前已經整理完成、可直接瀏覽與播放的系列，不再只集中在少數主題。
+                  目前可直接打開與播放的系列都在這裡。
                 </p>
               </div>
-              {latestBatch ? (
-                <div className="rounded-[24px] border border-amber-300/16 bg-amber-300/8 p-4 text-sm text-white/72">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-amber-100/70">最新上架</p>
-                  <p className="mt-2 font-medium text-white">{latestBatch.title}</p>
-                  <p className="mt-2 text-white/60">{latestBatch.summary}</p>
-                </div>
-              ) : null}
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -357,7 +342,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">全部瀏覽</p>
                 <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68">
-                  回到完整曲目庫，直接瀏覽目前已上架的所有內容。
+                  回到完整曲目庫，直接挑現在想聽的內容。
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                   <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
@@ -394,11 +379,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                       <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                         BPM {collection.bpmFocus.join(" / ")}
                       </span>
-                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                        {collection.trackIds.length} 首曲目
-                      </span>
                     </div>
-                    <p className="mt-4 text-sm leading-6 text-white/58">{collection.description}</p>
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         type="button"
@@ -427,10 +408,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             activeBpms={activeBpms}
             visibleCount={filteredAssets.length}
             selectedCount={selectedAssets.length}
-            featuredCollectionCount={publishedCollections.length}
-            featuredTrackCount={featuredTrackCount}
             activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
-            latestBatchLabel={latestBatch?.label ?? "尚無批次"}
             onToggleBpm={toggleBpm}
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
@@ -441,7 +419,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           {isAdmin ? (
             <ThemeProgramPanel mode={mode} programs={themePrograms} />
           ) : (
-            <ThemeProgramShowcase programs={themePrograms} tracks={tracks} batches={trackBatches} />
+            <ThemeProgramShowcase programs={themePrograms} tracks={tracks} />
           )}
         </div>
 

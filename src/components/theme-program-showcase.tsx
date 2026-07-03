@@ -2,15 +2,14 @@
 
 import Link from "next/link";
 
-import type { ThemeProgram, Track, TrackBatch } from "@/types/music";
+import type { ThemeProgram, Track } from "@/types/music";
 
 type ThemeProgramShowcaseProps = {
   programs: ThemeProgram[];
   tracks: Track[];
-  batches: TrackBatch[];
 };
 
-export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: ThemeProgramShowcaseProps) {
+export function ThemeProgramShowcase({ programs, tracks }: ThemeProgramShowcaseProps) {
   return (
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
@@ -24,7 +23,7 @@ export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: Th
       <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
         {programs.map((program) => {
           const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
-          const liveCollections = new Set(programTracks.flatMap((track) => track.collectionIds ?? [])).size;
+          const primaryCollectionId = programTracks.find((track) => (track.collectionIds?.length ?? 0) > 0)?.collectionIds?.[0] ?? null;
           const totalMinutes = Math.max(
             1,
             Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60),
@@ -51,29 +50,19 @@ export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: Th
                 <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5">
                   {programTracks.length > 0 ? `約 ${totalMinutes} 分鐘` : "即將推出"}
                 </span>
-                {liveCollections > 0 ? (
-                  <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                    {liveCollections} 個系列
-                  </span>
-                ) : null}
               </div>
 
               <div className="mt-5 rounded-[20px] border border-white/8 bg-white/6 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適合這些時候</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適合這個時候</p>
                 <p className="mt-2 leading-6 text-white/76">{program.audience}</p>
               </div>
-
-              <div className="mt-4 rounded-[20px] border border-white/8 bg-[#08111c]/90 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">打開後的感覺</p>
-                <p className="mt-3 leading-6 text-white/68">{program.summary}</p>
-              </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                {programTracks.length > 0 && liveCollections > 0 ? (
+                {programTracks.length > 0 && primaryCollectionId ? (
                   <Link
-                    href={`/collections/${programTracks[0].collectionIds?.[0] ?? ""}`}
+                    href={`/collections/${primaryCollectionId}`}
                     className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
                   >
-                    查看代表系列頁
+                    打開系列
                   </Link>
                 ) : (
                   <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-sm text-amber-100/82">

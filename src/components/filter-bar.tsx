@@ -5,10 +5,7 @@ type FilterBarProps = {
   activeBpms: number[];
   visibleCount: number;
   selectedCount: number;
-  featuredCollectionCount: number;
-  featuredTrackCount: number;
   activeCollectionLabel: string;
-  latestBatchLabel: string;
   onToggleBpm: (bpm: number) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
@@ -19,10 +16,7 @@ export function FilterBar({
   activeBpms,
   visibleCount,
   selectedCount,
-  featuredCollectionCount,
-  featuredTrackCount,
   activeCollectionLabel,
-  latestBatchLabel,
   onToggleBpm,
   onSelectAll,
   onClearSelection,
@@ -30,23 +24,14 @@ export function FilterBar({
   return (
     <section className="relative rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(6,8,20,0.44)] backdrop-blur-2xl md:p-6">
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/35 to-transparent" />
-      <div className="mb-5 flex flex-wrap gap-3 text-xs text-white/64">
-        <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
-          精選情境 {featuredCollectionCount}
-        </span>
-        <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
-          精選曲目 {featuredTrackCount}
-        </span>
-        <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-          目前情境 {activeCollectionLabel}
-        </span>
-        <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-1.5">
-          最新上架 {latestBatchLabel}
-        </span>
-      </div>
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">節奏篩選</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">依節奏挑選</p>
+            <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-white/62">
+              目前瀏覽 {activeCollectionLabel}
+            </span>
+          </div>
           <div className="flex flex-wrap gap-3">
             {bpmOptions.map((bpm) => {
               const isActive = activeBpms.includes(bpm);

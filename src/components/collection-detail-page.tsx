@@ -81,7 +81,6 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
 
           <div className="mt-8 flex flex-wrap gap-3 text-sm text-white/62">
             <span className="rounded-full border border-white/10 bg-white/8 px-4 py-2">{collection.heroMetric}</span>
-            <span className="rounded-full border border-white/10 bg-white/8 px-4 py-2">{collectionTracks.length} 首曲目</span>
             <span className="rounded-full border border-white/10 bg-white/8 px-4 py-2">總長約 {totalMinutes} 分鐘</span>
           </div>
         </div>
@@ -128,7 +127,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
 
           <div className="grid gap-6">
             <section className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-              <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">快速組合</p>
+              <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">快速開始</p>
               <h2 className="mt-3 font-serif text-3xl text-white">快速開始</h2>
               <div className="mt-6 grid gap-4">
                 {presets.map((preset) => (
@@ -143,7 +142,6 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                     <p className="mt-3 text-sm leading-6 text-white/66">{preset.summary}</p>
                     <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                       <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{preset.durationMinutes} 分鐘</span>
-                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{preset.trackIds.length} 首曲目</span>
                     </div>
                   </button>
                 ))}
@@ -151,8 +149,8 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
             </section>
 
             <section className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-              <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">情境說明</p>
-              <h2 className="mt-3 font-serif text-3xl text-white">這組系列適合什麼時候打開</h2>
+              <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">適合這個時候</p>
+              <h2 className="mt-3 font-serif text-3xl text-white">什麼時候打開最對</h2>
               <p className="mt-4 text-sm leading-7 text-white/68">
                 {collectionTracks[0]?.copy.themeScenario ??
                   "這個系列適合用來建立一段穩定、連續且低干擾的沉浸式工作情境。"}
