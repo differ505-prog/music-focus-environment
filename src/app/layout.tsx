@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 
 import { PlaybackProvider } from "@/components/playback-provider";
+import { getSiteUrl, siteDescription, siteName } from "@/lib/site-metadata";
 import "./globals.css";
 
 const displayFont = Cormorant_Garamond({
@@ -18,8 +19,30 @@ const bodyFont = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "OmniSonic",
-  description: "OmniSonic 提供低干擾、可長時間播放的沉浸式音樂路線與自動接續聆聽體驗。",
+  metadataBase: getSiteUrl(),
+  title: {
+    default: siteName,
+    template: `%s | ${siteName}`,
+  },
+  description: siteDescription,
+  applicationName: siteName,
+  keywords: ["OmniSonic", "專注音樂", "沉浸式播放", "BPM", "工作音樂", "深度專注"],
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    type: "website",
+    locale: "zh_TW",
+    url: "/",
+    title: siteName,
+    siteName,
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteName,
+    description: siteDescription,
+  },
 };
 
 export default function RootLayout({

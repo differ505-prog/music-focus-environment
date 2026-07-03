@@ -290,7 +290,7 @@ export function GlobalPlayer({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center gap-2">
               <PlayerArtworkActions
                 hasArtwork={Boolean(currentTrack && artworkSrc)}
                 showAdminDetails={showAdminDetails}
@@ -346,17 +346,17 @@ export function GlobalPlayer({
 
   return (
     <>
-      <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-w-6xl overflow-hidden rounded-[32px] border border-fuchsia-400/20 bg-[#050612]/86 p-4 shadow-[0_34px_110px_rgba(15,23,42,0.62)] backdrop-blur-3xl">
+      <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-h-[calc(100vh-2rem)] max-w-6xl overflow-y-auto overflow-x-hidden rounded-[32px] border border-fuchsia-400/20 bg-[#050612]/86 p-4 shadow-[0_34px_110px_rgba(15,23,42,0.62)] backdrop-blur-3xl">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_25%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.14),transparent_38%)]" />
         <div className="relative">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="flex items-center justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-fuchsia-100/60">
                   <Waves className="h-4 w-4" />
                   {showAdminDetails ? "Neon Focus Auto DJ" : "正在播放"}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <PlayerArtworkActions
                     hasArtwork={Boolean(currentTrack && artworkSrc)}
                     showAdminDetails={showAdminDetails}
@@ -442,7 +442,7 @@ export function GlobalPlayer({
               ) : null}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => onSeekBy(-10)}

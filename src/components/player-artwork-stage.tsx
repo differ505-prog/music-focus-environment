@@ -49,8 +49,8 @@ export function PlayerArtworkStage({
         src={artworkSrc}
         alt={trackTitle}
         fill
+        sizes="100vw"
         className="projection-artwork-glow object-cover opacity-22 blur-2xl"
-        unoptimized
       />
       <div
         className={`pointer-events-none absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/22 px-4 py-3 text-[11px] uppercase tracking-[0.26em] text-white/52 backdrop-blur-xl transition duration-500 md:left-8 md:right-8 ${
@@ -81,8 +81,8 @@ export function PlayerArtworkStage({
             src={artworkSrc}
             alt={trackTitle}
             fill
+            sizes="100vw"
             className={isPureProjection ? "object-contain projection-pure-drift" : "object-contain"}
-            unoptimized
             priority
           />
         </div>

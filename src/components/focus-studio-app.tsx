@@ -242,7 +242,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.22),transparent_28%),radial-gradient(circle_at_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_28%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,transparent_22%,transparent_80%,rgba(255,255,255,0.03)_100%)]" />
 
-      <div className="relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pb-[31rem] pt-8 md:px-8 md:pb-[24rem] md:pt-12">
+      <div
+        className={`relative mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 pt-8 md:px-8 md:pt-12 ${
+          isAdmin ? "pb-[18rem] md:pb-[22rem]" : "pb-32 md:pb-40"
+        }`}
+      >
         <StudioNav />
 
         <section className="relative rounded-[36px] border border-fuchsia-400/18 bg-black/26 p-6 shadow-[0_40px_120px_rgba(0,0,0,0.52)] backdrop-blur-3xl md:p-10">

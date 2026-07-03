@@ -69,9 +69,9 @@ export function MediaCard({
           alt={asset.title}
           width={1200}
           height={720}
+          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
           className="h-56 w-full object-cover transition duration-700 group-hover:scale-[1.03]"
           onError={() => setImageErrored(true)}
-          unoptimized
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#03070d] via-[#03070d]/18 to-transparent" />
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
