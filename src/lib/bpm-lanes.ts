@@ -1,6 +1,6 @@
 import type { Track } from "@/types/music";
 
-export const bpmLaneOptions = [85, 100, 105, 110, 115, 120] as const;
+export const bpmLaneOptions = [85, 100, 105, 115, 120] as const;
 
 export type BpmCompatibility = {
   status: "exact" | "adjacent" | "distant";

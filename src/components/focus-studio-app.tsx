@@ -1,27 +1,32 @@
 'use client';
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { generatedSceneImageUrl, mixEvents, mixSessions, trackCollections, themePrograms, tracks } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
-import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { usePlayback } from "@/components/playback-provider";
 import { StudioNav } from "@/components/studio-nav";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
-import { ThemeProgramShowcase } from "@/components/theme-program-showcase";
-import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
+import { getBpmCompatibility } from "@/lib/bpm-lanes";
 
 type FocusStudioAppProps = {
   mode?: "public" | "admin";
 };
 
+function extractBpms(bpmDisplay: string) {
+  return Array.from(new Set((bpmDisplay.match(/\d+/g) ?? []).map(Number))).sort((left, right) => left - right);
+}
+
 export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
+  const isAdmin = mode === "admin";
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
+  const [activeRouteId, setActiveRouteId] = useState<string>(themePrograms[0]?.id ?? "");
+  const [activeRouteBpm, setActiveRouteBpm] = useState<number | null>(null);
   const {
     selectedIds,
     setSelectedIds,
@@ -31,7 +36,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     playback,
     toggleAsset,
     playTrack,
-    startSession,
+    startRandomSession,
   } =
     usePlayback();
 
@@ -61,21 +66,72 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     return Array.from(new Set(tracks.map((track) => track.bpm))).sort((left, right) => left - right);
   }, []);
 
-  const publicThemeEntries = useMemo(() => {
+  const publicRouteEntries = useMemo(() => {
     return themePrograms.map((program) => {
       const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
-      const primaryCollection =
-        trackCollections.find((collection) =>
-          collection.trackIds.some((trackId) => programTracks.some((track) => track.id === trackId)),
-        ) ?? null;
+      const configuredBpms = extractBpms(program.bpmDisplay);
+      const subroutes = configuredBpms.map((bpm) => {
+        const bpmTracks = programTracks.filter((track) => track.bpm === bpm);
+
+        return {
+          bpm,
+          tracks: bpmTracks,
+          totalMinutes: Math.max(1, Math.round(bpmTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
+        };
+      });
 
       return {
         program,
         programTracks,
-        primaryCollection,
+        configuredBpms,
+        subroutes,
+        totalMinutes: Math.max(1, Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
       };
     });
   }, []);
+
+  useEffect(() => {
+    if (isAdmin || publicRouteEntries.length === 0) {
+      return;
+    }
+
+    if (!publicRouteEntries.some((entry) => entry.program.id === activeRouteId)) {
+      setActiveRouteId(publicRouteEntries[0]?.program.id ?? "");
+    }
+  }, [activeRouteId, isAdmin, publicRouteEntries]);
+
+  useEffect(() => {
+    if (isAdmin) {
+      return;
+    }
+
+    const activeEntry = publicRouteEntries.find((entry) => entry.program.id === activeRouteId) ?? publicRouteEntries[0] ?? null;
+
+    if (!activeEntry) {
+      setActiveRouteBpm(null);
+      return;
+    }
+
+    if (activeRouteBpm && activeEntry.subroutes.some((subroute) => subroute.bpm === activeRouteBpm)) {
+      return;
+    }
+
+    setActiveRouteBpm(activeEntry.subroutes[0]?.bpm ?? null);
+  }, [activeRouteBpm, activeRouteId, isAdmin, publicRouteEntries]);
+
+  const activeRouteEntry = useMemo(() => {
+    return publicRouteEntries.find((entry) => entry.program.id === activeRouteId) ?? publicRouteEntries[0] ?? null;
+  }, [activeRouteId, publicRouteEntries]);
+
+  const activeSubroute = useMemo(() => {
+    if (!activeRouteEntry) {
+      return null;
+    }
+
+    return activeRouteEntry.subroutes.find((subroute) => subroute.bpm === activeRouteBpm) ?? activeRouteEntry.subroutes[0] ?? null;
+  }, [activeRouteBpm, activeRouteEntry]);
+
+  const publicVisibleTracks = activeSubroute?.tracks ?? [];
 
   const bpmCompatibilityMap = useMemo(() => {
     const entries = tracks.map((track) => {
@@ -87,12 +143,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     });
 
     return new Map(entries);
-  }, [currentTrack]);
-
-  const recommendedMixes = useMemo(() => {
-    return rankTracksForMixing(currentTrack, tracks)
-      .filter((item) => item.compatibility.isRecommended)
-      .slice(0, 3);
   }, [currentTrack]);
 
   const mixInsights = useMemo(() => {
@@ -156,33 +206,29 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     setSelectedIds([]);
   };
 
-  const handleStartThemeSession = (programId: string) => {
-    const programTracks = tracks.filter((track) => track.themeProgramId === programId);
-
-    if (programTracks.length === 0) {
+  const handleQueueActiveSubroute = () => {
+    if (publicVisibleTracks.length === 0) {
       return;
     }
 
-    setActiveCollectionId("all");
-    setActiveBpms(Array.from(new Set(programTracks.map((track) => track.bpm))));
-    startSession(
-      programTracks.map((track) => track.id),
-      programTracks[0]?.id,
-    );
+    setSelectedIds((current: string[]) => {
+      const merged = new Set([...current, ...publicVisibleTracks.map((track) => track.id)]);
+      return Array.from(merged);
+    });
   };
 
-  const handleBrowseTheme = (programId: string) => {
-    const programTracks = tracks.filter((track) => track.themeProgramId === programId);
+  const handleRandomPlayActiveSubroute = () => {
+    if (publicVisibleTracks.length === 0) {
+      return;
+    }
 
-    setActiveCollectionId("all");
-    setActiveBpms(Array.from(new Set(programTracks.map((track) => track.bpm))));
+    startRandomSession(publicVisibleTracks.map((track) => track.id));
   };
 
-  const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "OmniSonic 後台工作台" : "OmniSonic";
   const heroDescription = isAdmin
     ? "集中管理主題內容、上架素材與製作流程。"
-    : "先選你現在想要的狀態，直接開始播放。";
+    : "先選主路線，再選 BPM，直接播放。";
 
   return (
     <main
@@ -213,26 +259,21 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
               <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
-                適合長時間播放
+                {isAdmin ? "主題手冊" : "5 條主路線"}
               </span>
               <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
-                不中斷接續
+                {isAdmin ? "上架素材" : "BPM 子路線"}
               </span>
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
-                幫助維持專注
+                {isAdmin ? "流程管理" : "隨機播放"}
               </span>
-              {isAdmin ? (
-                <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2">
-                  主題手冊
-                </span>
-              ) : null}
             </div>
             {!isAdmin ? (
               <div className="mt-8 rounded-[30px] border border-white/10 bg-white/6 p-5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-3xl">
-                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">主題路線</p>
-                    <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">五條路線，一眼選好</h2>
+                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">主路線</p>
+                    <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">五條路線，先選一條</h2>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs text-white/62">
                     {currentTrack ? (
@@ -252,24 +293,27 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                 </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
-                  {publicThemeEntries.map(({ program, programTracks, primaryCollection }) => {
+                  {publicRouteEntries.map(({ program, configuredBpms, programTracks, totalMinutes }) => {
+                    const isActive = activeRouteEntry?.program.id === program.id;
                     const hasPublishedTracks = programTracks.length > 0;
-                    const totalMinutes = Math.max(
-                      1,
-                      Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60),
-                    );
 
                     return (
-                      <article
+                      <button
                         key={program.id}
-                        className="rounded-[26px] border border-white/10 bg-black/18 p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8 xl:p-4"
+                        type="button"
+                        onClick={() => setActiveRouteId(program.id)}
+                        className={`rounded-[26px] border p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8 xl:p-4 ${
+                          isActive
+                            ? "border-fuchsia-300/34 bg-fuchsia-300/10 shadow-[0_0_36px_rgba(217,70,239,0.14)] ring-1 ring-white/12"
+                            : "border-white/10 bg-black/18"
+                        }`}
                       >
                         <div className="flex flex-wrap items-center gap-2 text-xs text-white/62">
                           <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
                             {program.label}
                           </span>
                           <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
-                            {program.bpmDisplay}
+                            {configuredBpms.join(" / ")} BPM
                           </span>
                           <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                             {hasPublishedTracks ? `約 ${totalMinutes} 分鐘` : "即將推出"}
@@ -277,40 +321,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                         </div>
                         <h3 className="mt-4 font-serif text-2xl text-white xl:text-xl">{program.title}</h3>
                         <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{program.summary}</p>
-                        <div className="mt-5 flex flex-wrap gap-3 xl:flex-col">
-                          <button
-                            type="button"
-                            onClick={() => handleStartThemeSession(program.id)}
-                            disabled={!hasPublishedTracks}
-                            className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45 xl:w-full"
-                          >
-                            {hasPublishedTracks ? "立即開始" : "即將推出"}
-                          </button>
-                          {primaryCollection ? (
-                            <Link
-                              href={`/collections/${primaryCollection.id}`}
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
-                            >
-                              查看系列
-                            </Link>
-                          ) : hasPublishedTracks ? (
-                            <button
-                              type="button"
-                              onClick={() => handleBrowseTheme(program.id)}
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
-                            >
-                              瀏覽曲目
-                            </button>
-                          ) : (
-                            <a
-                              href="#theme-routes-detail"
-                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white xl:w-full"
-                            >
-                              查看主題說明
-                            </a>
-                          )}
+                        <div className="mt-5 flex items-center justify-between gap-3 text-xs text-white/58">
+                          <span>{programTracks.length} 首已上架</span>
+                          <span>{isActive ? "目前路線" : "查看 BPM"}</span>
                         </div>
-                      </article>
+                      </button>
                     );
                   })}
                 </div>
@@ -320,6 +335,65 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
         </section>
 
         {!isAdmin ? (
+          <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">BPM 子路線</p>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">
+                  {activeRouteEntry?.program.title ?? "選一條路線"}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
+                  {activeRouteEntry?.program.audience ?? "先選路線，再挑一個 BPM。"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 text-xs text-white/62">
+                <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
+                  {activeRouteEntry?.program.label ?? "主路線"}
+                </span>
+                <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                  {activeRouteEntry?.programTracks.length ?? 0} 首歌曲
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+              {activeRouteEntry?.subroutes.map((subroute) => {
+                const isActive = activeSubroute?.bpm === subroute.bpm;
+
+                return (
+                  <button
+                    key={`${activeRouteEntry.program.id}-${subroute.bpm}`}
+                    type="button"
+                    onClick={() => setActiveRouteBpm(subroute.bpm)}
+                    className={`rounded-[28px] border p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/10 ${
+                      isActive
+                        ? "border-fuchsia-300/28 bg-fuchsia-300/10 shadow-[0_0_40px_rgba(217,70,239,0.16)] ring-1 ring-white/14"
+                        : "border-white/10 bg-white/6"
+                    }`}
+                  >
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">子路線</p>
+                    <h3 className="mt-3 font-serif text-2xl text-white">{subroute.bpm} BPM</h3>
+                    <p className="mt-3 text-sm leading-6 text-white/68">
+                      {subroute.tracks.length > 0 ? "打開這個節奏下的歌曲，直接隨機播放。" : "這條子路線還沒有上架歌曲。"}
+                    </p>
+                    <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
+                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                        {subroute.tracks.length} 首歌曲
+                      </span>
+                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                        {subroute.tracks.length > 0 ? `約 ${subroute.totalMinutes} 分鐘` : "尚未上架"}
+                      </span>
+                    </div>
+                    <div className="mt-5 flex items-center justify-between gap-3 text-xs text-white/58">
+                      <span>{isActive ? "目前子路線" : "查看歌曲"}</span>
+                      <span>{subroute.tracks.length > 0 ? "可播放" : "待上架"}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : (
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
@@ -339,7 +413,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   activeCollectionId === "all" ? "shadow-[0_0_40px_rgba(255,255,255,0.08)] ring-1 ring-white/14" : ""
                 }`}
               >
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">全部瀏覽</p>
+                <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">全部瀏覽</p>
                 <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68">
                   回到完整曲目庫，直接挑現在想聽的內容。
@@ -400,72 +474,135 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               })}
             </div>
           </section>
-        ) : null}
+        )}
 
-        <div className="mt-6">
-          <FilterBar
-            bpmOptions={availableBpmOptions}
-            activeBpms={activeBpms}
-            visibleCount={filteredAssets.length}
-            selectedCount={selectedAssets.length}
-            activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
-            onToggleBpm={toggleBpm}
-            onSelectAll={handleSelectAll}
-            onClearSelection={handleClearSelection}
-          />
-        </div>
-
-        <div id="theme-routes-detail" className="mt-6">
-          {isAdmin ? (
-            <ThemeProgramPanel mode={mode} programs={themePrograms} />
-          ) : (
-            <ThemeProgramShowcase programs={themePrograms} tracks={tracks} />
-          )}
-        </div>
-
-        {isAdmin ? (
-          <div className="mt-6">
-            <BpmAnalysisPanel />
-          </div>
-        ) : null}
-
-        {!isAdmin && currentTrack ? (
-          <div className="mt-6">
-            <BpmRecommendationPanel
-              currentTrack={currentTrack}
-              recommendations={recommendedMixes}
-              onPlayTrack={playTrack}
-            />
-          </div>
-        ) : null}
-
-        {isAdmin ? (
-          <div className="mt-6">
-            <MixInsightsPanel {...mixInsights} />
-          </div>
-        ) : null}
-
-        <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {filteredAssets.length > 0 ? (
-            filteredAssets.map((asset) => (
-              <MediaCard
-                key={asset.id}
-                asset={asset}
-                mode={mode}
-                compatibility={bpmCompatibilityMap.get(asset.id) ?? null}
-                checked={selectedIds.includes(asset.id)}
-                isCurrent={playback.currentTrackId === asset.id}
-                isNext={playback.nextTrackId === asset.id}
-                onToggle={toggleAsset}
-                onPlayTrack={playTrack}
-              />
-            ))
-          ) : (
-            <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
-              目前沒有符合條件的曲目，請放寬節奏篩選或回到全部曲目。
+        {!isAdmin ? (
+          <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
+            <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="max-w-3xl">
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">歌曲清單</p>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">
+                  {activeSubroute ? `${activeSubroute.bpm} BPM` : "選一個 BPM"}
+                </h2>
+                <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
+                  {activeSubroute
+                    ? `這條子路線目前有 ${activeSubroute.tracks.length} 首歌，可直接隨機播放或逐首打開。`
+                    : "先選一個 BPM 子路線。"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={handleRandomPlayActiveSubroute}
+                  disabled={publicVisibleTracks.length === 0}
+                  className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  隨機播放這組
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQueueActiveSubroute}
+                  disabled={publicVisibleTracks.length === 0}
+                  className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/18 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                  加入這組
+                </button>
+                <button
+                  type="button"
+                  onClick={handleClearSelection}
+                  className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
+                >
+                  清空清單
+                </button>
+              </div>
             </div>
-          )}
-        </section>
+
+            <div className="mt-5 flex flex-wrap gap-2 text-xs text-white/62">
+              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                {publicVisibleTracks.length} 首歌曲
+              </span>
+              <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                清單 {selectedAssets.length} 首
+              </span>
+              {currentTrack ? (
+                <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
+                  目前播放：{currentTrack.title}
+                </span>
+              ) : null}
+            </div>
+
+            <section className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {publicVisibleTracks.length > 0 ? (
+                publicVisibleTracks.map((asset) => (
+                  <MediaCard
+                    key={asset.id}
+                    asset={asset}
+                    mode={mode}
+                    compatibility={bpmCompatibilityMap.get(asset.id) ?? null}
+                    checked={selectedIds.includes(asset.id)}
+                    isCurrent={playback.currentTrackId === asset.id}
+                    isNext={playback.nextTrackId === asset.id}
+                    onToggle={toggleAsset}
+                    onPlayTrack={playTrack}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
+                  這條子路線目前沒有歌曲，先切到其他 BPM 或稍後再回來。
+                </div>
+              )}
+            </section>
+          </section>
+        ) : (
+          <>
+            <div className="mt-6">
+              <FilterBar
+                bpmOptions={availableBpmOptions}
+                activeBpms={activeBpms}
+                visibleCount={filteredAssets.length}
+                selectedCount={selectedAssets.length}
+                activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
+                onToggleBpm={toggleBpm}
+                onSelectAll={handleSelectAll}
+                onClearSelection={handleClearSelection}
+              />
+            </div>
+
+            <div id="theme-routes-detail" className="mt-6">
+              <ThemeProgramPanel mode={mode} programs={themePrograms} />
+            </div>
+
+            <div className="mt-6">
+              <BpmAnalysisPanel />
+            </div>
+
+            <div className="mt-6">
+              <MixInsightsPanel {...mixInsights} />
+            </div>
+
+            <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {filteredAssets.length > 0 ? (
+                filteredAssets.map((asset) => (
+                  <MediaCard
+                    key={asset.id}
+                    asset={asset}
+                    mode={mode}
+                    compatibility={bpmCompatibilityMap.get(asset.id) ?? null}
+                    checked={selectedIds.includes(asset.id)}
+                    isCurrent={playback.currentTrackId === asset.id}
+                    isNext={playback.nextTrackId === asset.id}
+                    onToggle={toggleAsset}
+                    onPlayTrack={playTrack}
+                  />
+                ))
+              ) : (
+                <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
+                  目前沒有符合條件的曲目，請放寬節奏篩選或回到全部曲目。
+                </div>
+              )}
+            </section>
+          </>
+        )}
       </div>
     </main>
   );

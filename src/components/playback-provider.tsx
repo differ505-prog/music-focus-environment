@@ -35,11 +35,23 @@ type PlaybackContextValue = {
   toggleAsset: (assetId: string) => void;
   playTrack: (assetId: string) => void;
   startSession: (assetIds: string[], initialTrackId?: string) => void;
+  startRandomSession: (assetIds: string[]) => void;
   playPause: () => void;
   toggleRepeat: () => void;
 };
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
+
+function shuffleIds<T>(items: T[]) {
+  const cloned = [...items];
+
+  for (let index = cloned.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [cloned[index], cloned[swapIndex]] = [cloned[swapIndex], cloned[index]];
+  }
+
+  return cloned;
+}
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -177,6 +189,21 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     setPendingPlayId(targetInitialTrackId);
   };
 
+  const startRandomSession = (assetIds: string[]) => {
+    const uniqueIds = Array.from(new Set(assetIds)).filter((assetId) => tracks.some((track) => track.id === assetId));
+
+    if (uniqueIds.length === 0) {
+      return;
+    }
+
+    const shuffledIds = shuffleIds(uniqueIds);
+
+    setIsPlayerOpen(true);
+    setIsPlayerMinimized(true);
+    setSelectedIds(shuffledIds);
+    setPendingPlayId(shuffledIds[0] ?? null);
+  };
+
   const playPause = () => {
     if (!controllerRef.current) {
       return;
@@ -206,6 +233,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       toggleAsset,
       playTrack,
       startSession,
+      startRandomSession,
       playPause,
       toggleRepeat,
     }),

@@ -14,7 +14,7 @@ function buildMusicPrompt(bpm: number) {
   return `Instrumental deep chillwave, melodic techno, dark atmospheric electronic, steady driving bassline, focused deep work rhythm for CEO mindset, tempo ${bpm} BPM, constant tempo, subtle background fireplace crackling sounds, ambient, no vocals, cinematic, sophisticated.`;
 }
 
-export const defaultMusicPrompt = buildMusicPrompt(110);
+export const defaultMusicPrompt = buildMusicPrompt(105);
 
 export const defaultImagePrompt =
   "Cinematic interior shot of a luxurious modern mansion in the mountains. Massive floor-to-ceiling windows revealing a dark, dense, and misty pine forest outside. A warm, roaring fireplace is burning in the living room. Sleek, sophisticated CEO workspace with a dark wood desk, moody ambient lighting, photorealistic, 8k resolution, architectural photography, cozy yet powerful and focused atmosphere.";
@@ -522,7 +522,7 @@ export const themePrograms: ThemeProgram[] = [
     id: "ceo-focus-lanes",
     label: "專注心流",
     title: "深度專注心流",
-    bpmDisplay: "85 / 105 / 110 / 120 BPM",
+    bpmDisplay: "85 / 105 / 120 BPM",
     summary:
       "穩定推進的深度專注節奏，適合決策、深度工作與長時間專注。",
     audience: "深度工作、策略規劃、長時間沉浸專注",
@@ -530,7 +530,7 @@ export const themePrograms: ThemeProgram[] = [
       "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道建立專注歌單。",
     operatingPrinciples: [
       "共用骨架固定 long-loop、no vocals、equal-power crossfade、LUFS 正規化與 dark premium 美學，不讓品質規格在主題切換時漂移。",
-      "BPM 只能走 85 / 105 / 110 / 120 四條車道，85 專責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
+      "BPM 只能走 85 / 105 / 120 三條車道，85 專責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
       "先做情緒與場景，再做音樂 prompt；禁止只換 BPM 不換聲音世界觀，避免生成出節奏對但氣質錯的內容。",
     ],
     layoutNotes: [
@@ -548,7 +548,7 @@ export const themePrograms: ThemeProgram[] = [
       {
         id: "Focus 02",
         title: "BPM 車道決策",
-        detail: "只允許 85 / 105 / 110 / 120，85 負責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
+        detail: "只允許 85 / 105 / 120，85 負責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
         deliverable: "鎖定單一 BPM 與 energy level，避免同一首歌同時帶多個節奏意圖。",
       },
       {
@@ -581,7 +581,7 @@ export const themePrograms: ThemeProgram[] = [
 1. themeScenario
 2. 核心情緒 3-5 個
 3. 使用場景
-4. 建議 BPM（只能從 85 / 105 / 110 / 120 擇一）
+4. 建議 BPM（只能從 85 / 105 / 120 擇一）
 5. 建議 energy level（1-10）
 6. 視覺關鍵字
 7. 音樂風格關鍵字
