@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import type { ThemeProgram } from "@/types/music";
 
 type ThemeProgramPanelProps = {
-  mode?: 'public' | 'admin';
   programs: readonly ThemeProgram[];
 };
 
@@ -220,8 +219,7 @@ function applyAutoPrefillToValue(currentValue: string, nextAutoValue: string) {
   return manualContent ? `${autoBlock}\n\n${manualContent}` : autoBlock;
 }
 
-export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPanelProps) {
-  const isAdmin = mode === 'admin';
+export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
@@ -483,16 +481,10 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
   return (
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="mb-5">
-        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">
-          {isAdmin ? '主題手冊' : '主題內容'}
-        </p>
-        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">
-          {isAdmin ? '主題管理' : '內容主題'}
-        </h2>
+        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">主題手冊</p>
+        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">主題管理</h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-white/66">
-          {isAdmin
-            ? '常用步驟已集中在前面，其餘說明可展開查看。每一步都可貼上、儲存並接續使用。'
-            : '把不同路線整理成可直接使用的內容主題。'}
+          常用步驟已集中在前面，其餘說明可展開查看。每一步都可貼上、儲存並接續使用。
         </p>
       </div>
 
@@ -516,306 +508,291 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
             <p className="mt-3 text-xs uppercase tracking-[0.24em] text-white/42">適用場景</p>
             <p className="mt-2 text-sm leading-6 text-white/74">{program.audience}</p>
 
-            {isAdmin ? (
-              <div className="mt-5 rounded-[20px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">製作步驟</p>
-                    <p className="mt-2 text-xs leading-6 text-cyan-50/72">
-                      常用步驟集中在這裡。先生成、貼上並儲存，後續可直接接著做。
-                    </p>
-                  </div>
-                  <div className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-cyan-50/74">
-                    常用
-                  </div>
+            <div className="mt-5 rounded-[20px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">製作步驟</p>
+                  <p className="mt-2 text-xs leading-6 text-cyan-50/72">
+                    常用步驟集中在這裡。先生成、貼上並儲存，後續可直接接著做。
+                  </p>
                 </div>
-                <div className="mt-4 grid gap-3">
-                  {program.promptModules.map((module, moduleIndex) => {
-                    const moduleKey = buildModuleKey(program.id, module.id);
-                    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, module, moduleOutputs);
-                    const feedback = feedbackMap[moduleKey];
-                    const slotCount = getModuleOutputSlotCount(module);
-                    const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);
-                    const supplementalInput = supplementalInputs[moduleKey] ?? '';
-                    const isLowInputModule = module.inputMode === 'low_input_auto_context';
+                <div className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-cyan-50/74">
+                  常用
+                </div>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {program.promptModules.map((module, moduleIndex) => {
+                  const moduleKey = buildModuleKey(program.id, module.id);
+                  const upstreamPayload = buildUpstreamPayload(program, moduleIndex, module, moduleOutputs);
+                  const feedback = feedbackMap[moduleKey];
+                  const slotCount = getModuleOutputSlotCount(module);
+                  const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);
+                  const supplementalInput = supplementalInputs[moduleKey] ?? '';
+                  const isLowInputModule = module.inputMode === 'low_input_auto_context';
 
-                    return (
-                      <div
-                        key={module.id}
-                        className="rounded-[18px] border border-cyan-300/12 bg-black/18 p-4"
-                      >
-                        <div className="flex flex-wrap items-center gap-3">
-                          <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-50/72">
-                            {module.id}
+                  return (
+                    <div
+                      key={module.id}
+                      className="rounded-[18px] border border-cyan-300/12 bg-black/18 p-4"
+                    >
+                      <div className="flex flex-wrap items-center gap-3">
+                        <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-50/72">
+                          {module.id}
+                        </span>
+                        <h4 className="text-sm font-medium text-white">{module.title}</h4>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-cyan-50/70">{module.purpose}</p>
+                      <pre className="mt-3 overflow-x-auto rounded-[16px] border border-white/8 bg-[#07101a]/90 p-4 text-xs leading-6 text-cyan-50/82">
+                        <code>{module.template}</code>
+                      </pre>
+
+                      {isLowInputModule ? (
+                        <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
+                            少量補充
+                          </p>
+                          <p className="mt-2 text-xs leading-6 text-amber-50/76">
+                            {module.autoAssembleNote ??
+                              '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
+                          </p>
+                          <div className="mt-4">
+                            <p className="text-xs uppercase tracking-[0.2em] text-white/48">
+                              {module.supplementalLabel ?? '少量補充資料'}
+                            </p>
+                            <textarea
+                              value={supplementalInput}
+                              onChange={(event) =>
+                                handleSupplementalInputChange(program.id, module.id, event.target.value)
+                              }
+                              placeholder={
+                                module.supplementalPlaceholder ??
+                                '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'
+                              }
+                              className="mt-3 min-h-28 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
+                            />
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {module.quickLinks?.map((link) => (
+                          <a
+                            key={`${module.id}-${link.url}`}
+                            href={link.url}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-50/82 transition hover:bg-cyan-300/16"
+                          >
+                            {link.label}
+                          </a>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyText(`${moduleKey}::template`, module.template, '模板已複製')
+                          }
+                          className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/72 transition hover:bg-white/12"
+                        >
+                          複製模板
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            isLowInputModule
+                              ? handleAssembleLowInput(program, moduleIndex)
+                              : handleInsertUpstream(program, moduleIndex)
+                          }
+                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-xs text-fuchsia-50/82 transition hover:bg-fuchsia-400/14 disabled:cursor-not-allowed disabled:opacity-45"
+                          disabled={!upstreamPayload}
+                        >
+                          {isLowInputModule ? '自動帶入前面內容' : '帶入前一步內容'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            handleCopyText(
+                              `${moduleKey}::output`,
+                              combinedOutput,
+                              '此步驟結果已複製',
+                            )
+                          }
+                          className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/14"
+                        >
+                          複製此步驟全部結果
+                        </button>
+                      </div>
+
+                      {upstreamPayload ? (
+                        <div className="mt-3 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
+                            已帶入前一步內容
+                          </p>
+                          <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
+                            {isLowInputModule
+                              ? '前面步驟的結果已可直接帶進這一步，減少手動整理。'
+                              : '前面步驟的結果已可直接帶進這一步，避免重複貼資料。'}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-4">
+                        <div className="flex items-center justify-between gap-3">
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
+                            {isLowInputModule
+                              ? '帶入後編輯區'
+                              : slotCount > 1
+                                ? `此步驟輸出（${slotCount} 組候選）`
+                                : '此步驟輸出'}
+                          </p>
+                          <span className="text-xs text-cyan-50/64">
+                            {feedback ?? feedbackMap[`${moduleKey}::template`] ?? feedbackMap[`${moduleKey}::output`] ?? '可貼上 AI 生成結果'}
                           </span>
-                          <h4 className="text-sm font-medium text-white">{module.title}</h4>
                         </div>
-                        <p className="mt-2 text-xs leading-6 text-cyan-50/70">{module.purpose}</p>
-                        <pre className="mt-3 overflow-x-auto rounded-[16px] border border-white/8 bg-[#07101a]/90 p-4 text-xs leading-6 text-cyan-50/82">
-                          <code>{module.template}</code>
-                        </pre>
+                        <div className="mt-3 grid gap-3">
+                          {Array.from({ length: slotCount }, (_, slotIndex) => {
+                            const slotKey = buildModuleSlotKey(program.id, module.id, slotIndex);
+                            const slotLabel = getModuleOutputSlotLabel(module, slotIndex);
 
-                        {isLowInputModule ? (
-                          <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
-                              少量補充
-                            </p>
-                            <p className="mt-2 text-xs leading-6 text-amber-50/76">
-                              {module.autoAssembleNote ??
-                                '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
-                            </p>
-                            <div className="mt-4">
-                              <p className="text-xs uppercase tracking-[0.2em] text-white/48">
-                                {module.supplementalLabel ?? '少量補充資料'}
-                              </p>
-                              <textarea
-                                value={supplementalInput}
-                                onChange={(event) =>
-                                  handleSupplementalInputChange(program.id, module.id, event.target.value)
-                                }
-                                placeholder={
-                                  module.supplementalPlaceholder ??
-                                  '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'
-                                }
-                                className="mt-3 min-h-28 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
-                              />
-                            </div>
-                          </div>
-                        ) : null}
-
-                        <div className="mt-4 flex flex-wrap gap-2">
-                          {module.quickLinks?.map((link) => (
-                            <a
-                              key={`${module.id}-${link.url}`}
-                              href={link.url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-50/82 transition hover:bg-cyan-300/16"
-                            >
-                              {link.label}
-                            </a>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyText(`${moduleKey}::template`, module.template, '模板已複製')
-                            }
-                            className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/72 transition hover:bg-white/12"
-                          >
-                            複製模板
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              isLowInputModule
-                                ? handleAssembleLowInput(program, moduleIndex)
-                                : handleInsertUpstream(program, moduleIndex)
-                            }
-                            className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-xs text-fuchsia-50/82 transition hover:bg-fuchsia-400/14 disabled:cursor-not-allowed disabled:opacity-45"
-                            disabled={!upstreamPayload}
-                          >
-                            {isLowInputModule ? '自動帶入前面內容' : '帶入前一步內容'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() =>
-                              handleCopyText(
-                                `${moduleKey}::output`,
-                                combinedOutput,
-                                '此步驟結果已複製',
-                              )
-                            }
-                            className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/14"
-                          >
-                            複製此步驟全部結果
-                          </button>
-                        </div>
-
-                        {upstreamPayload ? (
-                          <div className="mt-3 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
-                              已帶入前一步內容
-                            </p>
-                            <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
-                              {isLowInputModule
-                                ? '前面步驟的結果已可直接帶進這一步，減少手動整理。'
-                                : '前面步驟的結果已可直接帶進這一步，避免重複貼資料。'}
-                            </p>
-                          </div>
-                        ) : null}
-
-                        <div className="mt-4">
-                          <div className="flex items-center justify-between gap-3">
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
-                              {isLowInputModule
-                                ? '帶入後編輯區'
-                                : slotCount > 1
-                                  ? `此步驟輸出（${slotCount} 組候選）`
-                                  : '此步驟輸出'}
-                            </p>
-                            <span className="text-xs text-cyan-50/64">
-                              {feedback ?? feedbackMap[`${moduleKey}::template`] ?? feedbackMap[`${moduleKey}::output`] ?? '可貼上 AI 生成結果'}
-                            </span>
-                          </div>
-                          <div className="mt-3 grid gap-3">
-                            {Array.from({ length: slotCount }, (_, slotIndex) => {
-                              const slotKey = buildModuleSlotKey(program.id, module.id, slotIndex);
-                              const slotLabel = getModuleOutputSlotLabel(module, slotIndex);
-
-                              return (
-                                <div
-                                  key={slotKey}
-                                  className="rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
-                                >
-                                  <div className="flex items-center justify-between gap-3">
-                                    <p className="text-xs uppercase tracking-[0.2em] text-white/48">{slotLabel}</p>
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleCopyText(
-                                          `${slotKey}::output`,
-                                          moduleOutputs[slotKey] ?? '',
-                                          `${slotLabel} 已複製`,
-                                        )
-                                      }
-                                      className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
-                                    >
-                                      複製此框
-                                    </button>
-                                  </div>
-                                  <textarea
-                                    value={moduleOutputs[slotKey] ?? ''}
-                                    onChange={(event) =>
-                                      handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)
+                            return (
+                              <div
+                                key={slotKey}
+                                className="rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-xs uppercase tracking-[0.2em] text-white/48">{slotLabel}</p>
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      handleCopyText(
+                                        `${slotKey}::output`,
+                                        moduleOutputs[slotKey] ?? '',
+                                        `${slotLabel} 已複製`,
+                                      )
                                     }
-                                    placeholder={`把 ${slotLabel} 貼在這裡，儲存後可供後面步驟直接插入或複製。`}
-                                    className="mt-3 min-h-40 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
-                                  />
+                                    className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
+                                  >
+                                    複製此框
+                                  </button>
                                 </div>
-                              );
-                            })}
-                          </div>
-                          <div className="mt-3 flex flex-wrap items-center gap-2">
-                            <button
-                              type="button"
-                              onClick={() => handleSaveModuleOutput(program.id, module.id)}
-                              className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-50 transition hover:bg-cyan-300/16"
-                            >
-                              {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
-                            </button>
-                            <span className="text-xs text-white/45">
-                              {slotCount > 1 ? '儲存後，後續模組可直接取用這兩組候選內容。' : '儲存後，後續模組可直接取用這份內容。'}
-                            </span>
-                          </div>
+                                <textarea
+                                  value={moduleOutputs[slotKey] ?? ''}
+                                  onChange={(event) =>
+                                    handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)
+                                  }
+                                  placeholder={`把 ${slotLabel} 貼在這裡，儲存後可供後面步驟直接插入或複製。`}
+                                  className="mt-3 min-h-40 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleSaveModuleOutput(program.id, module.id)}
+                            className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-50 transition hover:bg-cyan-300/16"
+                          >
+                            {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
+                          </button>
+                          <span className="text-xs text-white/45">
+                            {slotCount > 1 ? '儲存後，後續模組可直接取用這兩組候選內容。' : '儲存後，後續模組可直接取用這份內容。'}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4 rounded-[18px] border border-white/8 bg-white/6 p-4">
-                <p className="text-xs uppercase tracking-[0.24em] text-white/42">主題定位</p>
-                <p className="mt-2 text-sm leading-6 text-white/68">
-                  {program.positioning}
-                </p>
-              </div>
-            )}
-
-            {isAdmin ? (
-              <div className="mt-5">
-                {renderSectionToggle(program.id, 'strategy', '戰略定位')}
-                {(collapsedSections[program.id] ?? defaultSectionState()).strategy ? null : (
-                  <div className="mt-3 rounded-[20px] border border-white/8 bg-white/6 p-4">
-                    <p className="text-sm leading-7 text-white/74">{program.positioning}</p>
-                    <div className="mt-4 grid gap-3">
-                      {program.operatingPrinciples.map((principle) => (
-                        <div key={principle} className="rounded-[18px] border border-white/8 bg-black/20 p-3">
-                          <p className="text-xs leading-6 text-white/68">{principle}</p>
-                        </div>
-                      ))}
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            ) : null}
+            </div>
 
-            {isAdmin ? (
-              <div className="mt-5">
-                {renderSectionToggle(program.id, 'workflow', '步驟流程')}
-                {(collapsedSections[program.id] ?? defaultSectionState()).workflow ? null : (
-                  <div className="mt-3 grid gap-3">
-                    {program.workflow.map((step) => (
-                      <div
-                        key={step.id}
-                        className="rounded-[18px] border border-fuchsia-400/10 bg-[#0a0817]/88 p-3"
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
-                            {step.id}
-                          </span>
-                          <h4 className="text-sm font-medium text-white">{step.title}</h4>
-                        </div>
-                        <p className="mt-2 text-xs leading-6 text-white/62">{step.detail}</p>
-                        <p className="mt-3 text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
-                          交付物
-                        </p>
-                        <p className="mt-2 text-xs leading-6 text-fuchsia-50/76">{step.deliverable}</p>
+            <div className="mt-5">
+              {renderSectionToggle(program.id, 'strategy', '戰略定位')}
+              {(collapsedSections[program.id] ?? defaultSectionState()).strategy ? null : (
+                <div className="mt-3 rounded-[20px] border border-white/8 bg-white/6 p-4">
+                  <p className="text-sm leading-7 text-white/74">{program.positioning}</p>
+                  <div className="mt-4 grid gap-3">
+                    {program.operatingPrinciples.map((principle) => (
+                      <div key={principle} className="rounded-[18px] border border-white/8 bg-black/20 p-3">
+                        <p className="text-xs leading-6 text-white/68">{principle}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5">
+              {renderSectionToggle(program.id, 'workflow', '步驟流程')}
+              {(collapsedSections[program.id] ?? defaultSectionState()).workflow ? null : (
+                <div className="mt-3 grid gap-3">
+                  {program.workflow.map((step) => (
+                    <div
+                      key={step.id}
+                      className="rounded-[18px] border border-fuchsia-400/10 bg-[#0a0817]/88 p-3"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
+                          {step.id}
+                        </span>
+                        <h4 className="text-sm font-medium text-white">{step.title}</h4>
+                      </div>
+                      <p className="mt-2 text-xs leading-6 text-white/62">{step.detail}</p>
+                      <p className="mt-3 text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
+                        交付物
+                      </p>
+                      <p className="mt-2 text-xs leading-6 text-fuchsia-50/76">{step.deliverable}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 grid gap-3">
+              <div>
+                {renderSectionToggle(program.id, 'notes', '介面與內容原則')}
+                {(collapsedSections[program.id] ?? defaultSectionState()).notes ? null : (
+                  <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    {program.layoutNotes.map((note) => (
+                      <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
+                        <p className="text-xs leading-6 text-white/65">{note}</p>
                       </div>
                     ))}
                   </div>
                 )}
               </div>
-            ) : null}
 
-            {isAdmin ? (
-              <div className="mt-5 grid gap-3">
-                <div>
-                  {renderSectionToggle(program.id, 'notes', '介面與內容原則')}
-                  {(collapsedSections[program.id] ?? defaultSectionState()).notes ? null : (
-                    <div className="mt-3 grid gap-3 md:grid-cols-3">
-                      {program.layoutNotes.map((note) => (
-                        <div key={note} className="rounded-[18px] border border-white/8 bg-white/6 p-3">
-                          <p className="text-xs leading-6 text-white/65">{note}</p>
+              <div>
+                {renderSectionToggle(program.id, 'seed', '初始提示')}
+                {(collapsedSections[program.id] ?? defaultSectionState()).seed ? null : (
+                  <div className="mt-3 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
+                    <pre className="overflow-x-auto text-xs leading-6 text-cyan-50/82">
+                      <code>{program.promptSeed}</code>
+                    </pre>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                {renderSectionToggle(program.id, 'checklist', '驗收清單')}
+                {(collapsedSections[program.id] ?? defaultSectionState()).checklist ? null : (
+                  <div className="mt-3 rounded-[18px] border border-emerald-300/12 bg-[#07130f]/88 p-4">
+                    <div className="grid gap-3">
+                      {program.acceptanceChecklist.map((item) => (
+                        <div key={item.id} className="rounded-[16px] border border-white/8 bg-black/18 p-3">
+                          <div className="flex items-center gap-3">
+                            <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
+                              {item.id}
+                            </span>
+                            <h4 className="text-sm font-medium text-white">{item.title}</h4>
+                          </div>
+                          <p className="mt-2 text-xs leading-6 text-emerald-50/72">{item.detail}</p>
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                <div>
-                  {renderSectionToggle(program.id, 'seed', '初始提示')}
-                  {(collapsedSections[program.id] ?? defaultSectionState()).seed ? null : (
-                    <div className="mt-3 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
-                      <pre className="overflow-x-auto text-xs leading-6 text-cyan-50/82">
-                        <code>{program.promptSeed}</code>
-                      </pre>
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  {renderSectionToggle(program.id, 'checklist', '驗收清單')}
-                  {(collapsedSections[program.id] ?? defaultSectionState()).checklist ? null : (
-                    <div className="mt-3 rounded-[18px] border border-emerald-300/12 bg-[#07130f]/88 p-4">
-                      <div className="grid gap-3">
-                        {program.acceptanceChecklist.map((item) => (
-                          <div key={item.id} className="rounded-[16px] border border-white/8 bg-black/18 p-3">
-                            <div className="flex items-center gap-3">
-                              <span className="rounded-full border border-white/10 bg-white/8 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-white/62">
-                                {item.id}
-                              </span>
-                              <h4 className="text-sm font-medium text-white">{item.title}</h4>
-                            </div>
-                            <p className="mt-2 text-xs leading-6 text-emerald-50/72">{item.detail}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
-            ) : null}
+            </div>
           </article>
         ))}
       </div>

@@ -140,7 +140,7 @@ export function AdminStudioPage() {
       </div>
 
       <div id="theme-routes-detail" className="mt-6">
-        <ThemeProgramPanel mode="admin" programs={themePrograms} />
+        <ThemeProgramPanel programs={themePrograms} />
       </div>
 
       <div className="mt-6">
