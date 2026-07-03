@@ -435,6 +435,8 @@ export const themePrograms: ThemeProgram[] = [
         id: "Module 01",
         title: "主題母版 Brief",
         purpose: "把少量抽象線索擴寫成可執行的 CEO Deep Focus 生產 brief。",
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位高端沉浸式音樂企劃師。
 
 請根據我提供的少量線索，輸出一份 CEO Deep Focus 主題 brief。
@@ -462,6 +464,11 @@ export const themePrograms: ThemeProgram[] = [
         title: "音樂 Prompt 模組",
         purpose: "把 brief 轉為可直接生成的英文音樂提示詞。",
         upstreamModuleIds: ["Module 01"],
+        autoAdvanceToNext: true,
+        quickLinks: [
+          { label: "打開 Copilot", url: "https://copilot.microsoft.com/" },
+          { label: "打開 Suno", url: "https://suno.com/create" },
+        ],
         outputSlots: 2,
         outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
         template: `You are a professional AI music prompt designer.
@@ -490,18 +497,20 @@ Brief:
         id: "Module 03",
         title: "視覺 Prompt 模組",
         purpose: "同步建立封面與背景動態素材，讓主題視覺保持一致。",
-        upstreamModuleIds: ["Module 01"],
+        upstreamModuleIds: ["Module 01", "Module 02"],
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位高端品牌視覺 prompt 設計師。
 
-請根據 CEO Deep Focus brief 產出：
+目前這一輪流程會產出 4 首歌曲：
+- Module 02 的候選 Prompt 01 會生成 2 首歌
+- Module 02 的候選 Prompt 02 也會生成 2 首歌
+
+請根據 CEO Deep Focus brief 與 2 組音樂 prompt 產出：
 1. Song 01 封面圖英文 prompt
-2. Song 01 背景影片英文 prompt
-3. Song 02 封面圖英文 prompt
-4. Song 02 背景影片英文 prompt
-5. Song 03 封面圖英文 prompt
-6. Song 03 背景影片英文 prompt
-7. Song 04 封面圖英文 prompt
-8. Song 04 背景影片英文 prompt
+2. Song 02 封面圖英文 prompt
+3. Song 03 封面圖英文 prompt
+4. Song 04 封面圖英文 prompt
 
 要求：
 - photorealistic
@@ -510,6 +519,9 @@ Brief:
 - glass, wood, fireplace, night skyline
 - moody but controlled
 - 避免過亮霓虹與過度娛樂感
+- 每首歌都要是獨立 prompt，不可合併成「一次生成兩張圖」
+- 請明確標示 Song 01 / Song 02 / Song 03 / Song 04
+- 視覺語意需對應各首歌的微差異，不可只是改 1-2 個字
 
 Brief：
 【貼上 Module 01 結果】`,
@@ -520,19 +532,25 @@ Brief：
         purpose: "把生成結果整理成網站可直接使用的 Track 資產。",
         upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
         inputMode: "low_input_auto_context",
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         supplementalLabel: "少量補充資料",
         supplementalPlaceholder:
-          "只補必要外部資訊，例如 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds，或你想指定的 title / slug。",
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
         autoAssembleNote:
-          "這一步不需要你重貼前面所有資料。系統會自動抓取已儲存的 Brief、音樂 Prompt、視覺 Prompt；你只需少量補外部資源或特別指定欄位。",
+          "這一步不需要你重貼前面所有資料。系統會自動抓取已儲存的 Brief、音樂 Prompt、圖片 Prompt，並附上同名異曲檢查與改名 SOP；你只需少量補外部資源或特別指定欄位。",
+        autoAssembleInstructions: [
+          "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
+          "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一，禁止沿用相同名稱。",
+          "Suno 一個提示詞通常會產出 2 首歌；若本輪有 2 組音樂 prompt，預設要整理為 4 首歌的命名與上架資料。",
+          "Module 03 若已提供 Song 01 到 Song 04 的獨立圖片 prompt，請一首歌對應一組 cover prompt，不可混用。",
+        ],
         template: `你是一位 TypeScript 音樂資料整理助手。
 
-請優先使用我上游已提供的 Brief、音樂 prompt、封面 prompt、背景影片 prompt，自動補完整體 Track JSON。
+請優先使用我上游已提供的 Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
 
 若我有補充資料，只把它視為少量覆寫資訊，例如：
 - audioUrl
 - coverImageUrl
-- backgroundVideoUrl
 - durationSeconds
 - 指定 title / slug
 
@@ -545,13 +563,13 @@ Brief：
 - moodTags
 - media.audioUrl
 - media.coverImageUrl
-- media.backgroundVideoUrl
+- media.backgroundVideoUrl（若目前沒有影片素材可先填空字串）
 - copy.descriptionZh
 - copy.descriptionEn
 - copy.themeScenario
 - prompts.musicPrompt
 - prompts.imagePrompt
-- prompts.videoPrompt
+- prompts.videoPrompt（若目前沒有影片提示詞可先填空字串）
 - prompts.generationPrompt
 - transition.introCueSeconds
 - transition.mixInPointSeconds
@@ -559,10 +577,12 @@ Brief：
 
 規則：
 - 只輸出 JSON
+- 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
 - 欄位不可省略
 - transition 需符合該 BPM 車道的平順接歌邏輯
 - 若上游已有足夠資訊，請主動生成 title、slug、descriptionZh、descriptionEn、moodTags、musicalKey、energyLevel
 - 若我有補充外部資源欄位，請直接覆蓋對應欄位
+- 若發現同名檔其實是不同歌曲，必須先重新命名，再輸出對應的 title / slug，不可保留重複名稱
 
 少量補充資料（可為空）：
 【只貼外部資源或你想覆寫的欄位】`,
@@ -644,6 +664,8 @@ Brief：
         id: "Module 01",
         title: "跑步主題 Brief",
         purpose: "把少量跑步意象整理成固定 180 BPM 的運動生產 brief。",
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位跑步音樂內容策劃師。
 
 請根據我提供的抽象線索，輸出一份 BPM 180 Slow Jog brief。
@@ -673,9 +695,16 @@ Brief：
         title: "跑感音樂 Prompt",
         purpose: "建立專屬於 180 慢跑的英文音樂生成模板。",
         upstreamModuleIds: ["Module 01"],
+        autoAdvanceToNext: true,
+        quickLinks: [
+          { label: "打開 Copilot", url: "https://copilot.microsoft.com/" },
+          { label: "打開 Suno", url: "https://suno.com/create" },
+        ],
+        outputSlots: 2,
+        outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
         template: `You are a professional AI music prompt designer for running playlists.
 
-Generate 1 English prompt for a BPM 180 Slow Jog instrumental track.
+Generate 2 English prompts for BPM 180 Slow Jog instrumental tracks.
 
 Requirements:
 - exact 180 BPM
@@ -705,18 +734,20 @@ Brief:
         id: "Module 03",
         title: "跑步視覺 Prompt",
         purpose: "讓封面與背景影片直接服務夜跑與耐力訓練情境。",
-        upstreamModuleIds: ["Module 01"],
+        upstreamModuleIds: ["Module 01", "Module 02"],
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位運動場景視覺 prompt 設計師。
 
-請根據 BPM 180 Slow Jog brief 產出：
+目前這一輪流程會產出 4 首歌曲：
+- Module 02 的候選 Prompt 01 會生成 2 首歌
+- Module 02 的候選 Prompt 02 也會生成 2 首歌
+
+請根據 BPM 180 Slow Jog brief 與 2 組音樂 prompt 產出：
 1. Song 01 封面圖英文 prompt
-2. Song 01 背景影片英文 prompt
-3. Song 02 封面圖英文 prompt
-4. Song 02 背景影片英文 prompt
-5. Song 03 封面圖英文 prompt
-6. Song 03 背景影片英文 prompt
-7. Song 04 封面圖英文 prompt
-8. Song 04 背景影片英文 prompt
+2. Song 02 封面圖英文 prompt
+3. Song 03 封面圖英文 prompt
+4. Song 04 封面圖英文 prompt
 
 要求：
 - photorealistic
@@ -724,6 +755,9 @@ Brief:
 - wet asphalt reflections
 - cold air, controlled breathing, forward motion
 - 不要豪宅、壁爐、商務書房意象
+- 每首歌都要是獨立 prompt，不可合併成「一次生成兩張圖」
+- 請明確標示 Song 01 / Song 02 / Song 03 / Song 04
+- 視覺語意需對應各首歌的微差異，不可只是改 1-2 個字
 
 Brief：
 【貼上 Module 01 結果】`,
@@ -734,19 +768,25 @@ Brief：
         purpose: "把跑步內容整理成可直接貼入專案的資產資料。",
         upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
         inputMode: "low_input_auto_context",
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         supplementalLabel: "少量補充資料",
         supplementalPlaceholder:
-          "只補必要外部資訊，例如 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds，或你想指定的 title / slug。",
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
         autoAssembleNote:
-          "這一步會自動沿用前面已儲存的跑步 Brief、音樂 Prompt、視覺 Prompt。你只補外部資源或少量指定欄位即可。",
+          "這一步會自動沿用前面已儲存的跑步 Brief、音樂 Prompt、圖片 Prompt，並附上同名異曲檢查與改名 SOP。你只補外部資源或少量指定欄位即可。",
+        autoAssembleInstructions: [
+          "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
+          "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一，禁止沿用相同名稱。",
+          "Suno 一個提示詞通常會產出 2 首歌；若本輪有 2 組音樂 prompt，預設要整理為 4 首歌的命名與上架資料。",
+          "Module 03 若已提供 Song 01 到 Song 04 的獨立圖片 prompt，請一首歌對應一組 cover prompt，不可混用。",
+        ],
         template: `你是一位 TypeScript 運動音樂資料整理助手。
 
-請優先使用我上游已提供的跑步 Brief、音樂 prompt、封面 prompt、背景影片 prompt，自動補完整體 Track JSON。
+請優先使用我上游已提供的跑步 Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
 
 若我有補充資料，只把它視為少量覆寫資訊，例如：
 - audioUrl
 - coverImageUrl
-- backgroundVideoUrl
 - durationSeconds
 - 指定 title / slug
 
@@ -759,13 +799,13 @@ Brief：
 - moodTags
 - media.audioUrl
 - media.coverImageUrl
-- media.backgroundVideoUrl
+- media.backgroundVideoUrl（若目前沒有影片素材可先填空字串）
 - copy.descriptionZh
 - copy.descriptionEn
 - copy.themeScenario
 - prompts.musicPrompt
 - prompts.imagePrompt
-- prompts.videoPrompt
+- prompts.videoPrompt（若目前沒有影片提示詞可先填空字串）
 - prompts.generationPrompt
 - transition.introCueSeconds
 - transition.mixInPointSeconds
@@ -774,9 +814,11 @@ Brief：
 規則：
 - 只輸出 JSON
 - BPM 必須為 180
+- 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
 - 文案需突出 cadence、耐力、夜跑或跑步機用途
 - 若上游已有足夠資訊，請主動生成 title、slug、descriptionZh、descriptionEn、moodTags、musicalKey、energyLevel
 - 若我有補充外部資源欄位，請直接覆蓋對應欄位
+- 若發現同名檔其實是不同歌曲，必須先重新命名，再輸出對應的 title / slug，不可保留重複名稱
 
 少量補充資料（可為空）：
 【只貼外部資源或你想覆寫的欄位】`,

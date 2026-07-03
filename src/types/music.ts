@@ -66,12 +66,18 @@ export type ThemePromptModule = {
   purpose: string;
   template: string;
   upstreamModuleIds?: string[];
+  autoAdvanceToNext?: boolean;
+  quickLinks?: Array<{
+    label: string;
+    url: string;
+  }>;
   outputSlots?: number;
   outputSlotLabels?: string[];
   inputMode?: "default" | "low_input_auto_context";
   supplementalLabel?: string;
   supplementalPlaceholder?: string;
   autoAssembleNote?: string;
+  autoAssembleInstructions?: string[];
 };
 
 export type ThemeChecklistItem = {

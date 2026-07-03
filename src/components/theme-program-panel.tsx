@@ -25,6 +25,8 @@ type StoredModuleOutputMap = Record<string, StoredModuleOutput>;
 
 const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v2';
 const MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY = 'theme-manual-module-supplemental-inputs-v1';
+const AUTO_PREFILL_START = '===== 系統自動預填開始 =====';
+const AUTO_PREFILL_END = '===== 系統自動預填結束 =====';
 
 const defaultSectionState = (): SectionState => ({
   strategy: true,
@@ -154,14 +156,68 @@ function buildLowInputAssembly(
   supplementalInput: string,
 ) {
   const upstreamPayload = buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
+  const extraInstructions = targetModule.autoAssembleInstructions?.length
+    ? [
+        '',
+        '以下是必須一起執行的檢查與命名 SOP：',
+        ...targetModule.autoAssembleInstructions.map((instruction, index) => `${index + 1}. ${instruction}`),
+      ]
+    : [];
 
   return [
     '以下是已自動整理的上游結果，請直接使用，不要要求我重新貼一次：',
     upstreamPayload || '目前沒有已儲存的上游結果。',
+    ...extraInstructions,
     '',
     '以下是少量補充資料（可能為空，僅在有提供時覆寫對應欄位）：',
     supplementalInput.trim() || '無',
   ].join('\n');
+}
+
+function wrapAutoPrefillValue(value: string) {
+  return `${AUTO_PREFILL_START}\n${value.trim()}\n${AUTO_PREFILL_END}`;
+}
+
+function extractManualContent(value: string) {
+  const trimmed = value.trim();
+
+  if (!trimmed) {
+    return '';
+  }
+
+  const autoBlockPattern = new RegExp(
+    `${AUTO_PREFILL_START}[\\s\\S]*?${AUTO_PREFILL_END}\\n?`,
+    'g',
+  );
+
+  return trimmed.replace(autoBlockPattern, '').trim();
+}
+
+function buildNextModulePrefill(
+  program: ThemeProgram,
+  moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
+  moduleOutputs: Record<string, string>,
+  supplementalInputs: SupplementalInputMap,
+) {
+  if (targetModule.inputMode === 'low_input_auto_context') {
+    return buildLowInputAssembly(
+      program,
+      moduleIndex,
+      targetModule,
+      moduleOutputs,
+      supplementalInputs[buildModuleKey(program.id, targetModule.id)] ?? '',
+    );
+  }
+
+  return buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
+}
+
+function applyAutoPrefillToValue(currentValue: string, nextAutoValue: string) {
+  const autoBlock = wrapAutoPrefillValue(nextAutoValue);
+  const manualContent = extractManualContent(currentValue);
+
+  return manualContent ? `${autoBlock}\n\n${manualContent}` : autoBlock;
 }
 
 export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPanelProps) {
@@ -298,11 +354,11 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
       return;
     }
 
-    const targetPromptModule = programs
-      .find((program) => program.id === programId)
-      ?.promptModules.find((item) => item.id === moduleId);
+    const targetProgram = programs.find((program) => program.id === programId);
+    const moduleIndex = targetProgram?.promptModules.findIndex((item) => item.id === moduleId) ?? -1;
+    const targetPromptModule = moduleIndex >= 0 ? targetProgram?.promptModules[moduleIndex] : undefined;
 
-    if (!targetPromptModule) {
+    if (!targetPromptModule || !targetProgram) {
       return;
     }
 
@@ -312,6 +368,23 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     for (let slotIndex = 0; slotIndex < getModuleOutputSlotCount(targetPromptModule); slotIndex += 1) {
       const slotKey = buildModuleSlotKey(programId, moduleId, slotIndex);
       nextOutputs[slotKey] = moduleOutputs[slotKey] ?? '';
+    }
+
+    const nextModule = targetProgram.promptModules[moduleIndex + 1];
+
+    if (targetPromptModule.autoAdvanceToNext && nextModule) {
+      const nextAutoValue = buildNextModulePrefill(
+        targetProgram,
+        moduleIndex + 1,
+        nextModule,
+        nextOutputs,
+        supplementalInputs,
+      );
+
+      if (nextAutoValue.trim()) {
+        const nextSlotKey = buildModuleSlotKey(programId, nextModule.id, 0);
+        nextOutputs[nextSlotKey] = applyAutoPrefillToValue(nextOutputs[nextSlotKey] ?? '', nextAutoValue);
+      }
     }
 
     const storedOutputs = Object.fromEntries(
@@ -328,10 +401,21 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     setModuleOutputs(nextOutputs);
     setFeedback(
       moduleKey,
-      getModuleOutputSlotCount(targetPromptModule) > 1
-        ? '已儲存此步驟全部候選結果'
-        : '已儲存，可供後續步驟取用',
+      targetPromptModule.autoAdvanceToNext && nextModule
+        ? '已儲存，並自動預填到下一步工作框'
+        : getModuleOutputSlotCount(targetPromptModule) > 1
+          ? '已儲存此步驟全部候選結果'
+          : '已儲存，可供後續步驟取用',
     );
+
+    if (targetPromptModule.autoAdvanceToNext && nextModule) {
+      setFeedback(
+        buildModuleKey(programId, nextModule.id),
+        nextModule.inputMode === 'low_input_auto_context'
+          ? '已接收上一步結果，並自動組裝低輸入內容'
+          : '已接收上一步結果，工作框已自動預填',
+      );
+    }
   };
 
   const handleCopyText = async (feedbackKey: string, value: string, successMessage: string) => {
@@ -500,6 +584,17 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                         ) : null}
 
                         <div className="mt-4 flex flex-wrap gap-2">
+                          {module.quickLinks?.map((link) => (
+                            <a
+                              key={`${module.id}-${link.url}`}
+                              href={link.url}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-50/82 transition hover:bg-cyan-300/16"
+                            >
+                              {link.label}
+                            </a>
+                          ))}
                           <button
                             type="button"
                             onClick={() =>
