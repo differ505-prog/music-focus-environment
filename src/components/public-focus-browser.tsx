@@ -1,20 +1,9 @@
 'use client';
 
 import { MediaCard } from "@/components/media-card";
+import { SelectableTile } from "@/components/selectable-tile";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
-import type { ThemeProgram, Track } from "@/types/music";
-
-export type PublicRouteEntry = {
-  program: ThemeProgram;
-  programTracks: Track[];
-  configuredBpms: number[];
-  subroutes: Array<{
-    bpm: number;
-    tracks: Track[];
-    totalMinutes: number;
-  }>;
-  totalMinutes: number;
-};
+import type { PublicRouteEntry } from "@/lib/studio-view-model";
 
 type PublicFocusBrowserProps = {
   routeEntries: PublicRouteEntry[];
@@ -69,20 +58,14 @@ export function PublicFocusBrowser({
             const isActive = activeRouteEntry?.program.id === program.id;
 
             return (
-              <button
+              <SelectableTile
                 key={program.id}
-                type="button"
+                eyebrow={`${configuredBpms.join(" / ")} BPM`}
+                title={program.title}
+                description={program.summary}
+                active={isActive}
                 onClick={() => onSelectRoute(program.id)}
-                className={`rounded-[26px] border p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8 xl:p-4 ${
-                  isActive
-                    ? "border-fuchsia-300/34 bg-fuchsia-300/10 shadow-[0_0_36px_rgba(217,70,239,0.14)] ring-1 ring-white/12"
-                    : "border-white/10 bg-black/18"
-                }`}
-              >
-                <p className="text-[11px] uppercase tracking-[0.3em] text-white/48">{configuredBpms.join(" / ")} BPM</p>
-                <h3 className="mt-3 font-serif text-2xl text-white xl:text-xl">{program.title}</h3>
-                <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{program.summary}</p>
-              </button>
+              />
             );
           })}
         </section>
@@ -103,20 +86,14 @@ export function PublicFocusBrowser({
             const isActive = activeSubroute?.bpm === subroute.bpm;
 
             return (
-              <button
+              <SelectableTile
                 key={`${activeRouteEntry.program.id}-${subroute.bpm}`}
-                type="button"
+                eyebrow="節奏"
+                title={`${subroute.bpm} BPM`}
+                description={subroute.tracks.length > 0 ? "直接進入" : "暫時沒有歌曲"}
+                active={isActive}
                 onClick={() => onSelectBpm(subroute.bpm)}
-                className={`rounded-[28px] border p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/10 ${
-                  isActive
-                    ? "border-fuchsia-300/28 bg-fuchsia-300/10 shadow-[0_0_40px_rgba(217,70,239,0.16)] ring-1 ring-white/14"
-                    : "border-white/10 bg-white/6"
-                }`}
-              >
-                <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">節奏</p>
-                <h3 className="mt-3 font-serif text-2xl text-white">{subroute.bpm} BPM</h3>
-                <p className="mt-3 text-sm leading-6 text-white/68">{subroute.tracks.length > 0 ? "直接進入" : "暫時沒有歌曲"}</p>
-              </button>
+              />
             );
           })}
         </section>

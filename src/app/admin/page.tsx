@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { FocusStudioApp } from "@/components/focus-studio-app";
+import { AdminStudioPage } from "@/components/admin-studio-page";
 
 export const metadata: Metadata = {
   title: "Admin",
@@ -11,5 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminPage() {
-  return <FocusStudioApp mode="admin" />;
+  return <AdminStudioPage />;
 }

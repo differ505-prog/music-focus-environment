@@ -1,5 +1,5 @@
-import { FocusStudioApp } from "@/components/focus-studio-app";
+import { PublicFocusPage } from "@/components/public-focus-page";
 
 export default function Page() {
-  return <FocusStudioApp />;
+  return <PublicFocusPage />;
 }
