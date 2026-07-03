@@ -119,6 +119,38 @@ const transitionProfiles: TrackTransitionProfile[] = [
     mixInPointSeconds: 22,
     mixOutPointSeconds: 340,
   }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.24,
+    sourceLufs: -14.27,
+    tempoLockBars: 2,
+    mixInPointSeconds: 18,
+    mixOutPointSeconds: 332,
+  }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.28,
+    sourceLufs: -14.39,
+    tempoLockBars: 2,
+    mixInPointSeconds: 20,
+    mixOutPointSeconds: 340,
+  }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.22,
+    sourceLufs: -14.31,
+    tempoLockBars: 2,
+    mixInPointSeconds: 16,
+    mixOutPointSeconds: 240,
+  }),
+  createTransitionProfile({
+    bpm: 85,
+    introCueSeconds: 0.26,
+    sourceLufs: -14.46,
+    tempoLockBars: 2,
+    mixInPointSeconds: 16,
+    mixOutPointSeconds: 220,
+  }),
 ];
 
 const trackNarratives: TrackNarrativeSeed[] = [
@@ -302,6 +334,126 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     createdAt: "2026-07-03T12:08:00.000Z",
   },
+  {
+    title: "Cityglass Night Ledger",
+    slug: "cityglass-night-ledger",
+    musicalKey: "B Minor",
+    energyLevel: 6.2,
+    moodTags: ["城市天際線", "黑玻璃桌面", "夜間寫作"],
+    descriptionZh:
+      "城市燈海、黑玻璃桌面與暖色火光構成的 85 BPM 夜間專注循環，適合寫作、規劃與安靜決策。",
+    descriptionEn:
+      "An 85 BPM late-night focus loop shaped by city lights, black-glass surfaces, and warm firelight, ideal for writing, planning, and quiet decision-making.",
+    themeScenario:
+      "高樓辦公室俯瞰整座城市，黑色桌面與窗外密集燈點形成清晰秩序，讓節拍維持冷靜、乾淨且可長時間循環。",
+    bpm: 85,
+    durationSeconds: 364,
+    media: {
+      audioUrl: "/audio/cityglass-night-ledger.mp3",
+      coverImageUrl: "/img/cityglass-night-ledger-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, 85 BPM exact tempo, dark premium skyline atmosphere, black-glass executive office mood, warm fireplace accents, no vocals, loop-friendly, smooth equal-power crossfade ready, disciplined and low-distraction.",
+      imagePrompt:
+        "Photorealistic executive office at midnight with a black glass desk, leather chair, fireplace glow, floor-to-ceiling windows opening to a vast city skyline, cinematic low-key lighting, calm premium deep work mood.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：午夜城市天際線、黑玻璃桌面、壁爐火光與安靜決策工作。BPM 固定 85，不可漂移；需支援 no vocals、long-loop、equal-power crossfade 與克制穩定的夜間專注聽感。",
+    },
+    createdAt: "2026-07-04T00:18:00.000Z",
+  },
+  {
+    title: "Huangpu Afterhours Bridge",
+    slug: "huangpu-afterhours-bridge",
+    musicalKey: "D Minor",
+    energyLevel: 6.4,
+    moodTags: ["江景夜色", "橋影燈火", "夜間專注"],
+    descriptionZh:
+      "江面燈火與橋影節奏構成的 85 BPM 夜間專注曲，適合寫作、整理與低壓長工時工作。",
+    descriptionEn:
+      "An 85 BPM late-night focus track shaped by river reflections, bridge lights, and restrained executive calm for writing, organizing, and extended low-pressure work.",
+    themeScenario:
+      "深色辦公室面向黃浦江夜景，橋梁與碼頭燈火在玻璃外維持穩定秩序，讓節拍保持冷靜、平順且不打擾思路。",
+    bpm: 85,
+    durationSeconds: 373,
+    media: {
+      audioUrl: "/audio/huangpu-afterhours-bridge.mp3",
+      coverImageUrl: "/img/huangpu-afterhours-bridge-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep work electronic, 85 BPM exact tempo, premium dark executive atmosphere, gentle riverfront pulse, distant bridge-light ambience, no vocals, loop-friendly, low-distraction arrangement, smooth equal-power crossfade ready, restrained and controlled.",
+      imagePrompt:
+        "Photorealistic premium executive office at night overlooking the Huangpu river, distant illuminated bridge, dark wood interior, black desk, fireplace glow, floor-to-ceiling glass, calm luxury deep work atmosphere, cinematic low-key lighting.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：黃浦江夜景、橋影燈火、深色辦公室、壁爐暖光與低壓長時間專注。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade、穩定節奏與沉著的夜間工作聽感。",
+    },
+    createdAt: "2026-07-04T00:20:00.000Z",
+  },
+  {
+    title: "Walnut River Focus",
+    slug: "walnut-river-focus",
+    musicalKey: "F Minor",
+    energyLevel: 6.1,
+    moodTags: ["胡桃木桌面", "河面反光", "理性工作"],
+    descriptionZh:
+      "胡桃木桌面、河岸倒影與壁爐火光交織出的 85 BPM 穩態節拍，適合規劃、審稿與長時段理性推進。",
+    descriptionEn:
+      "An 85 BPM steady-focus groove built from walnut textures, riverside reflections, and fireplace warmth, tailored for planning, review, and deliberate long-form execution.",
+    themeScenario:
+      "胡桃木辦公桌前的深色空間面向寧靜河面，光線低亮而克制，節拍像長時間記帳一樣穩定推進，不搶注意力。",
+    bpm: 85,
+    durationSeconds: 273,
+    media: {
+      audioUrl: "/audio/walnut-river-focus.mp3",
+      coverImageUrl: "/img/walnut-river-focus-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental executive focus electronic, 85 BPM exact tempo, warm walnut-toned groove, dark riverside ambience, fireplace texture, no vocals, long-form loop friendly, soft but stable pulse, elegant, premium, and smooth equal-power crossfade ready.",
+      imagePrompt:
+        "Photorealistic dark luxury office with a walnut desk, black leather chair, fireplace on the side, panoramic river view at night, subtle city reflections on the water, cinematic lighting, premium deep work atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：胡桃木桌面、深色室內、河面反光、壁爐暖光與理性長工時工作。BPM 固定 85，不可漂移；需維持穩定低壓節奏、long-loop、no vocals、smooth crossfade-ready 與安靜高級的專注感。",
+    },
+    createdAt: "2026-07-04T00:22:00.000Z",
+  },
+  {
+    title: "Blackglass Skyline Study",
+    slug: "blackglass-skyline-study",
+    musicalKey: "C Minor",
+    energyLevel: 6,
+    moodTags: ["深色辦公室", "水岸夜景", "安靜沉浸"],
+    descriptionZh:
+      "水岸夜景與深色辦公室交疊出的 85 BPM 夜讀節奏，適合閱讀、校稿與低干擾的靜態思考。",
+    descriptionEn:
+      "An 85 BPM late-night study groove blending waterfront skyline reflections with a dark executive interior, built for reading, editing, and low-distraction reflection.",
+    themeScenario:
+      "深色辦公室面向水岸城市夜景，桌燈與壁爐只保留必要亮度，節拍在安靜空間中緩慢推進，適合長時間沉浸。",
+    bpm: 85,
+    durationSeconds: 252,
+    media: {
+      audioUrl: "/audio/blackglass-skyline-study.mp3",
+      coverImageUrl: "/img/blackglass-skyline-study-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental late-night study electronic, 85 BPM exact tempo, dark waterfront ambience, smooth low-pressure groove, premium executive calm, no vocals, long-loop ready, subtle harmonic motion, elegant and equal-power crossfade friendly.",
+      imagePrompt:
+        "Photorealistic dark executive office at night with a black desk, leather seating, fireplace glow, panoramic windows overlooking waterfront city lights, minimal lamp lighting, cinematic premium study atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：深色辦公室、水岸夜景、桌燈、壁爐暖光與安靜夜讀工作。BPM 固定 85，不可漂移；需支援閱讀型沉浸、long-loop、no vocals、equal-power crossfade 與柔和穩定節拍。",
+    },
+    createdAt: "2026-07-04T00:24:00.000Z",
+  },
 ] as const;
 
 const trackCollectionsSeed = [
@@ -327,13 +479,17 @@ const trackCollectionsSeed = [
     title: "深夜理帳",
     summary: "適合寫作、校對與整理。",
     description: "低干擾，適合夜間長時間工作。",
-    heroMetric: "4 首夜間工作曲",
+    heroMetric: "8 首夜間工作曲",
     bpmFocus: [85, 105],
     trackIds: [
       "skyline-ember-ledger",
       "harbor-afterglow-study",
       "walnut-command-drift",
       "midnight-library-ledger",
+      "cityglass-night-ledger",
+      "huangpu-afterhours-bridge",
+      "walnut-river-focus",
+      "blackglass-skyline-study",
     ],
     tone: "cyan",
   },
@@ -350,6 +506,10 @@ const trackCollectionsSeed = [
       "harbor-afterglow-study",
       "obsidian-lake-focus",
       "lakeside-ember-terrace",
+      "cityglass-night-ledger",
+      "huangpu-afterhours-bridge",
+      "walnut-river-focus",
+      "blackglass-skyline-study",
     ],
     tone: "amber",
   },
@@ -378,6 +538,20 @@ const trackBatchesSeed = [
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-02T22:52:00.000Z",
     trackIds: ["skyline-ember-ledger", "harbor-afterglow-study"],
+  },
+  {
+    id: "batch-2026-07-04-riverfront",
+    label: "07.04 上架",
+    title: "河景夜讀 85 BPM 上架",
+    summary: "本輪上架的 4 首 85 BPM 夜間專注曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-04T00:24:00.000Z",
+    trackIds: [
+      "cityglass-night-ledger",
+      "huangpu-afterhours-bridge",
+      "walnut-river-focus",
+      "blackglass-skyline-study",
+    ],
   },
 ] as const;
 
