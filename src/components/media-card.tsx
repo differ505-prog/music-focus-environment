@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Headphones, Plus, Sparkles } from "lucide-react";
 
+import { ContentCardOverview } from "@/components/content-card-overview";
 import { generatedSceneImageUrl, trackBatches, trackCollections } from "@/data/music-assets";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
 import type { Track } from "@/types/music";
@@ -98,12 +99,13 @@ export function MediaCard({
           ) : null}
         </div>
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
-          <div className="space-y-2">
-            <p className="text-[11px] uppercase tracking-[0.34em] text-white/45">
-              {primaryCollectionTitle ?? "獨立單曲"}
-            </p>
-            <h3 className="font-serif text-2xl text-white">{asset.title}</h3>
-          </div>
+          <ContentCardOverview
+            eyebrow={primaryCollectionTitle ?? "獨立單曲"}
+            title={asset.title}
+            wrapperClassName="space-y-0"
+            eyebrowClassName="text-white/45"
+            titleClassName="mt-2"
+          />
           <button
             type="button"
             onClick={() => onPlayTrack(asset.id)}

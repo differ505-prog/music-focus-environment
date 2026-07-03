@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo } from "react";
 
+import { ContentCardOverview } from "@/components/content-card-overview";
 import { sessionPresets, trackBatches, trackCollections, tracks } from "@/data/music-assets";
 import { usePlayback } from "@/components/playback-provider";
 
@@ -111,15 +112,12 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                   onClick={() => startSession(collection.trackIds, track.id)}
                   className="rounded-[22px] border border-white/10 bg-white/6 p-5 text-left transition hover:border-white/16 hover:bg-white/10"
                 >
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">第 {index + 1} 首</p>
-                  <h3 className="mt-3 font-serif text-2xl text-white">{track.title}</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/66">{track.copy.descriptionZh}</p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/60">
-                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{track.bpm} BPM</span>
-                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                      約 {Math.round(track.durationSeconds / 60)} 分鐘
-                    </span>
-                  </div>
+                  <ContentCardOverview
+                    eyebrow={`第 ${index + 1} 首`}
+                    title={track.title}
+                    description={track.copy.descriptionZh}
+                    metaItems={[`${track.bpm} BPM`, `約 ${Math.round(track.durationSeconds / 60)} 分鐘`]}
+                  />
                 </button>
               ))}
             </div>
@@ -137,12 +135,13 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                     onClick={() => startSession(preset.trackIds, preset.trackIds[0])}
                     className="rounded-[22px] border border-cyan-300/12 bg-cyan-300/6 p-5 text-left transition hover:border-cyan-300/18 hover:bg-cyan-300/10"
                   >
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">{preset.label}</p>
-                    <h3 className="mt-3 font-serif text-2xl text-white">{preset.title}</h3>
-                    <p className="mt-3 text-sm leading-6 text-white/66">{preset.summary}</p>
-                    <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
-                      <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{preset.durationMinutes} 分鐘</span>
-                    </div>
+                    <ContentCardOverview
+                      eyebrow={preset.label}
+                      title={preset.title}
+                      description={preset.summary}
+                      metaItems={[`${preset.durationMinutes} 分鐘`]}
+                      eyebrowClassName="text-cyan-100/58"
+                    />
                   </button>
                 ))}
               </div>
