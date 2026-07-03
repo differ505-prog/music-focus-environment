@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo } from "react";
 import {
   ChevronUp,
   Minimize2,
@@ -18,6 +18,7 @@ import {
 import { PlayerArtworkActions } from "@/components/player-artwork-actions";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
+import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -73,16 +74,22 @@ export function GlobalPlayer({
   onClose,
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
-  const [isArtworkOpen, setIsArtworkOpen] = useState(false);
-  const [isProjectionMode, setIsProjectionMode] = useState(false);
-  const [isArtworkFullscreen, setIsArtworkFullscreen] = useState(false);
-  const artworkContainerRef = useRef<HTMLDivElement | null>(null);
-  const hudHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const cursorHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [isProjectionHudVisible, setIsProjectionHudVisible] = useState(true);
-  const [isProjectionCursorHidden, setIsProjectionCursorHidden] = useState(false);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
-  const isPureProjection = isProjectionMode && isArtworkFullscreen;
+  const {
+    artworkContainerRef,
+    isArtworkOpen,
+    isProjectionMode,
+    isArtworkFullscreen,
+    isProjectionHudVisible,
+    isProjectionCursorHidden,
+    isPureProjection,
+    openArtwork,
+    closeArtwork,
+    revealProjectionHud,
+    toggleArtworkFullscreen,
+  } = useArtworkProjection({
+    enabled: Boolean(currentTrack && artworkSrc),
+  });
   const currentTrackPlan = useMemo(() => {
     if (!sessionPlan || !currentTrack) {
       return null;
@@ -113,135 +120,6 @@ export function GlobalPlayer({
         ? "封面"
         : "雙擊全螢幕";
 
-  useEffect(() => {
-    if (!currentTrack) {
-      setIsArtworkOpen(false);
-    }
-  }, [currentTrack]);
-
-  useEffect(() => {
-    return () => {
-      if (hudHideTimerRef.current) {
-        clearTimeout(hudHideTimerRef.current);
-      }
-      if (cursorHideTimerRef.current) {
-        clearTimeout(cursorHideTimerRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
-    if (typeof document === "undefined") {
-      return;
-    }
-
-    const handleFullscreenChange = () => {
-      const isFullscreen = document.fullscreenElement === artworkContainerRef.current;
-      setIsArtworkFullscreen(isFullscreen);
-
-      if (isFullscreen) {
-        setIsProjectionHudVisible(false);
-        setIsProjectionCursorHidden(isProjectionMode);
-      } else if (isArtworkOpen) {
-        setIsProjectionCursorHidden(false);
-        revealProjectionHud();
-      }
-    };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && document.fullscreenElement !== artworkContainerRef.current) {
-        setIsArtworkOpen(false);
-      }
-    };
-
-    document.addEventListener("fullscreenchange", handleFullscreenChange);
-    document.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      document.removeEventListener("fullscreenchange", handleFullscreenChange);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isArtworkOpen, isProjectionMode]);
-
-  const handleOpenArtwork = (projectionMode = false) => {
-    if (!currentTrack || !artworkSrc) {
-      return;
-    }
-
-    setIsProjectionMode(projectionMode);
-    setIsArtworkOpen(true);
-    setIsProjectionHudVisible(true);
-    setIsProjectionCursorHidden(false);
-    setIsArtworkFullscreen(false);
-  };
-
-  const handleCloseArtwork = async () => {
-    if (typeof document !== "undefined" && document.fullscreenElement === artworkContainerRef.current) {
-      await document.exitFullscreen();
-    }
-
-    setIsArtworkOpen(false);
-    setIsProjectionMode(false);
-    setIsProjectionCursorHidden(false);
-    setIsArtworkFullscreen(false);
-  };
-
-  const handleToggleArtworkFullscreen = async () => {
-    if (!artworkContainerRef.current || typeof document === "undefined") {
-      return;
-    }
-
-    if (document.fullscreenElement === artworkContainerRef.current) {
-      await document.exitFullscreen();
-      return;
-    }
-
-    await artworkContainerRef.current.requestFullscreen();
-  };
-
-  const revealProjectionHud = () => {
-    if (isArtworkFullscreen) {
-      setIsProjectionHudVisible(false);
-      return;
-    }
-
-    setIsProjectionHudVisible(true);
-    setIsProjectionCursorHidden(false);
-
-    if (hudHideTimerRef.current) {
-      clearTimeout(hudHideTimerRef.current);
-    }
-    if (cursorHideTimerRef.current) {
-      clearTimeout(cursorHideTimerRef.current);
-    }
-
-    hudHideTimerRef.current = setTimeout(() => {
-      setIsProjectionHudVisible(false);
-    }, isProjectionMode ? 1600 : 2200);
-
-    if (isProjectionMode) {
-      cursorHideTimerRef.current = setTimeout(() => {
-        setIsProjectionCursorHidden(true);
-      }, 1400);
-    }
-  };
-
-  useEffect(() => {
-    if (!isArtworkOpen) {
-      setIsProjectionHudVisible(true);
-      setIsProjectionCursorHidden(false);
-      if (hudHideTimerRef.current) {
-        clearTimeout(hudHideTimerRef.current);
-      }
-      if (cursorHideTimerRef.current) {
-        clearTimeout(cursorHideTimerRef.current);
-      }
-      return;
-    }
-
-    revealProjectionHud();
-  }, [isArtworkOpen, isProjectionMode, isArtworkFullscreen]);
-
   const artworkStage = currentTrack && artworkSrc ? (
     <PlayerArtworkStage
       artworkContainerRef={artworkContainerRef}
@@ -258,7 +136,7 @@ export function GlobalPlayer({
         !isProjectionMode && !isArtworkFullscreen
           ? (event) => {
               if (event.target === event.currentTarget) {
-                void handleCloseArtwork();
+                void closeArtwork();
               }
             }
           : undefined
@@ -266,7 +144,7 @@ export function GlobalPlayer({
       onRevealHud={revealProjectionHud}
       onToggleFullscreen={(event) => {
         event.stopPropagation();
-        void handleToggleArtworkFullscreen();
+        void toggleArtworkFullscreen();
       }}
     />
   ) : null;
@@ -295,8 +173,8 @@ export function GlobalPlayer({
                 hasArtwork={Boolean(currentTrack && artworkSrc)}
                 showAdminDetails={showAdminDetails}
                 compact
-                onOpenArtwork={() => handleOpenArtwork(false)}
-                onOpenProjection={() => handleOpenArtwork(true)}
+                onOpenArtwork={() => openArtwork(false)}
+                onOpenProjection={() => openArtwork(true)}
               />
               <button
                 type="button"
@@ -360,8 +238,8 @@ export function GlobalPlayer({
                   <PlayerArtworkActions
                     hasArtwork={Boolean(currentTrack && artworkSrc)}
                     showAdminDetails={showAdminDetails}
-                    onOpenArtwork={() => handleOpenArtwork(false)}
-                    onOpenProjection={() => handleOpenArtwork(true)}
+                    onOpenArtwork={() => openArtwork(false)}
+                    onOpenProjection={() => openArtwork(true)}
                   />
                   <button
                     type="button"
