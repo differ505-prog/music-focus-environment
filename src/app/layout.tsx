@@ -19,7 +19,7 @@ const bodyFont = Manrope({
 
 export const metadata: Metadata = {
   title: "音樂創作與專注力環境",
-  description: "以 howler.js 建構的沉浸式深色音樂創作與專注力網站。",
+  description: "提供低干擾、可長時間播放的沉浸式專注音樂與自動接續聆聽體驗。",
 };
 
 export default function RootLayout({

@@ -172,7 +172,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       initialTrackId && orderedIds.includes(initialTrackId) ? initialTrackId : orderedIds[0] ?? null;
 
     setIsPlayerOpen(true);
-    setIsPlayerMinimized(false);
+    setIsPlayerMinimized(true);
     setSelectedIds(orderedIds);
     setPendingPlayId(targetInitialTrackId);
   };

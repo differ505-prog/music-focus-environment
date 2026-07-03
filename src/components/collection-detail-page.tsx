@@ -91,7 +91,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Track List</p>
-                <h2 className="mt-3 font-serif text-3xl text-white">系列曲目與播放入口</h2>
+                <h2 className="mt-3 font-serif text-3xl text-white">從這裡開始播放</h2>
               </div>
               {collectionTracks.length > 0 ? (
                 <button
@@ -99,7 +99,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                   onClick={() => startSession(collection.trackIds, collection.trackIds[0])}
                   className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18"
                 >
-                  播放整組 Session
+                  播放整組
                 </button>
               ) : null}
             </div>
@@ -117,9 +117,8 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                   <p className="mt-3 text-sm leading-6 text-white/66">{track.copy.descriptionZh}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/60">
                     <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{track.bpm} BPM</span>
-                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{track.musicalKey}</span>
                     <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                      Energy {track.energyLevel.toFixed(1)}
+                      約 {Math.round(track.durationSeconds / 60)} 分鐘
                     </span>
                   </div>
                 </button>
@@ -130,7 +129,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
           <div className="grid gap-6">
             <section className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
               <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">Preset Package</p>
-              <h2 className="mt-3 font-serif text-3xl text-white">可直接啟動的工作包</h2>
+              <h2 className="mt-3 font-serif text-3xl text-white">快速開始</h2>
               <div className="mt-6 grid gap-4">
                 {presets.map((preset) => (
                   <button
@@ -142,7 +141,6 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                     <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">{preset.label}</p>
                     <h3 className="mt-3 font-serif text-2xl text-white">{preset.title}</h3>
                     <p className="mt-3 text-sm leading-6 text-white/66">{preset.summary}</p>
-                    <p className="mt-3 text-sm leading-6 text-white/56">{preset.description}</p>
                     <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                       <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{preset.durationMinutes} 分鐘</span>
                       <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{preset.trackIds.length} 首曲目</span>
@@ -158,9 +156,6 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
               <p className="mt-4 text-sm leading-7 text-white/68">
                 {collectionTracks[0]?.copy.themeScenario ??
                   "這個系列適合用來建立一段穩定、連續且低干擾的沉浸式工作情境。"}
-              </p>
-              <p className="mt-4 text-sm leading-7 text-white/58">
-                這裡把單首、系列、Preset 與播放器打通，讓 collection 不只是內容分類，而是可直接使用的產品單位。
               </p>
             </section>
           </div>

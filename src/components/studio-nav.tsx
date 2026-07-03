@@ -3,25 +3,39 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-const navItems = [
+const adminNavItems = [
   {
     href: "/",
     label: "前台",
-    description: "客戶可見播放頁",
+    description: "客人播放頁",
   },
   {
     href: "/admin",
     label: "後台",
-    description: "提示詞與內部資料",
+    description: "內容管理",
   },
 ];
 
 export function StudioNav() {
   const pathname = usePathname();
+  const isAdminPage = pathname.startsWith("/admin");
+
+  if (!isAdminPage) {
+    return (
+      <nav className="mb-6 flex flex-wrap gap-3">
+        <Link
+          href="/"
+          className="rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-white/78 transition hover:border-white/20 hover:bg-white/12 hover:text-white"
+        >
+          沉浸式專注音樂
+        </Link>
+      </nav>
+    );
+  }
 
   return (
     <nav className="mb-6 flex flex-wrap gap-3">
-      {navItems.map((item) => {
+      {adminNavItems.map((item) => {
         const isActive = pathname === item.href;
 
         return (

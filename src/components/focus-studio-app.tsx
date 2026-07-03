@@ -25,12 +25,6 @@ import { ThemeProgramPanel } from "@/components/theme-program-panel";
 import { ThemeProgramShowcase } from "@/components/theme-program-showcase";
 import { getBpmCompatibility, rankTracksForMixing } from "@/lib/bpm-lanes";
 
-function wait(ms: number) {
-  return new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-}
-
 type FocusStudioAppProps = {
   mode?: "public" | "admin";
 };
@@ -38,7 +32,6 @@ type FocusStudioAppProps = {
 export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
-  const [isDownloading, setIsDownloading] = useState(false);
   const {
     selectedIds,
     setSelectedIds,
@@ -69,47 +62,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const nightLedgerCollection = useMemo(() => {
     return trackCollections.find((collection) => collection.id === "night-ledger-series") ?? null;
   }, []);
-
-  const collectionForDetail = activeCollection ?? defaultHeroCollection;
-
-  const collectionTracks = useMemo(() => {
-    if (!collectionForDetail) {
-      return [];
-    }
-
-    return collectionForDetail.trackIds
-      .map((trackId) => tracks.find((track) => track.id === trackId) ?? null)
-      .filter((track): track is (typeof tracks)[number] => Boolean(track));
-  }, [collectionForDetail]);
-
-  const collectionBatch = useMemo(() => {
-    if (!collectionForDetail) {
-      return null;
-    }
-
-    return (
-      trackBatches.find((batch) =>
-        collectionForDetail.trackIds.every((trackId) => batch.trackIds.includes(trackId)),
-      ) ?? null
-    );
-  }, [collectionForDetail]);
-
-  const collectionAverageMinutes = useMemo(() => {
-    if (collectionTracks.length === 0) {
-      return 0;
-    }
-
-    const totalSeconds = collectionTracks.reduce((sum, track) => sum + track.durationSeconds, 0);
-    return Math.round(totalSeconds / collectionTracks.length / 60);
-  }, [collectionTracks]);
-
-  const collectionPresets = useMemo(() => {
-    if (!collectionForDetail) {
-      return [];
-    }
-
-    return sessionPresets.filter((preset) => preset.collectionId === collectionForDetail.id);
-  }, [collectionForDetail]);
 
   const filteredAssets = useMemo(() => {
     return tracks.filter((asset) => {
@@ -210,29 +162,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     setSelectedIds([]);
   };
 
-  const handleDownload = async () => {
-    if (selectedAssets.length === 0 || isDownloading) {
-      return;
-    }
-
-    setIsDownloading(true);
-
-    try {
-      for (const asset of selectedAssets) {
-        const link = document.createElement("a");
-        link.href = asset.media.audioUrl;
-        link.download = `${asset.title.toLowerCase().replace(/\s+/g, "-")}.mp3`;
-        link.rel = "noopener";
-        document.body.append(link);
-        link.click();
-        link.remove();
-        await wait(150);
-      }
-    } finally {
-      setIsDownloading(false);
-    }
-  };
-
   const handleStartCollectionSession = (collectionId: string) => {
     const targetCollection = trackCollections.find((collection) => collection.id === collectionId);
 
@@ -290,13 +219,13 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
               <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
-                Dark Mode
+                低干擾
               </span>
               <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
-                Glassmorphism
+                無縫播放
               </span>
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
-                Howler.js Crossfade
+                長時專注
               </span>
               {isAdmin ? (
                 <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2">
@@ -329,26 +258,21 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </p>
                 </button>
                 <div className="rounded-[26px] border border-white/10 bg-white/6 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/44">Auto DJ Context</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/44">目前播放</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">
                     {currentTrack
-                      ? `${autoDjPlan?.currentPhaseLabel ?? "正在播放"} · ${currentTrack.title}`
+                      ? currentTrack.title
                       : "尚未開始播放"}
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-white/68">
                     {currentTrack
-                      ? `${autoDjPlan?.mixBrief ?? `目前播放清單 ${selectedAssets.length} 首`} 可使用下方 Filter 微調工作場景。`
-                      : "啟動上方 Session，系統將自動排配 DJ 曲序；或使用下方 Filter 自訂工作場景。"}
+                      ? `播放清單目前有 ${selectedAssets.length} 首，系統會自動延續相近的聆聽氛圍。`
+                      : "從上方直接開始播放，或用下方篩選找到適合現在狀態的曲目。"}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                     {autoDjPlan ? (
                       <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
-                        {autoDjPlan.laneLabel}
-                      </span>
-                    ) : null}
-                    {autoDjPlan ? (
-                      <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
-                        {autoDjPlan.currentPhaseLabel}
+                        已排好下一首
                       </span>
                     ) : null}
                     <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
@@ -382,7 +306,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">{preset.label}</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">{preset.title}</h3>
                   <p className="mt-3 leading-6 text-white/68">{preset.summary}</p>
-                  <p className="mt-3 leading-6 text-white/58">{preset.description}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                     <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
                       {preset.durationMinutes} 分鐘
@@ -516,11 +439,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             featuredTrackCount={featuredTrackCount}
             activeCollectionLabel={activeCollection?.title ?? "All Library"}
             latestBatchLabel={latestBatch?.label ?? "尚無批次"}
-            isDownloading={isDownloading}
             onToggleBpm={toggleBpm}
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
-            onDownload={handleDownload}
           />
         </div>
 
@@ -531,108 +452,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <ThemeProgramShowcase programs={themePrograms} tracks={tracks} batches={trackBatches} />
           )}
         </div>
-
-        {!isAdmin && collectionForDetail ? (
-          <section className="mt-6 rounded-[30px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-            <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Collection Detail</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">{collectionForDetail.title}</h2>
-                <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">{collectionForDetail.description}</p>
-              </div>
-              <div className="flex flex-wrap gap-3 text-xs text-white/62">
-                <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
-                  {collectionForDetail.heroMetric}
-                </span>
-                <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
-                  平均 {collectionAverageMinutes} 分鐘
-                </span>
-                {collectionBatch ? (
-                  <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-1.5">
-                    {collectionBatch.label}
-                  </span>
-                ) : null}
-                <Link
-                  href={`/collections/${collectionForDetail.id}`}
-                  className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-white/76 transition hover:bg-white/12 hover:text-white"
-                >
-                  查看完整系列頁
-                </Link>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_0.85fr]">
-              <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">Session Launch</p>
-                    <h3 className="mt-2 font-serif text-2xl text-white">把系列直接變成播放任務</h3>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => handleStartCollectionSession(collectionForDetail.id)}
-                    className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18"
-                  >
-                    播放整組 Session
-                  </button>
-                </div>
-                <div className="mt-4 grid gap-3 md:grid-cols-2">
-                  {collectionTracks.map((track, index) => (
-                    <button
-                      key={`${collectionForDetail.id}-${track.id}`}
-                      type="button"
-                      onClick={() => startSession(collectionForDetail.trackIds, track.id)}
-                      className="rounded-[20px] border border-white/10 bg-black/20 p-4 text-left transition hover:border-white/16 hover:bg-white/8"
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">Track {index + 1}</p>
-                      <h4 className="mt-2 font-medium text-white">{track.title}</h4>
-                      <p className="mt-2 text-sm leading-6 text-white/62">
-                        {track.bpm} BPM · {track.musicalKey} · Energy {track.energyLevel.toFixed(1)}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="grid gap-4">
-                {collectionPresets.length > 0 ? (
-                  <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
-                    <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">Preset Package</p>
-                    <div className="mt-3 grid gap-3">
-                      {collectionPresets.map((preset) => (
-                        <button
-                          key={`${collectionForDetail.id}-${preset.id}`}
-                          type="button"
-                          onClick={() => handleStartPresetSession(preset.id)}
-                          className="rounded-[18px] border border-white/10 bg-black/20 p-4 text-left transition hover:border-white/16 hover:bg-white/8"
-                        >
-                          <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">{preset.label}</p>
-                          <p className="mt-2 font-medium text-white">{preset.title}</p>
-                          <p className="mt-2 text-sm leading-6 text-white/62">{preset.summary}</p>
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-                <div className="rounded-[24px] border border-white/10 bg-white/6 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">Use Case</p>
-                  <p className="mt-3 text-sm leading-7 text-white/70">
-                    {collectionTracks[0]?.copy.themeScenario ??
-                      "用這個系列快速進入穩定、低干擾且可持續工作的沉浸式聆聽場景。"}
-                  </p>
-                </div>
-                <div className="rounded-[24px] border border-cyan-300/12 bg-[#07101a]/90 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">Auto DJ Intelligence</p>
-                  <ul className="mt-3 grid gap-3 text-sm leading-6 text-white/68">
-                    <li>不是只挑單首，而是啟動後就自動排成一條更像 DJ 的 session。</li>
-                    <li>系統會優先維持主車道 BPM，再用能量曲線做細幅推進與收尾。</li>
-                    <li>無縫銜接內容探索與自動接歌，提供不間斷的沉浸體驗。</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </section>
-        ) : null}
 
         {isAdmin ? (
           <div className="mt-6">
@@ -673,7 +492,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             ))
           ) : (
             <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
-              目前這個系列與 BPM 組合沒有曲目，切回 `All Library` 或放寬 BPM filter 即可看到更多內容。
+              目前沒有符合條件的曲目，請放寬節奏篩選或回到全部曲目。
             </div>
           )}
         </section>

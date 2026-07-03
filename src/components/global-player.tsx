@@ -250,8 +250,8 @@ export function GlobalPlayer({
             : "pointer-events-none opacity-0 -translate-y-3"
         }`}
       >
-        <span>{isProjectionMode ? "Projection Mode" : "Artwork View"}</span>
-        <span>{isProjectionMode ? "Esc 退出 / 雙擊切換全螢幕" : "雙擊全螢幕"}</span>
+        <span>{isProjectionMode ? "全螢幕封面" : "封面檢視"}</span>
+        <span>{isProjectionMode ? "Esc 關閉 / 雙擊切換全螢幕" : "雙擊切換全螢幕"}</span>
       </div>
       <div className="relative z-10 flex h-full w-full items-center justify-center">
         <div
@@ -284,7 +284,7 @@ export function GlobalPlayer({
       >
         <div className="max-w-4xl rounded-[28px] border border-white/10 bg-black/26 px-5 py-4 text-center backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/52">
-            {isProjectionMode ? "Projection Live" : "Now Displaying"}
+            {isProjectionMode ? "Full Screen Cover" : "正在播放"}
           </p>
           <h3 className="mt-3 font-serif text-2xl text-white md:text-4xl">{currentTrack.title}</h3>
           <p className="mt-2 text-sm text-white/56 md:text-base">
@@ -296,7 +296,7 @@ export function GlobalPlayer({
             {playback.repeatEnabled ? " · Loop On" : ""}
           </p>
           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
-            {sessionPlan
+            {showAdminDetails && sessionPlan
               ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
               : nextTrack
                 ? `Next ${nextTrack.title}`
@@ -318,17 +318,13 @@ export function GlobalPlayer({
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
                 <Waves className="h-4 w-4" />
-                Mini Auto DJ
+                迷你播放器
               </p>
               <h3 className="mt-2 truncate font-serif text-lg text-white">
                 {currentTrack?.title ?? "尚未選擇播放曲目"}
               </h3>
               <p className="mt-1 truncate text-xs text-white/55">
-                {sessionPlan
-                  ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
-                  : nextTrack
-                    ? `下一首：${nextTrack.title}`
-                    : "勾選素材後即可建立播放清單"}
+                {nextTrack ? `下一首：${nextTrack.title}` : "從下方加入曲目即可開始播放"}
               </p>
             </div>
 
@@ -343,14 +339,16 @@ export function GlobalPlayer({
                       >
                         <Expand className="h-4 w-4" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArtwork(true)}
-                        className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-3 py-3 text-[11px] uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
-                        aria-label="開啟投影模式"
-                      >
-                        投影
-                      </button>
+                      {showAdminDetails ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenArtwork(true)}
+                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-3 py-3 text-[11px] uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
+                          aria-label="開啟投影模式"
+                        >
+                          投影
+                        </button>
+                      ) : null}
                     </>
                   ) : null}
               <button
@@ -409,7 +407,7 @@ export function GlobalPlayer({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-fuchsia-100/60">
                   <Waves className="h-4 w-4" />
-                  Neon Focus Auto DJ
+                  {showAdminDetails ? "Neon Focus Auto DJ" : "正在播放"}
                 </div>
                 <div className="flex items-center gap-2">
                   {currentTrack && artworkSrc ? (
@@ -420,16 +418,18 @@ export function GlobalPlayer({
                         className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/70 transition hover:bg-white/12 hover:text-white"
                         aria-label="展開封面圖"
                       >
-                        看圖
+                        封面
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArtwork(true)}
-                        className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
-                        aria-label="開啟投影模式"
-                      >
-                        投影
-                      </button>
+                      {showAdminDetails ? (
+                        <button
+                          type="button"
+                          onClick={() => handleOpenArtwork(true)}
+                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
+                          aria-label="開啟投影模式"
+                        >
+                          投影
+                        </button>
+                      ) : null}
                     </>
                   ) : null}
                   <button
@@ -456,11 +456,11 @@ export function GlobalPlayer({
                     {currentTrack?.title ?? "尚未選擇播放曲目"}
                   </h3>
                   <p className="mt-1 truncate text-sm text-white/62">
-                    {sessionPlan
+                    {showAdminDetails && sessionPlan
                       ? sessionPlan.nextTransitionSummary
                       : nextTrack
                         ? `下一首：${nextTrack.title}`
-                        : "勾選素材後即可建立播放清單"}
+                        : "從下方加入曲目即可建立播放清單"}
                   </p>
                 </div>
                 <div className="text-sm text-white/64">
@@ -471,12 +471,12 @@ export function GlobalPlayer({
               </div>
               {currentTrack ? (
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  {sessionPlan ? (
+                  {showAdminDetails && sessionPlan ? (
                     <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
                       {sessionPlan.currentPhaseLabel}
                     </span>
                   ) : null}
-                  {sessionPlan ? (
+                  {showAdminDetails && sessionPlan ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
                       {sessionPlan.laneLabel}
                     </span>
@@ -571,7 +571,7 @@ export function GlobalPlayer({
             </div>
           </div>
 
-          {sessionPlan ? (
+          {showAdminDetails && sessionPlan ? (
             <div className="mt-4 grid gap-3 lg:grid-cols-3">
               <div className="rounded-[22px] border border-fuchsia-300/16 bg-fuchsia-300/8 p-4">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-fuchsia-100/58">現在階段</p>
@@ -645,7 +645,7 @@ export function GlobalPlayer({
                       }`}
                     >
                       <p className="text-[11px] uppercase tracking-[0.24em] opacity-70">
-                        {sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}`}
+                        {showAdminDetails ? sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}` : `Track ${index + 1}`}
                       </p>
                       <p className="mt-2 truncate text-sm font-medium">{track.title}</p>
                       <p className="mt-1 text-xs opacity-70">
@@ -653,7 +653,9 @@ export function GlobalPlayer({
                           ? "目前播放"
                           : isNext
                             ? "下一首"
-                            : sessionPlan?.trackPlans[index]?.transitionSummary ?? `${track.bpm} BPM`}
+                            : showAdminDetails
+                              ? sessionPlan?.trackPlans[index]?.transitionSummary ?? `${track.bpm} BPM`
+                              : `${track.bpm} BPM`}
                       </p>
                     </button>
                   );

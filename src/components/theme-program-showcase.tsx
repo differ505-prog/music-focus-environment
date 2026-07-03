@@ -15,9 +15,9 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Listening Modes</p>
-        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">{programs.length} 條內容主線，對應不同使用情境</h2>
+        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">依照使用情境，快速找到適合的音樂路線</h2>
         <p className="mt-3 text-sm leading-7 text-white/66 md:text-base">
-          探索不同 BPM 車道與音樂情境，尋找最適合當下任務的聆聽體驗。
+          每條內容線都對應不同的工作、移動或空間氛圍，直接挑適合你的那一條就好。
         </p>
       </div>
 
@@ -44,7 +44,6 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
 
               <h3 className="mt-4 font-serif text-2xl text-white">{program.title}</h3>
               <p className="mt-3 leading-7 text-white/66">{program.summary}</p>
-              <p className="mt-3 text-sm leading-7 text-white/58">{program.positioning}</p>
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                 <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5">
@@ -66,23 +65,13 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
                 <p className="mt-2 leading-6 text-white/76">{program.audience}</p>
               </div>
 
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                {program.operatingPrinciples.slice(0, 3).map((principle, index) => (
-                  <div key={`${program.id}-principle-${index + 1}`} className="rounded-[18px] border border-white/8 bg-black/20 p-4">
-                    <p className="text-[11px] uppercase tracking-[0.24em] text-white/40">Principle {index + 1}</p>
-                    <p className="mt-2 leading-6 text-white/68">{principle}</p>
-                  </div>
-                ))}
-              </div>
-
               <div className="mt-4 rounded-[20px] border border-white/8 bg-[#08111c]/90 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">Experience Arc</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">你會聽到什麼</p>
                 <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {program.workflow.map((step) => (
-                    <div key={step.id} className="rounded-[18px] border border-cyan-300/10 bg-cyan-300/6 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-100/55">{step.id}</p>
-                      <p className="mt-2 font-medium text-white">{step.title}</p>
-                      <p className="mt-2 leading-6 text-white/64">{step.deliverable}</p>
+                  {program.layoutNotes.slice(0, 2).map((note, index) => (
+                    <div key={`${program.id}-note-${index + 1}`} className="rounded-[18px] border border-cyan-300/10 bg-cyan-300/6 p-4">
+                      <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-100/55">重點 {index + 1}</p>
+                      <p className="mt-2 leading-6 text-white/68">{note}</p>
                     </div>
                   ))}
                 </div>

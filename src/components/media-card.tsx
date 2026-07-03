@@ -79,7 +79,12 @@ export function MediaCard({
             <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
               {asset.bpm} BPM
             </span>
-            {asset.featured ? (
+            {asset.featured && !showAdminDetails ? (
+              <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
+                熱門情境
+              </span>
+            ) : null}
+            {asset.featured && showAdminDetails ? (
               <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
                 Featured
               </span>
@@ -113,28 +118,41 @@ export function MediaCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {collectionLabels.map((label) => (
+        {!showAdminDetails
+          ? collectionLabels.slice(0, 1).map((label) => (
+              <span
+                key={`${asset.id}-${label}`}
+                className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
+              >
+                {label}
+              </span>
+            ))
+          : collectionLabels.map((label) => (
           <span
             key={`${asset.id}-${label}`}
             className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
           >
             {label}
           </span>
-        ))}
-        {batchLabel ? (
+            ))}
+        {batchLabel && showAdminDetails ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
             {batchLabel}
           </span>
         ) : null}
-        <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
-          {asset.musicalKey}
-        </span>
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          Energy {asset.energyLevel.toFixed(1)}
+          約 {Math.round(asset.durationSeconds / 60)} 分鐘
         </span>
-        <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-          {Math.round(asset.durationSeconds / 60)} min loop
-        </span>
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
+            {asset.musicalKey}
+          </span>
+        ) : null}
+        {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
+            Energy {asset.energyLevel.toFixed(1)}
+          </span>
+        ) : null}
         {showAdminDetails ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
             {asset.transition.tempoLockBars} Bars Lock
@@ -180,7 +198,7 @@ export function MediaCard({
         {isNext ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/25 bg-amber-300/12 px-3 py-1 text-xs text-amber-100">
             <Sparkles className="h-3.5 w-3.5" />
-            下一首 Crossfade
+            下一首
           </span>
         ) : null}
         {checked ? (
@@ -189,7 +207,7 @@ export function MediaCard({
             已加入播放清單
           </span>
         ) : null}
-        {compatibility && !isCurrent ? (
+        {compatibility && !isCurrent && showAdminDetails ? (
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${compatibilityTone}`}>
             {compatibility.label}
           </span>
@@ -214,16 +232,16 @@ export function MediaCard({
         <div className="mt-5 grid gap-4 text-sm text-white/72">
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            Track Identity
+            {showAdminDetails ? "Track Identity" : "這首歌適合什麼狀態"}
           </p>
           <p className="leading-6">{asset.copy.descriptionZh}</p>
-          <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p>
+          {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}
           <p className="mt-3 text-white/52">
-            {primaryCollectionTitle ? `收錄系列：${primaryCollectionTitle}` : "收錄系列：獨立曲目"}
-            {batchLabel ? `，上架批次：${batchLabel}` : ""}
+            {primaryCollectionTitle ? `收錄於 ${primaryCollectionTitle}` : "獨立曲目"}
+            {showAdminDetails && batchLabel ? `，上架批次：${batchLabel}` : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {asset.moodTags.map((tag) => (
+            {(showAdminDetails ? asset.moodTags : asset.moodTags.slice(0, 3)).map((tag) => (
               <span
                 key={tag}
                 className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/58"

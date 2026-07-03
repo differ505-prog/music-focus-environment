@@ -39,10 +39,10 @@ export function BpmRecommendationPanel({
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="flex flex-col gap-4">
         <div>
-          <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Lane Recommendation</p>
-          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">下一首 BPM 車道建議</h2>
+          <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Keep Listening</p>
+          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">接著聽這幾首</h2>
           <p className="mt-2 text-sm leading-7 text-white/66">
-            目前播放 {currentTrack.title}，系統優先推薦同 BPM，其次才是鄰近車道。
+            正在播放 {currentTrack.title}，下面這幾首最適合延續目前的聆聽狀態。
           </p>
         </div>
 
@@ -62,17 +62,16 @@ export function BpmRecommendationPanel({
                     compatibility.status,
                   )}`}
                 >
-                  {compatibility.label}
+                  {compatibility.status === "exact" ? "延續最順" : compatibility.status === "adjacent" ? "節奏接近" : compatibility.label}
                 </span>
-                <p className="mt-3 text-sm leading-6 text-white/58">{compatibility.description}</p>
+                <p className="mt-3 text-sm leading-6 text-white/58">{track.copy.descriptionZh}</p>
               </button>
             ))}
           </div>
         ) : (
           <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
             <p className="text-sm leading-7 text-white/62">
-              目前這首屬於較獨立的節奏車道，系統暫時不建議直接接到其他曲目。若要保留慢速深度工作氛圍，
-              建議延續同 BPM 系列再上架。
+              這首歌目前較適合單獨播放。若想維持相同氛圍，建議先回到同一系列繼續聽。
             </p>
           </div>
         )}
