@@ -62,8 +62,8 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     });
   }, [activeBpms, activeCollection]);
 
-  const featuredCollections = useMemo(() => {
-    return trackCollections.slice(0, 3);
+  const publishedCollections = useMemo(() => {
+    return trackCollections;
   }, []);
 
   const featuredTrackCount = useMemo(() => {
@@ -336,10 +336,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Published Collections</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列</h2>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Published Routes</p>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列入口</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  這裡放的是目前已經整理完成、可直接瀏覽與播放的系列。
+                  這裡放的是目前已經整理完成、可直接瀏覽與播放的系列，不再只集中在少數主題。
                 </p>
               </div>
               {latestBatch ? (
@@ -359,7 +359,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   activeCollectionId === "all" ? "shadow-[0_0_40px_rgba(255,255,255,0.08)] ring-1 ring-white/14" : ""
                 }`}
               >
-                <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">Library View</p>
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">Browse All</p>
                 <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68">
                   回到完整曲目庫，直接瀏覽目前已上架的所有內容。
@@ -373,7 +373,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </span>
                 </div>
               </button>
-              {featuredCollections.map((collection) => {
+              {publishedCollections.map((collection) => {
                 const isActive = activeCollectionId === collection.id;
                 const toneClasses =
                   collection.tone === "cyan"
@@ -410,7 +410,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                         onClick={() => toggleCollection(collection.id)}
                         className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-white/76 transition hover:bg-white/10 hover:text-white"
                       >
-                        切換首頁視角
+                        只看這個系列
                       </button>
                       <Link
                         href={`/collections/${collection.id}`}
@@ -432,9 +432,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             activeBpms={activeBpms}
             visibleCount={filteredAssets.length}
             selectedCount={selectedAssets.length}
-            featuredCollectionCount={featuredCollections.length}
+            featuredCollectionCount={publishedCollections.length}
             featuredTrackCount={featuredTrackCount}
-            activeCollectionLabel={activeCollection?.title ?? "All Library"}
+            activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
             latestBatchLabel={latestBatch?.label ?? "尚無批次"}
             onToggleBpm={toggleBpm}
             onSelectAll={handleSelectAll}
