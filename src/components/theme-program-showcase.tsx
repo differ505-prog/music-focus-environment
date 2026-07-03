@@ -10,11 +10,11 @@ type ThemeProgramShowcaseProps = {
   batches: TrackBatch[];
 };
 
-export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgramShowcaseProps) {
+export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: ThemeProgramShowcaseProps) {
   return (
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Listening Modes</p>
+        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">聆聽路線</p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">依照使用情境，快速找到適合的音樂路線</h2>
         <p className="mt-3 text-sm leading-7 text-white/66 md:text-base">
           每條內容線都對應不同的工作、移動或空間氛圍，直接挑適合你的那一條就好。
@@ -25,7 +25,6 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
         {programs.map((program) => {
           const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
           const featuredCount = programTracks.filter((track) => track.featured).length;
-          const programBatches = batches.filter((batch) => batch.themeProgramId === program.id);
           const liveCollections = new Set(programTracks.flatMap((track) => track.collectionIds ?? [])).size;
 
           return (
@@ -51,9 +50,6 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
                 </span>
                 <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-1.5 text-amber-100/80">
                   精選 {featuredCount}
-                </span>
-                <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5 text-cyan-100/80">
-                  批次 {programBatches.length}
                 </span>
                 <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                   系列 {liveCollections}

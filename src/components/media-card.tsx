@@ -103,7 +103,7 @@ export function MediaCard({
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.34em] text-white/45">
-              {primaryCollectionTitle ?? (asset.themeProgramId === "slow-jog-180" ? "Slow Jog Library" : "CEO Focus Library")}
+              {primaryCollectionTitle ?? "獨立單曲"}
             </p>
             <h3 className="font-serif text-2xl text-white">{asset.title}</h3>
           </div>
@@ -232,7 +232,7 @@ export function MediaCard({
         <div className="mt-5 grid gap-4 text-sm text-white/72">
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            {showAdminDetails ? "Track Identity" : "這首歌適合什麼狀態"}
+            {showAdminDetails ? "Track Identity" : "這首歌適合什麼時候播放"}
           </p>
           <p className="leading-6">{asset.copy.descriptionZh}</p>
           {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}

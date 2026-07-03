@@ -216,7 +216,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/45 to-transparent" />
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.38em] text-fuchsia-100/58">
-              {isAdmin ? "Internal Studio Workspace" : "CEO Mindset Environment"}
+              {isAdmin ? "Internal Studio Workspace" : "專注音樂路線"}
             </p>
             <h1 className="mt-4 max-w-2xl bg-gradient-to-r from-white via-fuchsia-100 to-cyan-100 bg-clip-text font-serif text-4xl leading-tight text-transparent md:text-6xl">
               {heroTitle}
@@ -244,7 +244,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               <div className="mt-8 rounded-[30px] border border-white/10 bg-white/6 p-5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-3xl">
-                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Theme Routes</p>
+                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">主題路線</p>
                     <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">從不同路線進入，不只一種聆聽方式</h2>
                     <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
                       每條主題線都保留同等入口。已上架的可以直接開始，尚在建置中的也會清楚保留位置。
@@ -336,7 +336,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Published Routes</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">已上架路線</p>
                 <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列入口</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
                   這裡放的是目前已經整理完成、可直接瀏覽與播放的系列，不再只集中在少數主題。
@@ -344,7 +344,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               </div>
               {latestBatch ? (
                 <div className="rounded-[24px] border border-amber-300/16 bg-amber-300/8 p-4 text-sm text-white/72">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-amber-100/70">Latest Batch</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-amber-100/70">最新上架</p>
                   <p className="mt-2 font-medium text-white">{latestBatch.title}</p>
                   <p className="mt-2 text-white/60">{latestBatch.summary}</p>
                 </div>
@@ -359,7 +359,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   activeCollectionId === "all" ? "shadow-[0_0_40px_rgba(255,255,255,0.08)] ring-1 ring-white/14" : ""
                 }`}
               >
-                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">Browse All</p>
+                  <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">全部瀏覽</p>
                 <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68">
                   回到完整曲目庫，直接瀏覽目前已上架的所有內容。

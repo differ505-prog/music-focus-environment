@@ -97,6 +97,9 @@ export function GlobalPlayer({
 
     return sessionPlan.trackPlans.find((plan) => plan.trackId === nextTrack.id) ?? null;
   }, [nextTrack, sessionPlan]);
+  const publicTrackSummary = currentTrack
+    ? `${currentTrack.bpm} BPM · 約 ${Math.round(currentTrack.durationSeconds / 60)} 分鐘`
+    : null;
 
   useEffect(() => {
     if (!currentTrack) {
@@ -284,24 +287,22 @@ export function GlobalPlayer({
       >
         <div className="max-w-4xl rounded-[28px] border border-white/10 bg-black/26 px-5 py-4 text-center backdrop-blur-xl">
           <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/52">
-            {isProjectionMode ? "Full Screen Cover" : "正在播放"}
+            {isProjectionMode ? "全螢幕封面" : "正在播放"}
           </p>
           <h3 className="mt-3 font-serif text-2xl text-white md:text-4xl">{currentTrack.title}</h3>
           <p className="mt-2 text-sm text-white/56 md:text-base">
-            {currentTrack.bpm} BPM
-            {" · "}
-            {currentTrack.musicalKey}
-            {" · "}
-            Energy {currentTrack.energyLevel.toFixed(1)}
-            {playback.repeatEnabled ? " · Loop On" : ""}
+            {showAdminDetails
+              ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
+              : publicTrackSummary}
+            {playback.repeatEnabled ? " · 循環播放" : ""}
           </p>
           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
             {showAdminDetails && sessionPlan
               ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
               : nextTrack
-                ? `Next ${nextTrack.title}`
+                ? `下一首 ${nextTrack.title}`
                 : isProjectionMode
-                  ? "Projection Ready"
+                  ? "封面已就緒"
                   : "Esc 關閉"}
           </p>
         </div>
@@ -465,7 +466,7 @@ export function GlobalPlayer({
                 </div>
                 <div className="text-sm text-white/64">
                   清單共 {playlist.length} 首
-                  {playback.isCrossfading ? ` · 無縫轉場中 (${playback.crossfadeWindowSeconds}s)` : ""}
+                  {playback.isCrossfading ? ` · 無縫播放中` : ""}
                   {playback.repeatEnabled ? " · 循環播放" : ""}
                 </div>
               </div>
@@ -482,7 +483,9 @@ export function GlobalPlayer({
                     </span>
                   ) : null}
                   <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                    {currentTrack.bpm} BPM · {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
+                    {showAdminDetails
+                      ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
+                      : publicTrackSummary}
                   </span>
                   {showAdminDetails ? (
                     <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
@@ -645,7 +648,9 @@ export function GlobalPlayer({
                       }`}
                     >
                       <p className="text-[11px] uppercase tracking-[0.24em] opacity-70">
-                        {showAdminDetails ? sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}` : `Track ${index + 1}`}
+                        {showAdminDetails
+                          ? sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}`
+                          : `第 ${index + 1} 首`}
                       </p>
                       <p className="mt-2 truncate text-sm font-medium">{track.title}</p>
                       <p className="mt-1 text-xs opacity-70">
