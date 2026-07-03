@@ -82,7 +82,7 @@ export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: Th
                   </Link>
                 ) : (
                   <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-sm text-amber-100/82">
-                    內容線已建好，曲目庫建置中
+                    即將推出
                   </span>
                 )}
               </div>

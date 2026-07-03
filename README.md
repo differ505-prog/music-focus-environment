@@ -1,6 +1,6 @@
-# 音樂創作與專注力環境
+# OmniSonic
 
-一個以 `Next.js App Router`、`Tailwind CSS`、`TypeScript` 與 `howler.js` 建構的個人用深色沉浸式音樂創作網站，聚焦於 CEO Mindset 式的深度工作氛圍、播放清單管理與無痕 crossfade 體驗。
+OmniSonic 是一個以 `Next.js App Router`、`Tailwind CSS`、`TypeScript` 與 `howler.js` 建構的沉浸式音樂網站，聚焦於低干擾播放、主題路線探索與無縫接續聆聽體驗。
 
 ## 功能特色
 

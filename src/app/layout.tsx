@@ -18,8 +18,8 @@ const bodyFont = Manrope({
 });
 
 export const metadata: Metadata = {
-  title: "音樂創作與專注力環境",
-  description: "提供低干擾、可長時間播放的沉浸式專注音樂與自動接續聆聽體驗。",
+  title: "OmniSonic",
+  description: "OmniSonic 提供低干擾、可長時間播放的沉浸式音樂路線與自動接續聆聽體驗。",
 };
 
 export default function RootLayout({

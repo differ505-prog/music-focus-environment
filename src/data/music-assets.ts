@@ -527,7 +527,7 @@ export const themePrograms: ThemeProgram[] = [
     title: "多車道深度專注主題",
     bpmDisplay: "85 / 100 / 105 / 110 / 115 / 120 BPM",
     summary:
-      "主打夜間決策、寫作、coding 與高密度思考，維持可平順接歌的 BPM 車道與穩定情緒弧線。",
+      "專為高密度思考、決策與 coding 設計。透過平穩的情緒弧線與節奏，帶你進入長時間沉浸的深度心流。",
     audience: "深度工作、策略規劃、長時間沉浸專注",
     positioning:
       "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道建立專注歌單。",
@@ -756,7 +756,7 @@ Brief：
     title: "180 慢跑節奏主題",
     bpmDisplay: "180 BPM",
     summary:
-      "主打穩定步頻、輕推進、戶外夜跑與耐力慢跑場景，重點不是夜店接歌，而是步伐鎖定與續航感。",
+      "專為穩定步頻與耐力訓練打造。無論是戶外夜跑或室內跑步機，都能幫你鎖定步伐，維持低壓續航感。",
     audience: "慢跑、跑步機、夜跑暖身、低壓耐力訓練",
     positioning:
       "鎖定 180 BPM，對齊跑步步頻與呼吸節奏，作為維持長距離 cadence 的實用工具。",
@@ -992,7 +992,7 @@ Brief：
     title: "海灘露天酒吧 DJ 主題",
     bpmDisplay: "115 / 120 BPM",
     summary:
-      "主打海風、日落、露天吧台與 open-air DJ set 的夏夜場景，重點是微醺推進感、暖色光影與可持續混音的戶外派對能量。",
+      "主打海風、日落與 open-air DJ set。微醺推進感與暖色光影，完美營造戶外派對、社交 lounge 與微舞池情境。",
     audience: "海灘酒吧、露天派對、黃昏酒精社交、開放式 lounge 與微舞池情境",
     positioning:
       "不是 festival 主舞台，也不是純 chill lounge，而是 open-air beach bar DJ set：要有律動、有空氣、有 sunset glamour，同時仍保持可長時間播放與平順接歌的商業型場景音樂。",
@@ -1212,7 +1212,7 @@ Brief：
     title: "城市夜色 City Pop 主題",
     bpmDisplay: "100 / 105 BPM",
     summary:
-      "主打霓虹街景、夏夜駕車、海灣高架與復古都會浪漫感，重點是 city pop 的光澤、groove 與可持續循環的夜間氛圍。",
+      "伴隨霓虹光澤與 groove 節奏，營造復古浪漫的氛圍。適合都會夜駕、晚間散步，或帶點微醺的輕鬆工作時刻。",
     audience: "夜間開車、都會微醺、晚間散步、城市夜讀與帶復古感的輕鬆工作場景",
     positioning:
       "不是純懷舊音樂收藏，也不是 Lo-fi 背景聲，而是兼具夜景敘事與商業播放性的 modern city pop line：要有暖色 synth、律動 bass、霓虹反光與都會浪漫感。",
@@ -1430,7 +1430,7 @@ Brief：
     title: "辦展展場音樂主題",
     bpmDisplay: "90 / 95 BPM",
     summary:
-      "主打展場動線、空間留白、作品觀看節奏與高級感聲場，重點是低干擾、可長時循環、能支撐觀展與停留的沉浸式背景音樂。",
+      "低干擾、可長時間循環的沉浸式高級聲場。完美支撐藝術展覽、品牌快閃或 showroom 的空間留白與觀看節奏。",
     audience: "藝術展覽、品牌快閃、策展空間、設計展間、showroom 與沉浸式展示場域",
     positioning:
       "不是飯店大廳 BGM，也不是純 ambient 噪景，而是帶有策展感與商業展示適配性的展場音樂線：要有空間感、質地感與流動感，同時不能搶走作品本身的注意力。",

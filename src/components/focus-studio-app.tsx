@@ -192,7 +192,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   };
 
   const isAdmin = mode === "admin";
-  const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
+  const heroTitle = isAdmin ? "OmniSonic 後台工作台" : "OmniSonic";
   const heroDescription = isAdmin
     ? "管理主題藍圖、轉場參數與生成資料，支援各內容線的 Prompt 模組與驗收流程。"
     : "把不同使用情境整理成可直接開始的音樂路線。先選你現在的狀態，再快速進入對應的聆聽體驗。";
@@ -246,9 +246,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   <div className="max-w-3xl">
                     <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">主題路線</p>
                     <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">從不同路線進入，不只一種聆聽方式</h2>
-                    <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                      每條主題線都保留同等入口。已上架的可以直接開始，尚在建置中的也會清楚保留位置。
-                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs text-white/62">
                     {currentTrack ? (
@@ -270,6 +267,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                 <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {publicThemeEntries.map(({ program, programTracks, primaryCollection }) => {
                     const hasPublishedTracks = programTracks.length > 0;
+                    const totalMinutes = Math.max(
+                      1,
+                      Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60),
+                    );
 
                     return (
                       <article
@@ -284,12 +285,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                             {program.bpmDisplay}
                           </span>
                           <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                            {hasPublishedTracks ? `${programTracks.length} 首已上架` : "內容建置中"}
+                            {hasPublishedTracks ? `約 ${totalMinutes} 分鐘` : "即將推出"}
                           </span>
                         </div>
                         <h3 className="mt-4 font-serif text-2xl text-white">{program.title}</h3>
                         <p className="mt-3 text-sm leading-6 text-white/68">{program.summary}</p>
-                        <p className="mt-3 text-sm leading-6 text-white/56">{program.audience}</p>
                         <div className="mt-5 flex flex-wrap gap-3">
                           <button
                             type="button"
@@ -297,7 +297,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                             disabled={!hasPublishedTracks}
                             className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
                           >
-                            {hasPublishedTracks ? "立即開始" : "建置中"}
+                            {hasPublishedTracks ? "立即開始" : "即將推出"}
                           </button>
                           {primaryCollection ? (
                             <Link

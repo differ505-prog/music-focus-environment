@@ -91,9 +91,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
         : generatedSceneImageUrl;
 
       navigator.mediaSession.metadata = new MediaMetadata({
-        title: currentTrack?.title ?? "音樂創作與專注力環境",
-        artist: "Music Focus Studio",
-        album: "CEO Mindset Environment",
+        title: currentTrack?.title ?? "OmniSonic",
+        artist: "OmniSonic",
+        album: "OmniSonic",
         artwork: [{ src: artworkSrc, sizes: "512x512", type: "image/jpeg" }],
       });
     }

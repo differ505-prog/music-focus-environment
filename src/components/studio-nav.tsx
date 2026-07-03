@@ -55,7 +55,7 @@ export function StudioNav() {
           onClick={handleSecretClick}
           className="select-none rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-white/78 transition hover:border-white/20 hover:bg-white/12 hover:text-white"
         >
-          沉浸式專注音樂
+          OmniSonic
         </Link>
       </nav>
     );
