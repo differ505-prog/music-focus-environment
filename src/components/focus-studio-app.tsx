@@ -12,6 +12,7 @@ import {
 } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
+import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { usePlayback } from "@/components/playback-provider";
@@ -213,6 +214,12 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
         <div className="mt-6">
           <ThemeProgramPanel mode={mode} programs={themePrograms} />
         </div>
+
+        {isAdmin ? (
+          <div className="mt-6">
+            <BpmAnalysisPanel />
+          </div>
+        ) : null}
 
         {!isAdmin && currentTrack ? (
           <div className="mt-6">

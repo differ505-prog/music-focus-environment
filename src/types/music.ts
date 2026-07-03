@@ -65,6 +65,7 @@ export type ThemePromptModule = {
   title: string;
   purpose: string;
   template: string;
+  upstreamModuleIds?: string[];
   outputSlots?: number;
   outputSlotLabels?: string[];
   inputMode?: "default" | "low_input_auto_context";

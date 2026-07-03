@@ -80,9 +80,48 @@ function combineModuleOutputs(
   return outputs.join('\n\n');
 }
 
-function buildUpstreamPayload(program: ThemeProgram, moduleIndex: number, moduleOutputs: Record<string, string>) {
-  const upstreamModules = program.promptModules
-    .slice(0, moduleIndex)
+function extractTemplateReferencedModuleIds(template: string) {
+  return Array.from(template.matchAll(/【貼上\s+(Module\s+\d+)\s+結果】/g)).map((match) => match[1]);
+}
+
+function getReferencedUpstreamModules(
+  program: ThemeProgram,
+  moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
+) {
+  const explicitlyConfiguredIds = targetModule.upstreamModuleIds ?? [];
+  const templateReferencedIds = extractTemplateReferencedModuleIds(targetModule.template);
+  const fallbackIds = program.promptModules.slice(0, moduleIndex).map((module) => module.id);
+  const candidateIds =
+    explicitlyConfiguredIds.length > 0
+      ? explicitlyConfiguredIds
+      : templateReferencedIds.length > 0
+        ? templateReferencedIds
+        : fallbackIds;
+  const previousModuleIds = new Set(program.promptModules.slice(0, moduleIndex).map((module) => module.id));
+  const seenIds = new Set<string>();
+
+  return candidateIds
+    .filter((moduleId) => previousModuleIds.has(moduleId))
+    .filter((moduleId) => {
+      if (seenIds.has(moduleId)) {
+        return false;
+      }
+
+      seenIds.add(moduleId);
+      return true;
+    })
+    .map((moduleId) => program.promptModules.find((module) => module.id === moduleId) ?? null)
+    .filter((module): module is ThemeProgram['promptModules'][number] => Boolean(module));
+}
+
+function buildUpstreamPayload(
+  program: ThemeProgram,
+  moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
+  moduleOutputs: Record<string, string>,
+) {
+  const upstreamModules = getReferencedUpstreamModules(program, moduleIndex, targetModule)
     .map((module) => ({
       title: module.title,
       output: combineModuleOutputs(program.id, module, moduleOutputs),
@@ -110,10 +149,11 @@ function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
 function buildLowInputAssembly(
   program: ThemeProgram,
   moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
   moduleOutputs: Record<string, string>,
   supplementalInput: string,
 ) {
-  const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
+  const upstreamPayload = buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
 
   return [
     '以下是已自動整理的上游結果，請直接使用，不要要求我重新貼一次：',
@@ -310,7 +350,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
 
   const handleInsertUpstream = (program: ThemeProgram, moduleIndex: number) => {
     const targetModule = program.promptModules[moduleIndex];
-    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
+    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
     const currentValue = moduleOutputs[buildModuleSlotKey(program.id, targetModule.id, 0)] ?? '';
 
     if (!upstreamPayload) {
@@ -332,6 +372,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     const assembledInput = buildLowInputAssembly(
       program,
       moduleIndex,
+      targetModule,
       moduleOutputs,
       supplementalInputs[moduleKey] ?? '',
     );
@@ -407,7 +448,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                 <div className="mt-4 grid gap-3">
                   {program.promptModules.map((module, moduleIndex) => {
                     const moduleKey = buildModuleKey(program.id, module.id);
-                    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, moduleOutputs);
+                    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, module, moduleOutputs);
                     const feedback = feedbackMap[moduleKey];
                     const slotCount = getModuleOutputSlotCount(module);
                     const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);

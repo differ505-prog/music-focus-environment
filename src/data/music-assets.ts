@@ -78,6 +78,38 @@ const transitionProfiles: TrackTransitionProfile[] = [
     mixInPointSeconds: 16,
     mixOutPointSeconds: 268,
   }),
+  createTransitionProfile({
+    bpm: 105,
+    introCueSeconds: 0.22,
+    sourceLufs: -14.48,
+    tempoLockBars: 2,
+    mixInPointSeconds: 18,
+    mixOutPointSeconds: 266,
+  }),
+  createTransitionProfile({
+    bpm: 105,
+    introCueSeconds: 0.18,
+    sourceLufs: -14.57,
+    tempoLockBars: 2,
+    mixInPointSeconds: 14,
+    mixOutPointSeconds: 258,
+  }),
+  createTransitionProfile({
+    bpm: 105,
+    introCueSeconds: 0.26,
+    sourceLufs: -14.41,
+    tempoLockBars: 2,
+    mixInPointSeconds: 20,
+    mixOutPointSeconds: 325,
+  }),
+  createTransitionProfile({
+    bpm: 105,
+    introCueSeconds: 0.2,
+    sourceLufs: -14.63,
+    tempoLockBars: 2,
+    mixInPointSeconds: 22,
+    mixOutPointSeconds: 340,
+  }),
 ];
 
 const trackNarratives: TrackNarrativeSeed[] = [
@@ -136,6 +168,130 @@ const trackNarratives: TrackNarrativeSeed[] = [
         "情境：河岸夜景、深色客廳、沙發、燭光、壁爐暖光與夜讀工作。BPM 固定 85，不可漂移；需支援閱讀型沉浸、long-loop、no vocals、equal-power crossfade 與穩定低壓節奏。",
     },
     createdAt: "2026-07-02T22:52:00.000Z",
+  },
+  {
+    title: "Obsidian Lake Focus",
+    slug: "obsidian-lake-focus",
+    musicalKey: "F Minor",
+    energyLevel: 4.1,
+    moodTags: ["misty-lake", "dark-forest", "105-bpm"],
+    descriptionZh:
+      "薄霧冷湖與針葉林包圍出的 105 BPM 心流迴圈，節奏穩定、情緒克制，適合深夜決策、模型審閱與長時間策略思考。",
+    descriptionEn:
+      "A 105 BPM executive focus loop shaped by a misty cold lake, dark coniferous forest, and sealed architectural calm, built for deep strategy sessions and uninterrupted analytical work.",
+    themeScenario:
+      "黑曜湖畔的極簡辦公桌前，霧氣沿著森林邊界緩慢推進，厚玻璃隔開外界雜訊，只留下冷靜、穩定而持續前進的專注脈衝。",
+    bpm: 105,
+    durationSeconds: 298,
+    media: {
+      audioUrl: "/audio/misty-lake-loop.mp3",
+      coverImageUrl: "/img/misty-lake-loop-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "105 BPM, Nordic electronica, dark ambient, low-end atmospheric drone, highly sophisticated and premium, instrumental. Built on a stable, understated downtempo groove perfect for CEO deep work. Energy level 4/10. Lush, evolving dark synthesizer pads evoke a misty, deep cold lake and dark coniferous forest solitude. The rhythm is anchored by a warm, continuous bassline pulse and subtle, organic textures acting as minimal percussion. Spatial, echoing soundscapes create a feeling of being insulated behind thick glass. The arrangement is completely flat in its dynamic range, ensuring a seamless flow, long-looping readiness, and perfectly smooth crossfades. No vocals, no vocal chops, no festival drop, no flashy lead hooks, no busy drum fills.",
+      imagePrompt:
+        "Photorealistic executive lakeside cabin workspace at blue-hour, mist hovering over a dark cold lake, coniferous forest silhouettes, floor-to-ceiling glass, matte black steel, walnut desk, warm amber task lamp, dark premium atmosphere, minimalist CEO deep work mood.",
+      videoPrompt:
+        "Slow cinematic interior shot of a dark luxury lakeside office, mist moving across a cold lake beyond tall glass windows, warm desk lamp and restrained fireplace glow, premium architectural motion, controlled and deeply focused atmosphere.",
+      generationPrompt:
+        "情境：黑曜湖畔、深色森林、厚玻璃隔音、冷霧湖面與長時間高強度策略思考。BPM 固定 105，不可漂移；需支援 long-loop、no vocals、equal-power crossfade、平直動態範圍與北歐冷調電子氛圍。",
+    },
+    createdAt: "2026-07-03T11:45:00.000Z",
+  },
+  {
+    title: "Walnut Command Drift",
+    slug: "walnut-command-drift",
+    musicalKey: "C Minor",
+    energyLevel: 4.3,
+    moodTags: ["walnut-cabin", "deliberate-control", "105-bpm"],
+    descriptionZh:
+      "胡桃木桌面、暗色石材與深湖倒影構成的 105 BPM 穩態節拍，適合財務模型、組織決策與需要冷靜推進的長工時工作。",
+    descriptionEn:
+      "A 105 BPM control-driven loop with walnut textures, matte stone surfaces, and a deep-water backdrop, designed for financial modeling, executive planning, and extended decision-heavy focus.",
+    themeScenario:
+      "在胡桃木與啞光黑鋼構成的湖畔辦公室裡，低頻像水面下的穩定暗流持續推動思緒，讓理性決策維持絕對掌控與低干擾節奏。",
+    bpm: 105,
+    durationSeconds: 290,
+    media: {
+      audioUrl: "/audio/walnut-drift-loop.mp3",
+      coverImageUrl: "/img/walnut-drift-loop-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "105 BPM, minimal dub techno, deep organic downtempo, dark atmospheric, premium and sophisticated, instrumental only. A steady, loop-friendly groove designed for long-form deep focus and high-intensity strategic thinking. Energy level 4/10 with sustained low-mid energy. Features a continuous, rolling sub-bassline overlay and muffled, intricate micro-percussion that evokes a sense of absolute detachment. Cinematic, dark drone pads provide a sanctuary of peace, featuring long reverb tails that mimic spatial echoes inside a matte black and walnut wood cabin. The track maintains a constant, hypnotic momentum with zero sudden changes, tailored for smooth crossfades and infinite looping. No vocals, no vocal chops, no festival drop, no flashy lead hooks, no busy drum fills.",
+      imagePrompt:
+        "Photorealistic dark executive office by a cold forest lake, matte black stone fireplace, walnut wood desk, leather chair, subtle amber lamp glow, floor-to-ceiling glass, heavy quiet atmosphere, premium CEO deep work aesthetic.",
+      videoPrompt:
+        "Slow cinematic dolly inside a walnut-and-black-steel lakeside office, fireplace reflections, dark water outside panoramic glass, restrained ambient motion, high-end deep work atmosphere.",
+      generationPrompt:
+        "情境：胡桃木桌面、啞光黑鋼、冷湖倒影、厚實牆面與高強度理性思考。BPM 固定 105，不可漂移；需維持持續低中頻能量、micro-percussion、steady sub-bass overlay、no vocals 與 smooth crossfade-ready 的 CEO Deep Focus 聽感。",
+    },
+    createdAt: "2026-07-03T11:52:00.000Z",
+  },
+  {
+    title: "Lakeside Ember Terrace",
+    slug: "lakeside-ember-terrace",
+    musicalKey: "A Minor",
+    energyLevel: 4.4,
+    moodTags: ["ember-terrace", "lakehouse", "105-bpm"],
+    descriptionZh:
+      "湖畔露台、火光倒影與潮濕石材鋪陳出的 105 BPM 專注節拍，適合長時段規劃、審稿與需要柔和推進感的高密度工作。",
+    descriptionEn:
+      "A 105 BPM executive terrace loop balancing lake reflections, ember glow, and restrained propulsion, ideal for long planning sessions, editorial review, and steady high-focus work.",
+    themeScenario:
+      "半戶外的湖畔露台被冷霧與火光包圍，石材地面映著橘色餘燼，節拍在開闊空間裡維持安靜但持續的推進力。",
+    bpm: 105,
+    durationSeconds: 357,
+    media: {
+      audioUrl: "/audio/lakeside-ember-terrace.mp3",
+      coverImageUrl: "/img/lakeside-ember-terrace-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "105 BPM, dark atmospheric downtempo, premium executive night ambience, instrumental only. Stable low-mid pulse for long-form focus with subtle ember warmth, wet stone reflections, and open-air lakeside spaciousness. Energy level 4/10, no vocals, no dramatic drops, no busy fills, no sudden dynamic spikes. Continuous bass support, clean restrained percussion, long-loop ready, smooth equal-power crossfade, calm but persistent decision-making momentum.",
+      imagePrompt:
+        "Photorealistic luxury lakeside terrace at night, dark stone flooring with reflective moisture, open fire pit, fireplace glow, deep forest lake beyond glass edge, warm amber accents, premium dark mode executive atmosphere.",
+      videoPrompt:
+        "Slow cinematic movement across a dark luxury lakeside terrace at night, soft firelight reflections on wet stone, cold mist above a still lake, restrained premium ambience, long-form deep focus atmosphere.",
+      generationPrompt:
+        "情境：湖畔露台、濕潤石材、火光倒影、半戶外安靜包覆感與長時間規劃工作。BPM 固定 105，不可漂移；需維持 steady pulse、open-air spaciousness、no vocals、smooth crossfade-ready 與低中頻穩定推進。",
+    },
+    createdAt: "2026-07-03T12:03:00.000Z",
+  },
+  {
+    title: "Midnight Library Ledger",
+    slug: "midnight-library-ledger",
+    musicalKey: "E Minor",
+    energyLevel: 4.2,
+    moodTags: ["midnight-library", "ledger-room", "105-bpm"],
+    descriptionZh:
+      "雙層書牆、湖景落地窗與暖色吊燈構成的 105 BPM 理性心流，特別適合財務整理、寫作校對與需要秩序感的深夜工作。",
+    descriptionEn:
+      "A 105 BPM rational-focus loop built for midnight accounting, editing, and structured deep work, framed by towering bookshelves, lake-view glass, and warm pendant light.",
+    themeScenario:
+      "高挑書房在深夜燈光下維持安靜秩序，窗外霧湖延伸出深度空間感，讓節拍像一條穩定帳本線般持續推進而不打擾思路。",
+    bpm: 105,
+    durationSeconds: 373,
+    media: {
+      audioUrl: "/audio/midnight-library-ledger.mp3",
+      coverImageUrl: "/img/midnight-library-ledger-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "105 BPM, minimal dub techno, dark academic ambient, premium instrumental focus loop. Controlled pulse, disciplined sub-bass, micro-percussion, and long reverb tails suited for structured midnight work. Energy level 4/10. No vocals, no dramatic transitions, no bright hooks, no festival dynamics. Designed for writing, ledger review, smooth crossfades, and uninterrupted executive concentration.",
+      imagePrompt:
+        "Photorealistic dark luxury library office at night with double-height bookshelves, warm pendant lights, fireplace, leather seating, walnut desk, and floor-to-ceiling windows overlooking a misty forest lake, premium CEO deep work mood.",
+      videoPrompt:
+        "Slow cinematic shot inside a tall dark library office at night, warm pendant lights above a walnut desk, fireplace glow, misty lake beyond vast glass windows, premium focused atmosphere with restrained movement.",
+      generationPrompt:
+        "情境：深夜書房、雙層書牆、暖色吊燈、霧湖窗景與財務帳本式理性工作。BPM 固定 105，不可漂移；需維持 dark academic、micro-percussion、steady sub-bass、no vocals 與 long-loop crossfade-ready 的秩序感。",
+    },
+    createdAt: "2026-07-03T12:08:00.000Z",
   },
 ] as const;
 
@@ -305,6 +461,7 @@ export const themePrograms: ThemeProgram[] = [
         id: "Module 02",
         title: "音樂 Prompt 模組",
         purpose: "把 brief 轉為可直接生成的英文音樂提示詞。",
+        upstreamModuleIds: ["Module 01"],
         outputSlots: 2,
         outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
         template: `You are a professional AI music prompt designer.
@@ -333,11 +490,18 @@ Brief:
         id: "Module 03",
         title: "視覺 Prompt 模組",
         purpose: "同步建立封面與背景動態素材，讓主題視覺保持一致。",
+        upstreamModuleIds: ["Module 01"],
         template: `你是一位高端品牌視覺 prompt 設計師。
 
 請根據 CEO Deep Focus brief 產出：
-1. 2 組封面圖英文 prompt
-2. 2 組背景影片英文 prompt
+1. Song 01 封面圖英文 prompt
+2. Song 01 背景影片英文 prompt
+3. Song 02 封面圖英文 prompt
+4. Song 02 背景影片英文 prompt
+5. Song 03 封面圖英文 prompt
+6. Song 03 背景影片英文 prompt
+7. Song 04 封面圖英文 prompt
+8. Song 04 背景影片英文 prompt
 
 要求：
 - photorealistic
@@ -354,6 +518,7 @@ Brief：
         id: "Module 04",
         title: "上架 JSON 模組",
         purpose: "把生成結果整理成網站可直接使用的 Track 資產。",
+        upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
         inputMode: "low_input_auto_context",
         supplementalLabel: "少量補充資料",
         supplementalPlaceholder:
@@ -507,6 +672,7 @@ Brief：
         id: "Module 02",
         title: "跑感音樂 Prompt",
         purpose: "建立專屬於 180 慢跑的英文音樂生成模板。",
+        upstreamModuleIds: ["Module 01"],
         template: `You are a professional AI music prompt designer for running playlists.
 
 Generate 1 English prompt for a BPM 180 Slow Jog instrumental track.
@@ -539,11 +705,18 @@ Brief:
         id: "Module 03",
         title: "跑步視覺 Prompt",
         purpose: "讓封面與背景影片直接服務夜跑與耐力訓練情境。",
+        upstreamModuleIds: ["Module 01"],
         template: `你是一位運動場景視覺 prompt 設計師。
 
 請根據 BPM 180 Slow Jog brief 產出：
-1. 2 組封面圖英文 prompt
-2. 2 組背景影片英文 prompt
+1. Song 01 封面圖英文 prompt
+2. Song 01 背景影片英文 prompt
+3. Song 02 封面圖英文 prompt
+4. Song 02 背景影片英文 prompt
+5. Song 03 封面圖英文 prompt
+6. Song 03 背景影片英文 prompt
+7. Song 04 封面圖英文 prompt
+8. Song 04 背景影片英文 prompt
 
 要求：
 - photorealistic
@@ -559,6 +732,7 @@ Brief：
         id: "Module 04",
         title: "運動上架 JSON",
         purpose: "把跑步內容整理成可直接貼入專案的資產資料。",
+        upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
         inputMode: "low_input_auto_context",
         supplementalLabel: "少量補充資料",
         supplementalPlaceholder:
