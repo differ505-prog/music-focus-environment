@@ -39,7 +39,17 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
   const [isDownloading, setIsDownloading] = useState(false);
-  const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack, startSession } =
+  const {
+    selectedIds,
+    setSelectedIds,
+    selectedAssets,
+    currentTrack,
+    autoDjPlan,
+    playback,
+    toggleAsset,
+    playTrack,
+    startSession,
+  } =
     usePlayback();
 
   const trackMap = useMemo(() => {
@@ -319,15 +329,32 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </p>
                 </button>
                 <div className="rounded-[26px] border border-white/10 bg-white/6 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/44">Now Context</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/44">Auto DJ Context</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">
-                    {currentTrack ? `正在播放 ${currentTrack.title}` : "尚未開始播放"}
+                    {currentTrack
+                      ? `${autoDjPlan?.currentPhaseLabel ?? "正在播放"} · ${currentTrack.title}`
+                      : "尚未開始播放"}
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-white/68">
                     {currentTrack
-                      ? `目前播放清單 ${selectedAssets.length} 首，可直接用下方系列詳情與推薦區塊繼續擴充 session。`
-                      : "先從上方任一入口開始 session，再往下用系列詳情與 BPM filter 精修你的工作場景。"}
+                      ? `${autoDjPlan?.mixBrief ?? `目前播放清單 ${selectedAssets.length} 首`} 可直接用下方系列詳情與推薦區塊繼續擴充 session。`
+                      : "先從上方任一入口開始 session，系統會自動幫你排好 DJ 式曲序，再往下用系列詳情與 BPM filter 微調工作場景。"}
                   </p>
+                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
+                    {autoDjPlan ? (
+                      <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
+                        {autoDjPlan.laneLabel}
+                      </span>
+                    ) : null}
+                    {autoDjPlan ? (
+                      <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
+                        {autoDjPlan.currentPhaseLabel}
+                      </span>
+                    ) : null}
+                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                      {selectedAssets.length} 首待播
+                    </span>
+                  </div>
                 </div>
               </div>
             ) : null}
@@ -595,11 +622,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-cyan-300/12 bg-[#07101a]/90 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">Why It Feels Productized</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">Why It Feels Like DJ</p>
                   <ul className="mt-3 grid gap-3 text-sm leading-6 text-white/68">
-                    <li>不是只挑單首，而是能直接啟動一整組工作 session。</li>
-                    <li>系列、批次、BPM 與播放器現在形成同一條任務路徑。</li>
-                    <li>首頁即可完成「理解內容 到 開始使用 到 再微調」的閉環。</li>
+                    <li>不是只挑單首，而是啟動後就自動排成一條更像 DJ 的 session。</li>
+                    <li>系統會優先維持主車道 BPM，再用能量曲線做細幅推進與收尾。</li>
+                    <li>首頁即可完成「理解內容 到 開始使用 到 自動接歌」的閉環。</li>
                   </ul>
                 </div>
               </div>

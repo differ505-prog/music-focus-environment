@@ -18,12 +18,13 @@ import {
   X,
 } from "lucide-react";
 
-import type { PlaybackSnapshot, Track } from "@/types/music";
+import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
   playlist: Track[];
   currentTrack: Track | null;
   nextTrack: Track | null;
+  sessionPlan: AutoDjSessionPlan | null;
   playback: PlaybackSnapshot;
   isMinimized: boolean;
   mode?: "public" | "admin";
@@ -57,6 +58,7 @@ export function GlobalPlayer({
   playlist,
   currentTrack,
   nextTrack,
+  sessionPlan,
   playback,
   isMinimized,
   mode = "public",
@@ -81,6 +83,20 @@ export function GlobalPlayer({
   const [isProjectionCursorHidden, setIsProjectionCursorHidden] = useState(false);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
   const isPureProjection = isProjectionMode && isArtworkFullscreen;
+  const currentTrackPlan = useMemo(() => {
+    if (!sessionPlan || !currentTrack) {
+      return null;
+    }
+
+    return sessionPlan.trackPlans.find((plan) => plan.trackId === currentTrack.id) ?? null;
+  }, [currentTrack, sessionPlan]);
+  const nextTrackPlan = useMemo(() => {
+    if (!sessionPlan || !nextTrack) {
+      return null;
+    }
+
+    return sessionPlan.trackPlans.find((plan) => plan.trackId === nextTrack.id) ?? null;
+  }, [nextTrack, sessionPlan]);
 
   useEffect(() => {
     if (!currentTrack) {
@@ -280,7 +296,13 @@ export function GlobalPlayer({
             {playback.repeatEnabled ? " · Loop On" : ""}
           </p>
           <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
-            {nextTrack ? `Next ${nextTrack.title}` : isProjectionMode ? "Projection Ready" : "Esc 關閉"}
+            {sessionPlan
+              ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
+              : nextTrack
+                ? `Next ${nextTrack.title}`
+                : isProjectionMode
+                  ? "Projection Ready"
+                  : "Esc 關閉"}
           </p>
         </div>
       </div>
@@ -296,13 +318,17 @@ export function GlobalPlayer({
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
                 <Waves className="h-4 w-4" />
-                Mini Player
+                Mini Auto DJ
               </p>
               <h3 className="mt-2 truncate font-serif text-lg text-white">
                 {currentTrack?.title ?? "尚未選擇播放曲目"}
               </h3>
               <p className="mt-1 truncate text-xs text-white/55">
-                {nextTrack ? `下一首：${nextTrack.title}` : "勾選素材後即可建立播放清單"}
+                {sessionPlan
+                  ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
+                  : nextTrack
+                    ? `下一首：${nextTrack.title}`
+                    : "勾選素材後即可建立播放清單"}
               </p>
             </div>
 
@@ -383,7 +409,7 @@ export function GlobalPlayer({
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-fuchsia-100/60">
                   <Waves className="h-4 w-4" />
-                  Neon Focus Player
+                  Neon Focus Auto DJ
                 </div>
                 <div className="flex items-center gap-2">
                   {currentTrack && artworkSrc ? (
@@ -430,7 +456,11 @@ export function GlobalPlayer({
                     {currentTrack?.title ?? "尚未選擇播放曲目"}
                   </h3>
                   <p className="mt-1 truncate text-sm text-white/62">
-                    {nextTrack ? `下一首：${nextTrack.title}` : "勾選素材後即可建立播放清單"}
+                    {sessionPlan
+                      ? sessionPlan.nextTransitionSummary
+                      : nextTrack
+                        ? `下一首：${nextTrack.title}`
+                        : "勾選素材後即可建立播放清單"}
                   </p>
                 </div>
                 <div className="text-sm text-white/64">
@@ -441,8 +471,18 @@ export function GlobalPlayer({
               </div>
               {currentTrack ? (
                 <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                  {sessionPlan ? (
+                    <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
+                      {sessionPlan.currentPhaseLabel}
+                    </span>
+                  ) : null}
+                  {sessionPlan ? (
+                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                      {sessionPlan.laneLabel}
+                    </span>
+                  ) : null}
                   <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                    {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
+                    {currentTrack.bpm} BPM · {currentTrack.musicalKey} · Energy {currentTrack.energyLevel.toFixed(1)}
                   </span>
                   {showAdminDetails ? (
                     <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
@@ -531,6 +571,34 @@ export function GlobalPlayer({
             </div>
           </div>
 
+          {sessionPlan ? (
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              <div className="rounded-[22px] border border-fuchsia-300/16 bg-fuchsia-300/8 p-4">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-fuchsia-100/58">現在階段</p>
+                <p className="mt-3 font-serif text-xl text-white">{sessionPlan.currentPhaseLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  {currentTrackPlan?.phaseDescription ?? sessionPlan.currentPhaseDescription}
+                </p>
+              </div>
+              <div className="rounded-[22px] border border-cyan-300/16 bg-cyan-300/8 p-4">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-cyan-100/58">接歌策略</p>
+                <p className="mt-3 font-serif text-xl text-white">{sessionPlan.laneLabel}</p>
+                <p className="mt-2 text-sm leading-6 text-white/68">{sessionPlan.strategySummary}</p>
+              </div>
+              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
+                <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">下一步</p>
+                <p className="mt-3 font-serif text-xl text-white">
+                  {nextTrackPlan?.phaseLabel ?? (nextTrack ? "下一首待命" : "本輪即將結束")}
+                </p>
+                <p className="mt-2 text-sm leading-6 text-white/68">
+                  {nextTrack
+                    ? `${nextTrack.title} · ${nextTrackPlan?.transitionSummary ?? `${nextTrack.bpm} BPM 待命`}`
+                    : sessionPlan.nextTransitionSummary}
+                </p>
+              </div>
+            </div>
+          ) : null}
+
           <div className="mt-4">
             <input
               type="range"
@@ -576,10 +644,16 @@ export function GlobalPlayer({
                             : "border-white/10 bg-black/18 text-white/72 hover:border-white/20 hover:bg-white/8"
                       }`}
                     >
-                      <p className="text-[11px] uppercase tracking-[0.24em] opacity-70">Track {index + 1}</p>
+                      <p className="text-[11px] uppercase tracking-[0.24em] opacity-70">
+                        {sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}`}
+                      </p>
                       <p className="mt-2 truncate text-sm font-medium">{track.title}</p>
                       <p className="mt-1 text-xs opacity-70">
-                        {isCurrent ? "目前播放" : isNext ? "下一首" : `${track.bpm} BPM`}
+                        {isCurrent
+                          ? "目前播放"
+                          : isNext
+                            ? "下一首"
+                            : sessionPlan?.trackPlans[index]?.transitionSummary ?? `${track.bpm} BPM`}
                       </p>
                     </button>
                   );

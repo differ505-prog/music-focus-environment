@@ -7,8 +7,9 @@ import { Waves } from "lucide-react";
 
 import { generatedSceneImageUrl, tracks } from "@/data/music-assets";
 import { GlobalPlayer } from "@/components/global-player";
+import { buildAutoDjQueue, createAutoDjSessionPlan } from "@/lib/auto-dj";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
-import type { PlaybackSnapshot, Track } from "@/types/music";
+import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 const initialPlaybackState: PlaybackSnapshot = {
   currentTrackId: null,
@@ -29,6 +30,7 @@ type PlaybackContextValue = {
   selectedAssets: Track[];
   currentTrack: Track | null;
   nextTrack: Track | null;
+  autoDjPlan: AutoDjSessionPlan | null;
   playback: PlaybackSnapshot;
   toggleAsset: (assetId: string) => void;
   playTrack: (assetId: string) => void;
@@ -50,8 +52,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
   const selectedAssets = useMemo(() => {
-    const selectedSet = new Set(selectedIds);
-    return tracks.filter((asset) => selectedSet.has(asset.id));
+    return selectedIds
+      .map((assetId) => tracks.find((asset) => asset.id === assetId) ?? null)
+      .filter((asset): asset is Track => Boolean(asset));
   }, [selectedIds]);
 
   const currentTrack = useMemo(() => {
@@ -61,6 +64,10 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   const nextTrack = useMemo(() => {
     return tracks.find((asset) => asset.id === playback.nextTrackId) ?? null;
   }, [playback.nextTrackId]);
+
+  const autoDjPlan = useMemo(() => {
+    return createAutoDjSessionPlan(selectedAssets, playback.currentTrackId, playback.nextTrackId);
+  }, [playback.currentTrackId, playback.nextTrackId, selectedAssets]);
 
   useEffect(() => {
     controllerRef.current = new HowlerPlaylistController({
@@ -152,16 +159,22 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   };
 
   const startSession = (assetIds: string[], initialTrackId?: string) => {
-    const nextIds = Array.from(new Set(assetIds)).filter((assetId) => tracks.some((track) => track.id === assetId));
+    const nextPlaylist = Array.from(new Set(assetIds))
+      .map((assetId) => tracks.find((track) => track.id === assetId) ?? null)
+      .filter((track): track is Track => Boolean(track));
 
-    if (nextIds.length === 0) {
+    if (nextPlaylist.length === 0) {
       return;
     }
 
+    const orderedIds = buildAutoDjQueue(nextPlaylist, initialTrackId);
+    const targetInitialTrackId =
+      initialTrackId && orderedIds.includes(initialTrackId) ? initialTrackId : orderedIds[0] ?? null;
+
     setIsPlayerOpen(true);
     setIsPlayerMinimized(false);
-    setSelectedIds(nextIds);
-    setPendingPlayId(initialTrackId && nextIds.includes(initialTrackId) ? initialTrackId : nextIds[0]);
+    setSelectedIds(orderedIds);
+    setPendingPlayId(targetInitialTrackId);
   };
 
   const playPause = () => {
@@ -188,6 +201,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       selectedAssets,
       currentTrack,
       nextTrack,
+      autoDjPlan,
       playback,
       toggleAsset,
       playTrack,
@@ -195,7 +209,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       playPause,
       toggleRepeat,
     }),
-    [selectedIds, selectedAssets, currentTrack, nextTrack, playback],
+    [selectedIds, selectedAssets, currentTrack, nextTrack, autoDjPlan, playback],
   );
 
   return (
@@ -206,6 +220,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
           playlist={selectedAssets}
           currentTrack={currentTrack}
           nextTrack={nextTrack}
+          sessionPlan={autoDjPlan}
           playback={playback}
           isMinimized={isPlayerMinimized}
           mode={mode}

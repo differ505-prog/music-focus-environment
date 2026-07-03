@@ -172,6 +172,30 @@ export type MixSession = {
 
 export type PlaybackEngine = "precision_web_audio" | "background_safe_html5";
 
+export type AutoDjPhase = "opening" | "lock" | "lift" | "glide";
+
+export type AutoDjTrackPlan = {
+  trackId: string;
+  order: number;
+  phase: AutoDjPhase;
+  phaseLabel: string;
+  phaseDescription: string;
+  transitionSummary: string;
+};
+
+export type AutoDjSessionPlan = {
+  orderedTrackIds: string[];
+  laneLabel: string;
+  strategySummary: string;
+  currentTrackIndex: number;
+  currentPhase: AutoDjPhase | null;
+  currentPhaseLabel: string;
+  currentPhaseDescription: string;
+  mixBrief: string;
+  nextTransitionSummary: string;
+  trackPlans: AutoDjTrackPlan[];
+};
+
 export type PlaybackSnapshot = {
   currentTrackId: string | null;
   nextTrackId: string | null;
