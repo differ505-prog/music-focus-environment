@@ -1,23 +1,13 @@
 'use client';
 
 import { useMemo } from "react";
-import {
-  ChevronUp,
-  Minimize2,
-  Pause,
-  Play,
-  Redo2,
-  Repeat,
-  SkipBack,
-  SkipForward,
-  Undo2,
-  Waves,
-  X,
-} from "lucide-react";
+import { Waves } from "lucide-react";
 
-import { PlayerArtworkActions } from "@/components/player-artwork-actions";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
+import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
+import { PlayerProgressBar } from "@/components/player-progress-bar";
+import { PlayerTransportControls } from "@/components/player-transport-controls";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
@@ -167,53 +157,28 @@ export function GlobalPlayer({
                 {nextTrack ? `下一首 ${nextTrack.title}` : "加入曲目即可播放"}
               </p>
             </div>
-
             <div className="flex shrink-0 items-center gap-2">
-              <PlayerArtworkActions
-                hasArtwork={Boolean(currentTrack && artworkSrc)}
+              <PlayerHeaderBar
                 showAdminDetails={showAdminDetails}
+                hasArtwork={Boolean(currentTrack && artworkSrc)}
                 compact
+                hideTitle
+                title="播放器"
                 onOpenArtwork={() => openArtwork(false)}
                 onOpenProjection={() => openArtwork(true)}
+                onToggleMinimize={onToggleMinimize}
+                onClose={onClose}
               />
-              <button
-                type="button"
-                onClick={onPlayPause}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-cyan-300/25 bg-cyan-300/14 p-3 text-cyan-50 transition hover:bg-cyan-300/22 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
-              >
-                {playback.isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              </button>
-              <button
-                type="button"
-                onClick={onToggleRepeat}
-                disabled={playlist.length === 0}
-                className={`rounded-full border p-3 transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                  playback.repeatEnabled
-                    ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
-                    : "border-white/10 bg-white/8 text-white/75 hover:bg-white/12 hover:text-white"
-                }`}
-                aria-label={playback.repeatEnabled ? "關閉循環播放" : "開啟循環播放"}
-              >
-                <Repeat className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onToggleMinimize}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white/75 transition hover:bg-white/12 hover:text-white"
-                aria-label="展開播放器"
-              >
-                <ChevronUp className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onClose}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white/75 transition hover:bg-white/12 hover:text-white"
-                aria-label="關閉播放器"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <PlayerTransportControls
+                playlistLength={playlist.length}
+                playback={playback}
+                compact
+                onPlayPause={onPlayPause}
+                onToggleRepeat={onToggleRepeat}
+                onPrevious={onPrevious}
+                onNext={onNext}
+                onSeekBy={onSeekBy}
+              />
             </div>
           </div>
         </div>
@@ -229,36 +194,15 @@ export function GlobalPlayer({
         <div className="relative">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-center gap-3 text-[11px] uppercase tracking-[0.32em] text-fuchsia-100/60">
-                  <Waves className="h-4 w-4" />
-                  {showAdminDetails ? "Neon Focus Auto DJ" : "正在播放"}
-                </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <PlayerArtworkActions
-                    hasArtwork={Boolean(currentTrack && artworkSrc)}
-                    showAdminDetails={showAdminDetails}
-                    onOpenArtwork={() => openArtwork(false)}
-                    onOpenProjection={() => openArtwork(true)}
-                  />
-                  <button
-                    type="button"
-                    onClick={onToggleMinimize}
-                    className="rounded-full border border-white/10 bg-white/8 p-2 text-white/70 transition hover:bg-white/12 hover:text-white"
-                    aria-label="縮小播放器"
-                  >
-                    <Minimize2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="rounded-full border border-white/10 bg-white/8 p-2 text-white/70 transition hover:bg-white/12 hover:text-white"
-                    aria-label="關閉播放器"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
+              <PlayerHeaderBar
+                showAdminDetails={showAdminDetails}
+                hasArtwork={Boolean(currentTrack && artworkSrc)}
+                title={showAdminDetails ? "Neon Focus Auto DJ" : "正在播放"}
+                onOpenArtwork={() => openArtwork(false)}
+                onOpenProjection={() => openArtwork(true)}
+                onToggleMinimize={onToggleMinimize}
+                onClose={onClose}
+              />
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <h3 className="truncate font-serif text-2xl text-white">
@@ -320,66 +264,15 @@ export function GlobalPlayer({
               ) : null}
             </div>
 
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={() => onSeekBy(-10)}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="倒退十秒"
-              >
-                <Undo2 className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onPrevious}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="播放上一首"
-              >
-                <SkipBack className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onPlayPause}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-fuchsia-400/30 bg-fuchsia-400/18 p-4 text-fuchsia-50 transition hover:bg-fuchsia-400/26 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label={playback.isPlaying ? "暫停播放" : "開始播放"}
-              >
-                {playback.isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-              </button>
-              <button
-                type="button"
-                onClick={onToggleRepeat}
-                disabled={playlist.length === 0}
-                className={`rounded-full border p-3 transition disabled:cursor-not-allowed disabled:opacity-40 ${
-                  playback.repeatEnabled
-                    ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
-                    : "border-white/10 bg-white/8 text-white hover:bg-white/12"
-                }`}
-                aria-label={playback.repeatEnabled ? "關閉循環播放" : "開啟循環播放"}
-              >
-                <Repeat className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={onNext}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="播放下一首"
-              >
-                <SkipForward className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => onSeekBy(10)}
-                disabled={playlist.length === 0}
-                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-40"
-                aria-label="快轉十秒"
-              >
-                <Redo2 className="h-4 w-4" />
-              </button>
-            </div>
+            <PlayerTransportControls
+              playlistLength={playlist.length}
+              playback={playback}
+              onPlayPause={onPlayPause}
+              onToggleRepeat={onToggleRepeat}
+              onPrevious={onPrevious}
+              onNext={onNext}
+              onSeekBy={onSeekBy}
+            />
           </div>
 
           {showAdminDetails && sessionPlan ? (
@@ -410,24 +303,12 @@ export function GlobalPlayer({
             </div>
           ) : null}
 
-          <div className="mt-4">
-            <input
-              type="range"
-              min={0}
-              max={playback.duration || 0}
-              step={0.1}
-              value={Math.min(playback.currentTime, playback.duration || 0)}
-              onInput={(event) => onSeek(Number((event.target as HTMLInputElement).value))}
-              onChange={(event) => onSeek(Number(event.target.value))}
-              disabled={playback.duration <= 0}
-              className="h-2 w-full cursor-pointer accent-fuchsia-400 disabled:cursor-not-allowed"
-              aria-label="快轉播放進度"
-            />
-            <div className="mt-2 flex items-center justify-between text-xs text-white/50">
-              <span>{formatTime(playback.currentTime)}</span>
-              <span>{formatTime(playback.duration)}</span>
-            </div>
-          </div>
+          <PlayerProgressBar
+            currentTime={playback.currentTime}
+            duration={playback.duration}
+            onSeek={onSeek}
+            formatTime={formatTime}
+          />
 
           <PlayerPlaylistStrip
             playlist={playlist}
