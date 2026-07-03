@@ -1,7 +1,8 @@
 'use client';
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useRef } from "react";
 
 const adminNavItems = [
   {
@@ -18,14 +19,41 @@ const adminNavItems = [
 
 export function StudioNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const isAdminPage = pathname.startsWith("/admin");
+
+  const clickCountRef = useRef(0);
+  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleSecretClick = (e: React.MouseEvent) => {
+    // 如果已經在首頁，防止重新載入
+    if (pathname === '/') {
+      e.preventDefault();
+    }
+
+    clickCountRef.current += 1;
+    
+    if (clickCountRef.current >= 3) {
+      router.push("/admin");
+      clickCountRef.current = 0;
+    }
+
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+    }
+
+    clickTimeoutRef.current = setTimeout(() => {
+      clickCountRef.current = 0;
+    }, 1000); // 1秒內連點三次
+  };
 
   if (!isAdminPage) {
     return (
       <nav className="mb-6 flex flex-wrap gap-3">
         <Link
           href="/"
-          className="rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-white/78 transition hover:border-white/20 hover:bg-white/12 hover:text-white"
+          onClick={handleSecretClick}
+          className="select-none rounded-full border border-white/12 bg-white/8 px-4 py-2 text-sm text-white/78 transition hover:border-white/20 hover:bg-white/12 hover:text-white"
         >
           沉浸式專注音樂
         </Link>
