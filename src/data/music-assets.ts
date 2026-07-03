@@ -533,7 +533,7 @@ export const themePrograms: ThemeProgram[] = [
       "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道建立專注歌單。",
     operatingPrinciples: [
       "共用骨架固定 long-loop、no vocals、equal-power crossfade、LUFS 正規化與 dark premium 美學，不讓品質規格在主題切換時漂移。",
-      "BPM 只能走 85 / 100 / 105 / 110 / 115 / 120 六條車道，85 專責慢速沉浸，其餘車道維持可接歌策略。",
+      "BPM 只能走 85 / 105 / 110 / 120 四條車道，85 專責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
       "先做情緒與場景，再做音樂 prompt；禁止只換 BPM 不換聲音世界觀，避免生成出節奏對但氣質錯的內容。",
     ],
     layoutNotes: [
@@ -551,7 +551,7 @@ export const themePrograms: ThemeProgram[] = [
       {
         id: "Focus 02",
         title: "BPM 車道決策",
-        detail: "只允許 85 / 100 / 105 / 110 / 115 / 120，85 負責慢速深度工作，其餘車道維持原本可接歌策略。",
+        detail: "只允許 85 / 105 / 110 / 120，85 負責慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
         deliverable: "鎖定單一 BPM 與 energy level，避免同一首歌同時帶多個節奏意圖。",
       },
       {
@@ -578,13 +578,13 @@ export const themePrograms: ThemeProgram[] = [
         quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位高端沉浸式音樂企劃師。
 
-請根據我提供的少量線索，輸出一份 CEO Deep Focus 主題 brief。
+請根據我提供的少量線索，輸出一份「深度專注心流（CEO Deep Focus）」主題 brief。
 
 必須輸出：
 1. themeScenario
 2. 核心情緒 3-5 個
 3. 使用場景
-4. 建議 BPM（只能從 85 / 100 / 105 / 110 / 115 / 120 擇一）
+4. 建議 BPM（只能從 85 / 105 / 110 / 120 擇一）
 5. 建議 energy level（1-10）
 6. 視覺關鍵字
 7. 音樂風格關鍵字
@@ -736,7 +736,7 @@ Brief：
       {
         id: "Check 02",
         title: "BPM 車道正確",
-        detail: "必須落在既定六條車道，且 85 BPM 只能用於慢速沉浸與閱讀型內容。",
+        detail: "必須落在既定四條車道，且 85 BPM 只用於慢速沉浸，其餘車道聚焦高密度思考、決策與 coding。",
       },
       {
         id: "Check 03",
@@ -1435,7 +1435,7 @@ Brief：
     positioning:
       "不是飯店大廳 BGM，也不是純 ambient 噪景，而是帶有策展感與商業展示適配性的展場音樂線：要有空間感、質地感與流動感，同時不能搶走作品本身的注意力。",
     operatingPrinciples: [
-      "BPM 只走 90 / 95 兩條車道，讓觀展步調與空間流動感維持在舒適、穩定且不急躁的區間。",
+      "內容可走 Ambient 聲場方向，或 90 / 95 兩條弱脈衝車道，讓觀展步調與空間流動感維持在舒適、穩定且不急躁的區間。",
       "聲音核心需結合 ambient electronica、minimal pulse、gallery-grade texture、soft percussive motion，禁止強烈主旋律或情緒過度煽動。",
       "視覺與文案必須同時成立展牆、光束、留白動線、霧面材質、投影裝置與人流停留這組展場世界觀。",
     ],
@@ -1454,8 +1454,8 @@ Brief：
       {
         id: "Expo 02",
         title: "動線節奏決策",
-        detail: "只允許 90 / 95 BPM，讓觀展停留與步行節奏穩定，不把空間推向 lounge 或舞池方向。",
-        deliverable: "鎖定單一車道與 energy level，確保整組內容能長時間支撐展場動線。",
+        detail: "可選 Ambient 聲場方向，或 90 / 95 BPM 的弱脈衝版本，讓觀展停留與步行節奏穩定，不把空間推向 lounge 或舞池方向。",
+        deliverable: "鎖定 Ambient 聲場方向，或鎖定 90 / 95 的單一弱脈衝車道與 energy level，確保整組內容能長時間支撐展場動線。",
       },
       {
         id: "Expo 03",
@@ -1476,18 +1476,18 @@ Brief：
       {
         id: "Module 01",
         title: "展場 Brief",
-        purpose: "把少量策展與空間意象整理成可執行的辦展展場音樂生產 brief。",
+        purpose: "把少量策展與空間意象整理成可執行的沉浸式展場聲景生產 brief。",
         autoAdvanceToNext: true,
         quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位策展展場與商業空間音樂企劃師。
 
-請根據我提供的少量線索，輸出一份 辦展展場音樂 主題 brief。
+請根據我提供的少量線索，輸出一份「沉浸式展場聲景」主題 brief。
 
 必須輸出：
 1. themeScenario
 2. 核心情緒 3-5 個
 3. 使用場景
-4. 建議 BPM（只能從 90 / 95 擇一）
+4. 建議 BPM（只能從 Ambient / 90 / 95 擇一）
 5. 建議 energy level（1-10）
 6. 視覺關鍵字
 7. 音樂風格關鍵字
@@ -1497,6 +1497,7 @@ Brief：
 - 走 premium exhibition、gallery flow、spatial restraint
 - 不要反問，直接補足缺漏
 - 內容需支援 long-loop 與平順 crossfade
+- 若選 Ambient，聲音可接近無拍或僅保留極弱脈衝；若要進站上架，metadata 仍需對應到 90 或 95 的弱脈衝設定
 - 禁止寫成咖啡廳 BGM、飯店大廳鋼琴或夜店 lounge
 
 輸入線索：
@@ -1520,8 +1521,8 @@ Generate 2 English prompts for instrumental exhibition background tracks.
 
 Requirements:
 - premium exhibition soundscape
-- minimal electronica / spatial ambient pulse / subtle gallery rhythm
-- exact BPM same as the brief
+- minimal electronica / spatial ambient pulse / beatless ambient option / subtle gallery rhythm
+- if the brief chooses Ambient, keep it beatless or pulse-light; otherwise keep the BPM exactly the same as the brief
 - loop-friendly
 - smooth crossfade ready
 - low-distraction
@@ -1550,7 +1551,7 @@ Brief:
 - Module 02 的候選 Prompt 01 會生成 2 首歌
 - Module 02 的候選 Prompt 02 也會生成 2 首歌
 
-請根據 辦展展場音樂 brief 與 2 組音樂 prompt 產出：
+請根據 沉浸式展場聲景 brief 與 2 組音樂 prompt 產出：
 1. Song 01 封面圖英文 prompt
 2. Song 02 封面圖英文 prompt
 3. Song 03 封面圖英文 prompt
@@ -1568,7 +1569,7 @@ Brief：
       {
         id: "Module 04",
         title: "展場上架 JSON",
-        purpose: "把辦展展場音樂生成結果整理成可直接上站的 Track 資產。",
+        purpose: "把沉浸式展場聲景生成結果整理成可直接上站的 Track 資產。",
         upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
         inputMode: "low_input_auto_context",
         quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
@@ -1585,7 +1586,7 @@ Brief：
         ],
         template: `你是一位 TypeScript 音樂資料整理助手。
 
-請優先使用我上游已提供的展場 Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
+請優先使用我上游已提供的沉浸式展場聲景 Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
 
 請整理成 Track JSON 與 transition 補充欄位：
 - title
@@ -1610,7 +1611,8 @@ Brief：
 
 規則：
 - 只輸出 JSON
-- BPM 只能是 90 或 95
+- 若 Brief 為 Ambient，請仍以 90 或 95 的極弱脈衝填入 bpm 與 transition metadata，且在文案中明確說明它以 ambient soundscape 為主
+- BPM 欄位只能是 90 或 95
 - 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
 - 欄位不可省略
 
@@ -1627,7 +1629,7 @@ Brief：
       {
         id: "Check 02",
         title: "車道控制正確",
-        detail: "BPM 只能落在 90 / 95，確保觀展步調穩定、耐聽且不搶作品注意力。",
+        detail: "若走 Ambient，需保持近乎無拍或極弱脈衝；若走節拍版，BPM 只能落在 90 / 95，確保觀展步調穩定、耐聽且不搶作品注意力。",
       },
       {
         id: "Check 03",
