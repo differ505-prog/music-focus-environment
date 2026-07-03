@@ -20,7 +20,6 @@ type PublicFocusBrowserProps = {
   routeEntries: PublicRouteEntry[];
   activeRouteId: string;
   activeRouteBpm: number | null;
-  currentTrackTitle?: string | null;
   selectedIds: string[];
   playbackCurrentTrackId: string | null;
   playbackNextTrackId: string | null;
@@ -38,7 +37,6 @@ export function PublicFocusBrowser({
   routeEntries,
   activeRouteId,
   activeRouteBpm,
-  currentTrackTitle,
   selectedIds,
   playbackCurrentTrackId,
   playbackNextTrackId,
@@ -64,15 +62,10 @@ export function PublicFocusBrowser({
             <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">現在想聽什麼</p>
             <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">直接選一個狀態</h2>
           </div>
-          {currentTrackTitle ? (
-            <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5 text-xs text-cyan-100/85">
-              正在播放 {currentTrackTitle}
-            </span>
-          ) : null}
         </div>
 
         <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5" aria-label="播放狀態">
-          {routeEntries.map(({ program, configuredBpms, programTracks }) => {
+          {routeEntries.map(({ program, configuredBpms }) => {
             const isActive = activeRouteEntry?.program.id === program.id;
 
             return (
@@ -89,7 +82,6 @@ export function PublicFocusBrowser({
                 <p className="text-[11px] uppercase tracking-[0.3em] text-white/48">{configuredBpms.join(" / ")} BPM</p>
                 <h3 className="mt-3 font-serif text-2xl text-white xl:text-xl">{program.title}</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{program.summary}</p>
-                <p className="mt-5 text-xs text-white/54">{programTracks.length} 首歌</p>
               </button>
             );
           })}
@@ -104,7 +96,6 @@ export function PublicFocusBrowser({
               {activeRouteEntry?.program.title ?? "選一個狀態"}
             </h2>
           </div>
-          <p className="text-sm text-white/62">{activeRouteEntry?.programTracks.length ?? 0} 首歌</p>
         </div>
 
         <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4" aria-label="節奏選擇">
@@ -124,9 +115,7 @@ export function PublicFocusBrowser({
               >
                 <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">節奏</p>
                 <h3 className="mt-3 font-serif text-2xl text-white">{subroute.bpm} BPM</h3>
-                <p className="mt-3 text-sm leading-6 text-white/68">
-                  {subroute.tracks.length > 0 ? `${subroute.tracks.length} 首歌` : "暫時沒有歌曲"}
-                </p>
+                <p className="mt-3 text-sm leading-6 text-white/68">{subroute.tracks.length > 0 ? "直接進入" : "暫時沒有歌曲"}</p>
               </button>
             );
           })}
@@ -141,7 +130,7 @@ export function PublicFocusBrowser({
               {activeSubroute ? `${activeSubroute.bpm} BPM` : "選一個節奏"}
             </h2>
             <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-              {activeSubroute ? `${activeSubroute.tracks.length} 首歌，可直接播放。` : "先選一個節奏。"}
+              {activeSubroute ? "挑一首，或直接開始。" : "先選一個節奏。"}
             </p>
           </div>
           <div className="flex flex-wrap gap-3">

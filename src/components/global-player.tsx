@@ -1,11 +1,8 @@
 'use client';
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ChevronUp,
-  Expand,
-  ListMusic,
   Minimize2,
   Pause,
   Play,
@@ -18,6 +15,9 @@ import {
   X,
 } from "lucide-react";
 
+import { PlayerArtworkActions } from "@/components/player-artwork-actions";
+import { PlayerArtworkStage } from "@/components/player-artwork-stage";
+import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -100,6 +100,18 @@ export function GlobalPlayer({
   const publicTrackSummary = currentTrack
     ? `${currentTrack.bpm} BPM · 約 ${Math.round(currentTrack.durationSeconds / 60)} 分鐘`
     : null;
+  const artworkDetailLine = currentTrack
+    ? `${showAdminDetails
+        ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
+        : publicTrackSummary}${playback.repeatEnabled ? " · 循環播放" : ""}`
+    : "";
+  const artworkFooterLabel = showAdminDetails && sessionPlan
+    ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
+    : nextTrack
+      ? `下一首 ${nextTrack.title}`
+      : isProjectionMode
+        ? "封面"
+        : "雙擊全螢幕";
 
   useEffect(() => {
     if (!currentTrack) {
@@ -231,9 +243,18 @@ export function GlobalPlayer({
   }, [isArtworkOpen, isProjectionMode, isArtworkFullscreen]);
 
   const artworkStage = currentTrack && artworkSrc ? (
-    <div
-      ref={artworkContainerRef}
-      onClick={
+    <PlayerArtworkStage
+      artworkContainerRef={artworkContainerRef}
+      artworkSrc={artworkSrc}
+      trackTitle={currentTrack.title}
+      detailLine={artworkDetailLine}
+      footerLabel={artworkFooterLabel}
+      isProjectionMode={isProjectionMode}
+      isArtworkFullscreen={isArtworkFullscreen}
+      isPureProjection={isPureProjection}
+      isProjectionHudVisible={isProjectionHudVisible}
+      isProjectionCursorHidden={isProjectionCursorHidden}
+      onBackgroundClick={
         !isProjectionMode && !isArtworkFullscreen
           ? (event) => {
               if (event.target === event.currentTarget) {
@@ -242,86 +263,12 @@ export function GlobalPlayer({
             }
           : undefined
       }
-      onMouseMove={revealProjectionHud}
-      onTouchStart={revealProjectionHud}
-      className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02040a]/96 p-4 md:p-8 ${isProjectionMode && isProjectionCursorHidden ? "cursor-none" : ""}`}
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.16),transparent_26%),radial-gradient(circle_at_bottom,rgba(34,211,238,0.14),transparent_32%)] animate-projection-breathe" />
-      <Image
-        src={artworkSrc}
-        alt={currentTrack.title}
-        fill
-        className="projection-artwork-glow object-cover opacity-22 blur-2xl"
-        unoptimized
-      />
-      <div
-        className={`pointer-events-none absolute left-4 right-4 top-4 z-20 flex items-center justify-between gap-3 rounded-full border border-white/10 bg-black/22 px-4 py-3 text-[11px] uppercase tracking-[0.26em] text-white/52 backdrop-blur-xl transition duration-500 md:left-8 md:right-8 ${
-          isProjectionHudVisible && !isArtworkFullscreen
-            ? "opacity-100 translate-y-0"
-            : "pointer-events-none opacity-0 -translate-y-3"
-        }`}
-      >
-        <span>{isProjectionMode ? "全螢幕封面" : "封面檢視"}</span>
-        <span>{isProjectionMode ? "Esc 關閉 / 雙擊切換全螢幕" : "雙擊切換全螢幕"}</span>
-      </div>
-      <div className="relative z-10 flex h-full w-full items-center justify-center">
-        <div
-          className={`projection-stage relative aspect-[16/9] w-full max-w-[min(92vw,180vh)] overflow-hidden bg-black/28 ${
-            isPureProjection
-              ? "h-full w-full max-w-none rounded-none border-none shadow-none"
-              : "rounded-[32px] border border-white/10 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
-          } ${isProjectionMode ? "projection-stage-drift" : ""}`}
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          onDoubleClick={(event) => {
-            event.stopPropagation();
-            void handleToggleArtworkFullscreen();
-          }}
-        >
-          {!isPureProjection ? (
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,transparent_72%,rgba(255,255,255,0.03))]" />
-          ) : null}
-          <Image
-            src={artworkSrc}
-            alt={currentTrack.title}
-            fill
-            className={isPureProjection ? "object-contain projection-pure-drift" : "object-contain"}
-            unoptimized
-            priority
-          />
-        </div>
-      </div>
-      <div
-        className={`pointer-events-none absolute bottom-4 left-4 right-4 z-20 flex justify-center transition duration-500 md:bottom-8 ${
-          isProjectionHudVisible && !isArtworkFullscreen
-            ? "opacity-100 translate-y-0"
-            : "pointer-events-none opacity-0 translate-y-3"
-        }`}
-      >
-        <div className="max-w-4xl rounded-[28px] border border-white/10 bg-black/26 px-5 py-4 text-center backdrop-blur-xl">
-          <p className="text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/52">
-            {isProjectionMode ? "全螢幕封面" : "正在播放"}
-          </p>
-          <h3 className="mt-3 font-serif text-2xl text-white md:text-4xl">{currentTrack.title}</h3>
-          <p className="mt-2 text-sm text-white/56 md:text-base">
-            {showAdminDetails
-              ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
-              : publicTrackSummary}
-            {playback.repeatEnabled ? " · 循環播放" : ""}
-          </p>
-          <p className="mt-2 text-xs uppercase tracking-[0.22em] text-white/38">
-            {showAdminDetails && sessionPlan
-              ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
-              : nextTrack
-                ? `下一首 ${nextTrack.title}`
-                : isProjectionMode
-                  ? "封面"
-                  : "雙擊全螢幕"}
-          </p>
-        </div>
-      </div>
-    </div>
+      onRevealHud={revealProjectionHud}
+      onToggleFullscreen={(event) => {
+        event.stopPropagation();
+        void handleToggleArtworkFullscreen();
+      }}
+    />
   ) : null;
 
   if (isMinimized) {
@@ -344,28 +291,13 @@ export function GlobalPlayer({
             </div>
 
             <div className="flex items-center gap-2">
-              {currentTrack && artworkSrc ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArtwork(false)}
-                        className="rounded-full border border-white/10 bg-white/8 p-3 text-white/75 transition hover:bg-white/12 hover:text-white"
-                        aria-label="展開封面圖"
-                      >
-                        <Expand className="h-4 w-4" />
-                      </button>
-                      {showAdminDetails ? (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenArtwork(true)}
-                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-3 py-3 text-[11px] uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
-                          aria-label="開啟投影模式"
-                        >
-                          投影
-                        </button>
-                      ) : null}
-                    </>
-                  ) : null}
+              <PlayerArtworkActions
+                hasArtwork={Boolean(currentTrack && artworkSrc)}
+                showAdminDetails={showAdminDetails}
+                compact
+                onOpenArtwork={() => handleOpenArtwork(false)}
+                onOpenProjection={() => handleOpenArtwork(true)}
+              />
               <button
                 type="button"
                 onClick={onPlayPause}
@@ -425,28 +357,12 @@ export function GlobalPlayer({
                   {showAdminDetails ? "Neon Focus Auto DJ" : "正在播放"}
                 </div>
                 <div className="flex items-center gap-2">
-                  {currentTrack && artworkSrc ? (
-                    <>
-                      <button
-                        type="button"
-                        onClick={() => handleOpenArtwork(false)}
-                        className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs uppercase tracking-[0.24em] text-white/70 transition hover:bg-white/12 hover:text-white"
-                        aria-label="展開封面圖"
-                      >
-                        封面
-                      </button>
-                      {showAdminDetails ? (
-                        <button
-                          type="button"
-                          onClick={() => handleOpenArtwork(true)}
-                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/12 px-4 py-2 text-xs uppercase tracking-[0.24em] text-fuchsia-50 transition hover:bg-fuchsia-400/18"
-                          aria-label="開啟投影模式"
-                        >
-                          投影
-                        </button>
-                      ) : null}
-                    </>
-                  ) : null}
+                  <PlayerArtworkActions
+                    hasArtwork={Boolean(currentTrack && artworkSrc)}
+                    showAdminDetails={showAdminDetails}
+                    onOpenArtwork={() => handleOpenArtwork(false)}
+                    onOpenProjection={() => handleOpenArtwork(true)}
+                  />
                   <button
                     type="button"
                     onClick={onToggleMinimize}
@@ -635,53 +551,14 @@ export function GlobalPlayer({
             </div>
           </div>
 
-          <div className="mt-4 rounded-[24px] border border-white/10 bg-white/6 p-3">
-            <div className="mb-3 flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/58">
-              <ListMusic className="h-4 w-4" />
-              播放清單
-            </div>
-            {playlist.length === 0 ? (
-              <p className="text-sm text-white/48">播放後會顯示清單。</p>
-            ) : (
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {playlist.map((track, index) => {
-                  const isCurrent = playback.currentTrackId === track.id;
-                  const isNext = playback.nextTrackId === track.id;
-
-                  return (
-                    <button
-                      key={track.id}
-                      type="button"
-                      onClick={() => onPlayTrack(track.id)}
-                      className={`min-w-[180px] rounded-[20px] border px-4 py-3 text-left transition ${
-                        isCurrent
-                          ? "border-cyan-300/40 bg-cyan-300/14 text-cyan-50"
-                          : isNext
-                            ? "border-amber-300/30 bg-amber-300/10 text-amber-50"
-                            : "border-white/10 bg-black/18 text-white/72 hover:border-white/20 hover:bg-white/8"
-                      }`}
-                    >
-                      <p className="text-[11px] uppercase tracking-[0.24em] opacity-70">
-                        {showAdminDetails
-                          ? sessionPlan?.trackPlans[index]?.phaseLabel ?? `Track ${index + 1}`
-                          : `第 ${index + 1} 首`}
-                      </p>
-                      <p className="mt-2 truncate text-sm font-medium">{track.title}</p>
-                      <p className="mt-1 text-xs opacity-70">
-                        {isCurrent
-                          ? "目前播放"
-                          : isNext
-                            ? "下一首"
-                            : showAdminDetails
-                              ? sessionPlan?.trackPlans[index]?.transitionSummary ?? `${track.bpm} BPM`
-                              : `${track.bpm} BPM`}
-                      </p>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+          <PlayerPlaylistStrip
+            playlist={playlist}
+            currentTrackId={playback.currentTrackId}
+            nextTrackId={playback.nextTrackId}
+            showAdminDetails={showAdminDetails}
+            sessionPlan={sessionPlan}
+            onPlayTrack={onPlayTrack}
+          />
         </div>
       </div>
       {isArtworkOpen ? artworkStage : null}

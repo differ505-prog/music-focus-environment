@@ -278,7 +278,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             routeEntries={publicRouteEntries}
             activeRouteId={activeRouteId}
             activeRouteBpm={activeRouteBpm}
-            currentTrackTitle={currentTrack?.title ?? null}
             selectedIds={selectedIds}
             playbackCurrentTrackId={playback.currentTrackId}
             playbackNextTrackId={playback.nextTrackId}
