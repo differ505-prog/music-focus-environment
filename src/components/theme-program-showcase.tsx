@@ -24,8 +24,11 @@ export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: Th
       <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
         {programs.map((program) => {
           const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
-          const featuredCount = programTracks.filter((track) => track.featured).length;
           const liveCollections = new Set(programTracks.flatMap((track) => track.collectionIds ?? [])).size;
+          const totalMinutes = Math.max(
+            1,
+            Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60),
+          );
 
           return (
             <article
@@ -46,31 +49,23 @@ export function ThemeProgramShowcase({ programs, tracks, batches: _batches }: Th
 
               <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                 <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5">
-                  曲目 {programTracks.length}
+                  {programTracks.length > 0 ? `約 ${totalMinutes} 分鐘` : "即將推出"}
                 </span>
-                <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-3 py-1.5 text-amber-100/80">
-                  精選 {featuredCount}
-                </span>
-                <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                  系列 {liveCollections}
-                </span>
+                {liveCollections > 0 ? (
+                  <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                    {liveCollections} 個系列
+                  </span>
+                ) : null}
               </div>
 
               <div className="mt-5 rounded-[20px] border border-white/8 bg-white/6 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適用場景</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適合這些時候</p>
                 <p className="mt-2 leading-6 text-white/76">{program.audience}</p>
               </div>
 
               <div className="mt-4 rounded-[20px] border border-white/8 bg-[#08111c]/90 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">你會聽到什麼</p>
-                <div className="mt-3 grid gap-3 md:grid-cols-2">
-                  {program.layoutNotes.slice(0, 2).map((note, index) => (
-                    <div key={`${program.id}-note-${index + 1}`} className="rounded-[18px] border border-cyan-300/10 bg-cyan-300/6 p-4">
-                      <p className="text-[11px] uppercase tracking-[0.24em] text-cyan-100/55">重點 {index + 1}</p>
-                      <p className="mt-2 leading-6 text-white/68">{note}</p>
-                    </div>
-                  ))}
-                </div>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/60">打開後的感覺</p>
+                <p className="mt-3 leading-6 text-white/68">{program.summary}</p>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
                 {programTracks.length > 0 && liveCollections > 0 ? (
