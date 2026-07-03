@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Headphones, Sparkles } from "lucide-react";
+import { ChevronDown, ChevronUp, Headphones, Plus, Sparkles } from "lucide-react";
 
 import { generatedSceneImageUrl, trackBatches, trackCollections } from "@/data/music-assets";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
@@ -79,26 +79,23 @@ export function MediaCard({
             <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
               {asset.bpm} BPM
             </span>
-            {asset.featured && !showAdminDetails ? (
-              <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
-                熱門情境
-              </span>
-            ) : null}
             {asset.featured && showAdminDetails ? (
               <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
                 精選
               </span>
             ) : null}
           </div>
-          <label className="flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/32 px-3 py-2 text-xs text-white/75 backdrop-blur-xl">
-            <input
-              type="checkbox"
-              checked={checked}
-              onChange={() => onToggle(asset.id)}
-              className="h-4 w-4 rounded border-white/18 bg-transparent accent-cyan-300"
-            />
-            選取
-          </label>
+          {showAdminDetails ? (
+            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/32 px-3 py-2 text-xs text-white/75 backdrop-blur-xl">
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => onToggle(asset.id)}
+                className="h-4 w-4 rounded border-white/18 bg-transparent accent-cyan-300"
+              />
+              選取
+            </label>
+          ) : null}
         </div>
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
           <div className="space-y-2">
@@ -118,8 +115,8 @@ export function MediaCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        {!showAdminDetails
-          ? collectionLabels.slice(0, 1).map((label) => (
+        {showAdminDetails
+          ? collectionLabels.map((label) => (
               <span
                 key={`${asset.id}-${label}`}
                 className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
@@ -127,14 +124,7 @@ export function MediaCard({
                 {label}
               </span>
             ))
-          : collectionLabels.map((label) => (
-          <span
-            key={`${asset.id}-${label}`}
-            className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
-          >
-            {label}
-          </span>
-            ))}
+          : null}
         {batchLabel && showAdminDetails ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
             {batchLabel}
@@ -201,12 +191,6 @@ export function MediaCard({
             下一首
           </span>
         ) : null}
-        {checked ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/10 px-3 py-1 text-xs text-white/78">
-            <Check className="h-3.5 w-3.5" />
-            已加入播放清單
-          </span>
-        ) : null}
         {compatibility && !isCurrent && showAdminDetails ? (
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${compatibilityTone}`}>
             {compatibility.label}
@@ -270,6 +254,24 @@ export function MediaCard({
           </div>
         ) : null}
       </div>
+      ) : null}
+      {!showAdminDetails ? (
+        <div className="mt-5 flex gap-3">
+          <button
+            type="button"
+            onClick={() => onToggle(asset.id)}
+            className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
+              checked
+                ? "border-white/16 bg-white/12 text-white"
+                : "border-white/10 bg-black/20 text-white/76 hover:border-white/18 hover:text-white"
+            }`}
+          >
+            <span className="inline-flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              {checked ? "已加入清單" : "加入清單"}
+            </span>
+          </button>
+        </div>
       ) : null}
       </div>
     </article>
