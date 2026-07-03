@@ -52,7 +52,11 @@ export function useArtworkProjection({ enabled }: UseArtworkProjectionOptions) {
 
   const closeArtwork = useCallback(async () => {
     if (typeof document !== "undefined" && document.fullscreenElement === artworkContainerRef.current) {
-      await document.exitFullscreen();
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // Browsers can reject fullscreen exit when the document is inactive.
+      }
     }
 
     clearProjectionTimers();
