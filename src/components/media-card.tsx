@@ -86,7 +86,7 @@ export function MediaCard({
             ) : null}
             {asset.featured && showAdminDetails ? (
               <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
-                Featured
+                精選
               </span>
             ) : null}
           </div>
@@ -232,7 +232,7 @@ export function MediaCard({
         <div className="mt-5 grid gap-4 text-sm text-white/72">
         <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
           <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            {showAdminDetails ? "Track Identity" : "這首歌適合什麼時候播放"}
+            {showAdminDetails ? "曲目資訊" : "這首歌適合什麼時候播放"}
           </p>
           <p className="leading-6">{asset.copy.descriptionZh}</p>
           {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}
@@ -241,7 +241,7 @@ export function MediaCard({
             {showAdminDetails && batchLabel ? `，上架批次：${batchLabel}` : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {(showAdminDetails ? asset.moodTags : asset.moodTags.slice(0, 3)).map((tag) => (
+            {(showAdminDetails ? asset.moodTags : asset.moodTags.slice(0, 2)).map((tag) => (
               <span
                 key={tag}
                 className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/58"

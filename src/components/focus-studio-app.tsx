@@ -3,16 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
-import {
-  bpmOptions,
-  generatedSceneImageUrl,
-  mixEvents,
-  mixSessions,
-  trackBatches,
-  trackCollections,
-  themePrograms,
-  tracks,
-} from "@/data/music-assets";
+import { generatedSceneImageUrl, mixEvents, mixSessions, trackBatches, trackCollections, themePrograms, tracks } from "@/data/music-assets";
 import { FilterBar } from "@/components/filter-bar";
 import { BpmRecommendationPanel } from "@/components/bpm-recommendation-panel";
 import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
@@ -64,6 +55,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
   const publishedCollections = useMemo(() => {
     return trackCollections;
+  }, []);
+
+  const availableBpmOptions = useMemo(() => {
+    return Array.from(new Set(tracks.map((track) => track.bpm))).sort((left, right) => left - right);
   }, []);
 
   const featuredTrackCount = useMemo(() => {
@@ -279,7 +274,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                       >
                         <div className="flex flex-wrap items-center gap-2 text-xs text-white/62">
                           <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
-                            {program.label}
+                    {program.label}
                           </span>
                           <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
                             {program.bpmDisplay}
@@ -369,7 +364,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                     {tracks.length} 首曲目
                   </span>
                   <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                    {bpmOptions.join(" / ")} BPM
+                    {availableBpmOptions.join(" / ")} BPM
                   </span>
                 </div>
               </button>
@@ -428,7 +423,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
         <div className="mt-6">
           <FilterBar
-            bpmOptions={bpmOptions}
+            bpmOptions={availableBpmOptions}
             activeBpms={activeBpms}
             visibleCount={filteredAssets.length}
             selectedCount={selectedAssets.length}

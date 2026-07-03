@@ -127,7 +127,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "skyline-ember-ledger",
     musicalKey: "B Minor",
     energyLevel: 6.7,
-    moodTags: ["skyline", "firelight", "deep-work"],
+    moodTags: ["高樓夜景", "壁爐火光", "深度工作"],
     descriptionZh: "高樓夜景與壁爐火光交疊出的 85 BPM 深度工作節奏，適合寫作、規劃與長時間低壓沉浸。",
     descriptionEn: "An 85 BPM executive focus groove shaped by city-light tension and fireplace warmth, designed for writing, planning, and extended low-pressure immersion.",
     themeScenario: "高樓書桌前的深色辦公室裡，城市燈海鋪在窗外，火光把節奏壓進更安靜、更穩定的夜間專注狀態。",
@@ -155,7 +155,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "harbor-afterglow-study",
     musicalKey: "D Minor",
     energyLevel: 6.4,
-    moodTags: ["harbor", "night-study", "glassmorphism"],
+    moodTags: ["河岸夜景", "夜讀", "霧面光感"],
     descriptionZh: "河岸夜景、壁爐暖光與低亮客廳所構成的 85 BPM 夜讀節奏，適合閱讀、整理與靜態思考。",
     descriptionEn: "An 85 BPM late-night study loop with harbor lights, fireplace warmth, and a restrained lounge atmosphere for reading, reflection, and deliberate note-taking.",
     themeScenario: "面向河岸燈火的深色客廳中，沙發、酒杯與燭光維持安靜秩序，讓思緒在穩定節拍裡延長停留。",
@@ -183,7 +183,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "obsidian-lake-focus",
     musicalKey: "F Minor",
     energyLevel: 4.1,
-    moodTags: ["misty-lake", "dark-forest", "105-bpm"],
+    moodTags: ["霧湖", "森林", "105 BPM"],
     descriptionZh:
       "薄霧冷湖與針葉林包圍出的 105 BPM 心流迴圈，節奏穩定、情緒克制，適合深夜決策、模型審閱與長時間策略思考。",
     descriptionEn:
@@ -214,7 +214,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "walnut-command-drift",
     musicalKey: "C Minor",
     energyLevel: 4.3,
-    moodTags: ["walnut-cabin", "deliberate-control", "105-bpm"],
+    moodTags: ["胡桃木", "理性推進", "105 BPM"],
     descriptionZh:
       "胡桃木桌面、暗色石材與深湖倒影構成的 105 BPM 穩態節拍，適合財務模型、組織決策與需要冷靜推進的長工時工作。",
     descriptionEn:
@@ -245,7 +245,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "lakeside-ember-terrace",
     musicalKey: "A Minor",
     energyLevel: 4.4,
-    moodTags: ["ember-terrace", "lakehouse", "105-bpm"],
+    moodTags: ["露台火光", "湖畔空間", "105 BPM"],
     descriptionZh:
       "湖畔露台、火光倒影與潮濕石材鋪陳出的 105 BPM 專注節拍，適合長時段規劃、審稿與需要柔和推進感的高密度工作。",
     descriptionEn:
@@ -276,7 +276,7 @@ const trackNarratives: TrackNarrativeSeed[] = [
     slug: "midnight-library-ledger",
     musicalKey: "E Minor",
     energyLevel: 4.2,
-    moodTags: ["midnight-library", "ledger-room", "105-bpm"],
+    moodTags: ["深夜書房", "秩序感", "105 BPM"],
     descriptionZh:
       "雙層書牆、湖景落地窗與暖色吊燈構成的 105 BPM 理性心流，特別適合財務整理、寫作校對與需要秩序感的深夜工作。",
     descriptionEn:
@@ -307,12 +307,12 @@ const trackNarratives: TrackNarrativeSeed[] = [
 const trackCollectionsSeed = [
   {
     id: "featured-obsidian-waters",
-    label: "Featured Collection",
-    title: "Obsidian Waters",
-    summary: "黑曜湖畔的 CEO Deep Focus 精選組曲，專注於冷靜決策、霧湖空間感與平直心流。",
+    label: "精選系列",
+    title: "黑曜湖畔",
+    summary: "黑曜湖畔的深度專注組曲，收斂成冷靜、穩定、低干擾的心流節奏。",
     description:
-      "把黑曜森林、霧湖辦公室與深色材質語言收斂成一條完整內容線，讓使用者不是只挑單首，而是直接進入同一種工作情境。",
-    heroMetric: "4 首 105 BPM 精選",
+      "把霧湖、森林與深色材質收斂成一條完整工作情境，適合直接整組打開，穩定進入長時間專注。",
+    heroMetric: "4 首 105 BPM 心流曲",
     bpmFocus: [105],
     trackIds: [
       "obsidian-lake-focus",
@@ -324,12 +324,12 @@ const trackCollectionsSeed = [
   },
   {
     id: "night-ledger-series",
-    label: "Night Ledger",
-    title: "Night Ledger Sessions",
+    label: "深夜理帳",
+    title: "深夜理帳",
     summary: "偏向財務整理、寫作與深夜校對的理性專注系列。",
     description:
-      "從高樓書桌到雙層書牆，把長工時、低干擾與秩序感做成可連續播放的深色工作場景。",
-    heroMetric: "4 首理性深夜工作曲",
+      "從高樓夜景到書房秩序，把低干擾、長工時與夜間沉靜感整理成一條可連續播放的工作路線。",
+    heroMetric: "4 首夜間工作曲",
     bpmFocus: [85, 105],
     trackIds: [
       "skyline-ember-ledger",
@@ -341,12 +341,12 @@ const trackCollectionsSeed = [
   },
   {
     id: "architectural-calm",
-    label: "Architectural Calm",
-    title: "Architectural Calm Loops",
-    summary: "以玻璃、石材、胡桃木與火光構成的空間導向沉浸系列。",
+    label: "空間沉浸",
+    title: "空間靜域",
+    summary: "以玻璃、石材、胡桃木與火光構成的空間沉浸系列。",
     description:
-      "把豪宅書房、湖畔露台與深色客廳的材質語言串成同一種 premium atmosphere，強化網站的策展入口感。",
-    heroMetric: "玻璃 x 胡桃木 x 火光",
+      "把玻璃、石材、火光與湖景的材質語言串成同一條沉浸路線，讓工作現場更安靜、更有包覆感。",
+    heroMetric: "玻璃 x 石材 x 火光",
     bpmFocus: [85, 105],
     trackIds: [
       "skyline-ember-ledger",
@@ -361,9 +361,9 @@ const trackCollectionsSeed = [
 const trackBatchesSeed = [
   {
     id: "batch-2026-07-03-obsidian",
-    label: "Batch 07.03",
-    title: "Obsidian Waters 105 BPM Batch",
-    summary: "依據 CEO Deep Focus 黑曜湖畔 brief 一次上架的 4 首 105 BPM 曲目。",
+    label: "07.03 上架",
+    title: "黑曜湖畔 105 BPM 上架",
+    summary: "本輪上架的 4 首 105 BPM 深度專注曲目。",
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-03T12:08:00.000Z",
     trackIds: [
@@ -375,9 +375,9 @@ const trackBatchesSeed = [
   },
   {
     id: "batch-2026-07-02-nightfall",
-    label: "Batch 07.02",
-    title: "Night Work Foundations Batch",
-    summary: "建立首頁基礎內容庫的首批 85 BPM 深度工作曲目。",
+    label: "07.02 上架",
+    title: "深夜理帳首波上架",
+    summary: "首批 85 BPM 夜間專注曲目。",
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-02T22:52:00.000Z",
     trackIds: ["skyline-ember-ledger", "harbor-afterglow-study"],
@@ -436,9 +436,9 @@ export const trackBatches: TrackBatch[] = trackBatchesSeed.map((batch) => ({
 export const sessionPresets: SessionPreset[] = [
   {
     id: "preset-focus-60",
-    label: "60 Min Focus",
-    title: "Obsidian Waters Sprint",
-    summary: "用 60 分鐘進入黑曜湖畔的深度工作節奏。",
+    label: "60 分鐘快進",
+    title: "黑曜湖畔短程專注",
+    summary: "用 60 分鐘快速進入穩定的深度專注節奏。",
     description: "適合早晨開工、重要會議前整理思路，或需要快速進入沉浸式工作狀態的短程 session。",
     durationMinutes: 60,
     collectionId: "featured-obsidian-waters",
@@ -446,8 +446,8 @@ export const sessionPresets: SessionPreset[] = [
   },
   {
     id: "preset-ledger-90",
-    label: "90 Min Night Work",
-    title: "Night Ledger Review",
+    label: "90 分鐘夜間工作",
+    title: "深夜理帳長段工作",
     summary: "給寫作、校對與財務整理的 90 分鐘理性工作包。",
     description: "偏向深夜低干擾工作，節奏更克制，適合長段閱讀、編輯與資料整理。",
     durationMinutes: 90,
@@ -456,8 +456,8 @@ export const sessionPresets: SessionPreset[] = [
   },
   {
     id: "preset-architectural-75",
-    label: "75 Min Atmosphere",
-    title: "Architectural Calm Session",
+    label: "75 分鐘空間沉浸",
+    title: "空間靜域工作場",
     summary: "用空間材質與火光氛圍把工作現場收斂成穩定節奏。",
     description: "適合需要 premium atmosphere 的寫作與 brainstorming，讓空間感先建立，再進入長段專注。",
     durationMinutes: 75,
@@ -523,7 +523,7 @@ export const bpmOptions = bpmLaneOptions;
 export const themePrograms: ThemeProgram[] = [
   {
     id: "ceo-focus-lanes",
-    label: "CEO Deep Focus",
+    label: "專注心流",
     title: "深度專注心流",
     bpmDisplay: "85 / 105 / 110 / 120 BPM",
     summary:
@@ -752,7 +752,7 @@ Brief：
   },
   {
     id: "slow-jog-180",
-    label: "BPM 180 Slow Jog",
+    label: "慢跑步頻",
     title: "180 慢跑節奏",
     bpmDisplay: "180 BPM",
     summary:
@@ -988,7 +988,7 @@ Brief：
   },
   {
     id: "beach-bar-dj",
-    label: "Beach Bar DJ",
+    label: "海灘酒吧",
     title: "海灘露天酒吧",
     bpmDisplay: "115 / 120 BPM",
     summary:
@@ -1208,7 +1208,7 @@ Brief：
   },
   {
     id: "city-pop-cruise",
-    label: "City Pop Cruise",
+    label: "城市夜色",
     title: "城市夜色 City Pop",
     bpmDisplay: "100 / 105 BPM",
     summary:
@@ -1426,7 +1426,7 @@ Brief：
   },
   {
     id: "exhibition-sonic-space",
-    label: "Exhibition Sonic Space",
+    label: "展場聲景",
     title: "沉浸式展場聲景",
     bpmDisplay: "Ambient / 90 / 95 BPM",
     summary:

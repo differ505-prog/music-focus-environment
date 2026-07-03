@@ -90,7 +90,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
           <div className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Track List</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">曲目清單</p>
                 <h2 className="mt-3 font-serif text-3xl text-white">從這裡開始播放</h2>
               </div>
               {collectionTracks.length > 0 ? (
@@ -112,7 +112,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                   onClick={() => startSession(collection.trackIds, track.id)}
                   className="rounded-[22px] border border-white/10 bg-white/6 p-5 text-left transition hover:border-white/16 hover:bg-white/10"
                 >
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">Track {index + 1}</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">第 {index + 1} 首</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">{track.title}</h3>
                   <p className="mt-3 text-sm leading-6 text-white/66">{track.copy.descriptionZh}</p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/60">
@@ -128,7 +128,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
 
           <div className="grid gap-6">
             <section className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-              <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">Preset Package</p>
+              <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">快速組合</p>
               <h2 className="mt-3 font-serif text-3xl text-white">快速開始</h2>
               <div className="mt-6 grid gap-4">
                 {presets.map((preset) => (
@@ -151,7 +151,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
             </section>
 
             <section className="rounded-[28px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-              <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">Scene Brief</p>
+              <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">情境說明</p>
               <h2 className="mt-3 font-serif text-3xl text-white">這組系列適合什麼時候打開</h2>
               <p className="mt-4 text-sm leading-7 text-white/68">
                 {collectionTracks[0]?.copy.themeScenario ??
