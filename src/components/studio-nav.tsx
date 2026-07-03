@@ -57,12 +57,6 @@ export function StudioNav() {
         >
           OmniSonic
         </Link>
-        <Link
-          href="/admin"
-          className="rounded-full border border-white/8 bg-black/18 px-3 py-2 text-xs text-white/52 transition hover:border-white/16 hover:bg-white/10 hover:text-white/78"
-        >
-          管理入口
-        </Link>
       </nav>
     );
   }

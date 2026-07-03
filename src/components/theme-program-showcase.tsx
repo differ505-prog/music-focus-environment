@@ -13,7 +13,7 @@ export function ThemeProgramShowcase({ programs, tracks }: ThemeProgramShowcaseP
   return (
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">選路線</p>
+        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">直接播放</p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">直接挑一條開始</h2>
       </div>
 

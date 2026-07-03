@@ -228,7 +228,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const heroTitle = isAdmin ? "OmniSonic 後台工作台" : "OmniSonic";
   const heroDescription = isAdmin
     ? "集中管理主題內容、上架素材與製作流程。"
-    : "先選主路線，再選 BPM，直接播放。";
+    : "直接選你現在要的狀態。";
 
   return (
     <main
@@ -249,7 +249,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/45 to-transparent" />
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.38em] text-fuchsia-100/58">
-              {isAdmin ? "管理工作台" : "選路線"}
+              {isAdmin ? "管理工作台" : "直接播放"}
             </p>
             <h1 className="mt-4 max-w-2xl bg-gradient-to-r from-white via-fuchsia-100 to-cyan-100 bg-clip-text font-serif text-4xl leading-tight text-transparent md:text-6xl">
               {heroTitle}
@@ -257,23 +257,25 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <p className="mt-5 max-w-2xl text-sm leading-7 text-white/70 md:text-base">
               {heroDescription}
             </p>
-            <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
-              <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
-                {isAdmin ? "主題手冊" : "5 條主路線"}
-              </span>
-              <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
-                {isAdmin ? "上架素材" : "BPM 子路線"}
-              </span>
-              <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
-                {isAdmin ? "流程管理" : "隨機播放"}
-              </span>
-            </div>
+            {isAdmin ? (
+              <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
+                <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
+                  主題手冊
+                </span>
+                <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
+                  上架素材
+                </span>
+                <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
+                  流程管理
+                </span>
+              </div>
+            ) : null}
             {!isAdmin ? (
               <div className="mt-8 rounded-[30px] border border-white/10 bg-white/6 p-5">
                 <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-3xl">
-                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">主路線</p>
-                    <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">五條路線，先選一條</h2>
+                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">現在想聽什麼</p>
+                    <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">直接選一個狀態</h2>
                   </div>
                   <div className="flex flex-wrap gap-2 text-xs text-white/62">
                     {currentTrack ? (
@@ -323,7 +325,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                         <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{program.summary}</p>
                         <div className="mt-5 flex items-center justify-between gap-3 text-xs text-white/58">
                           <span>{programTracks.length} 首已上架</span>
-                          <span>{isActive ? "目前路線" : "查看 BPM"}</span>
+                          <span>{isActive ? "已選擇" : "打開"}</span>
                         </div>
                       </button>
                     );
@@ -338,17 +340,17 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">BPM 子路線</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">節奏</p>
                 <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">
                   {activeRouteEntry?.program.title ?? "選一條路線"}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  {activeRouteEntry?.program.audience ?? "先選路線，再挑一個 BPM。"}
+                  {activeRouteEntry?.program.audience ?? "先選一個狀態。"}
                 </p>
               </div>
               <div className="flex flex-wrap gap-2 text-xs text-white/62">
                 <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
-                  {activeRouteEntry?.program.label ?? "主路線"}
+                  {activeRouteEntry?.program.label ?? "目前狀態"}
                 </span>
                 <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
                   {activeRouteEntry?.programTracks.length ?? 0} 首歌曲
@@ -371,10 +373,10 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                         : "border-white/10 bg-white/6"
                     }`}
                   >
-                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">子路線</p>
+                    <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">節奏</p>
                     <h3 className="mt-3 font-serif text-2xl text-white">{subroute.bpm} BPM</h3>
                     <p className="mt-3 text-sm leading-6 text-white/68">
-                      {subroute.tracks.length > 0 ? "打開這個節奏下的歌曲，直接隨機播放。" : "這條子路線還沒有上架歌曲。"}
+                      {subroute.tracks.length > 0 ? `${subroute.tracks.length} 首歌，直接播放。` : "暫時沒有歌曲。"}
                     </p>
                     <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                       <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
@@ -385,7 +387,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                       </span>
                     </div>
                     <div className="mt-5 flex items-center justify-between gap-3 text-xs text-white/58">
-                      <span>{isActive ? "目前子路線" : "查看歌曲"}</span>
+                      <span>{isActive ? "已選擇" : "打開"}</span>
                       <span>{subroute.tracks.length > 0 ? "可播放" : "待上架"}</span>
                     </div>
                   </button>
@@ -480,14 +482,14 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">歌曲清單</p>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">直接播放</p>
                 <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">
                   {activeSubroute ? `${activeSubroute.bpm} BPM` : "選一個 BPM"}
                 </h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
                   {activeSubroute
-                    ? `這條子路線目前有 ${activeSubroute.tracks.length} 首歌，可直接隨機播放或逐首打開。`
-                    : "先選一個 BPM 子路線。"}
+                    ? `${activeSubroute.tracks.length} 首歌，可直接播放。`
+                    : "先選一個節奏。"}
                 </p>
               </div>
               <div className="flex flex-wrap gap-3">
@@ -497,7 +499,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   disabled={publicVisibleTracks.length === 0}
                   className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  隨機播放這組
+                  隨機播放
                 </button>
                 <button
                   type="button"
@@ -505,7 +507,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   disabled={publicVisibleTracks.length === 0}
                   className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/18 disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  加入這組
+                  加入播放清單
                 </button>
                 <button
                   type="button"
@@ -548,7 +550,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                 ))
               ) : (
                 <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
-                  這條子路線目前沒有歌曲，先切到其他 BPM 或稍後再回來。
+                  這個節奏暫時沒有歌曲。
                 </div>
               )}
             </section>
