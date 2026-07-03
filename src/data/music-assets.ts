@@ -530,7 +530,7 @@ export const themePrograms: ThemeProgram[] = [
       "主打夜間決策、寫作、coding 與高密度思考，維持可平順接歌的 BPM 車道與穩定情緒弧線。",
     audience: "深度工作、策略規劃、長時間沉浸專注",
     positioning:
-      "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道拆出可量產的專注型內容資產。",
+      "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道建立專注歌單。",
     operatingPrinciples: [
       "共用骨架固定 long-loop、no vocals、equal-power crossfade、LUFS 正規化與 dark premium 美學，不讓品質規格在主題切換時漂移。",
       "BPM 只能走 85 / 100 / 105 / 110 / 115 / 120 六條車道，85 專責慢速沉浸，其餘車道維持可接歌策略。",
@@ -676,7 +676,7 @@ Brief：
         supplementalPlaceholder:
           "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
         autoAssembleNote:
-          "這一步不需要你重貼前面所有資料。系統會自動抓取已儲存的 Brief、音樂 Prompt、圖片 Prompt，並附上同名異曲檢查與改名 SOP；你只需少量補外部資源或特別指定欄位。",
+          "系統會自動沿用前置設定的 Brief、音樂 Prompt、圖片 Prompt；你只需補上外部資源與必要欄位。",
         autoAssembleInstructions: [
           "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
           "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一，禁止沿用相同名稱。",
@@ -759,7 +759,7 @@ Brief：
       "主打穩定步頻、輕推進、戶外夜跑與耐力慢跑場景，重點不是夜店接歌，而是步伐鎖定與續航感。",
     audience: "慢跑、跑步機、夜跑暖身、低壓耐力訓練",
     positioning:
-      "不是聽放鬆的，這本質上是一個 BPM 180 的節拍器 (Metronome)。必須嚴格鎖定步頻，每一拍都要對齊腳步，作為維持長距離 cadence 的高強度實用工具。",
+      "鎖定 180 BPM，對齊跑步步頻與呼吸節奏，作為維持長距離 cadence 的實用工具。",
     operatingPrinciples: [
       "共用骨架延續 no vocals、long-loop、平順轉場與 dark premium 視覺，但聽感絕對不能放鬆，必須有 relentless 的推進感。",
       "所有 prompt 與 metadata 固定 180 BPM，不做多車道，確保跑步時身體節奏不被拉扯。",
@@ -912,7 +912,7 @@ Brief：
         supplementalPlaceholder:
           "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
         autoAssembleNote:
-          "這一步會自動沿用前面已儲存的跑步 Brief、音樂 Prompt、圖片 Prompt，並附上同名異曲檢查與改名 SOP。你只補外部資源或少量指定欄位即可。",
+          "系統會自動沿用前置設定的跑步 Brief、音樂 Prompt、圖片 Prompt；你只需補上外部資源與必要欄位。",
         autoAssembleInstructions: [
           "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
           "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一，禁止沿用相同名稱。",
@@ -1004,7 +1004,7 @@ Brief：
     layoutNotes: [
       "前台視覺可走 sunset amber、teal ocean、wet wood deck、outdoor string lights，而不是 CEO 書房語彙。",
       "卡片資訊要優先呈現 sunset set、open-air groove、cocktail hour、DJ energy 等使用情境。",
-      "後台 workflow 需保留可量產的 prompt 模板，方便未來規律上架 beach bar 系列內容。",
+      "後台 workflow 需保留對應的 prompt 模板，方便未來擴充 beach bar 系列內容。",
     ],
     workflow: [
       {
@@ -1421,6 +1421,223 @@ Brief：
         id: "Check 04",
         title: "視覺與場景一致",
         detail: "封面與文案必須呈現霓虹街景、車窗反光、海灣高架與夏夜都會浪漫語彙。",
+      },
+    ],
+  },
+  {
+    id: "exhibition-sonic-space",
+    label: "Exhibition Sonic Space",
+    title: "辦展展場音樂主題",
+    bpmDisplay: "90 / 95 BPM",
+    summary:
+      "主打展場動線、空間留白、作品觀看節奏與高級感聲場，重點是低干擾、可長時循環、能支撐觀展與停留的沉浸式背景音樂。",
+    audience: "藝術展覽、品牌快閃、策展空間、設計展間、showroom 與沉浸式展示場域",
+    positioning:
+      "不是飯店大廳 BGM，也不是純 ambient 噪景，而是帶有策展感與商業展示適配性的展場音樂線：要有空間感、質地感與流動感，同時不能搶走作品本身的注意力。",
+    operatingPrinciples: [
+      "BPM 只走 90 / 95 兩條車道，讓觀展步調與空間流動感維持在舒適、穩定且不急躁的區間。",
+      "聲音核心需結合 ambient electronica、minimal pulse、gallery-grade texture、soft percussive motion，禁止強烈主旋律或情緒過度煽動。",
+      "視覺與文案必須同時成立展牆、光束、留白動線、霧面材質、投影裝置與人流停留這組展場世界觀。",
+    ],
+    layoutNotes: [
+      "前台視覺可走 chalk white、graphite、soft steel、museum light 與霧面空間材質，不要混入夜店或辦公室語彙。",
+      "卡片資訊應優先呈現 gallery flow、slow circulation、installation mood、spatial texture 等展場情境。",
+      "後台 workflow 需保留對應的 prompt 模板，方便後續延伸藝術展、品牌展與沉浸式展間等變體內容。",
+    ],
+    workflow: [
+      {
+        id: "Expo 01",
+        title: "展場情境母題",
+        detail: "輸入展牆、光束、留白空間、材質細節、觀展動線、裝置作品與安靜人流等抽象詞，生成完整展場 brief。",
+        deliverable: "得到可直接進入音樂與視覺生成的展場音樂 brief，含空間感、節奏感、BPM 與接歌氛圍。",
+      },
+      {
+        id: "Expo 02",
+        title: "動線節奏決策",
+        detail: "只允許 90 / 95 BPM，讓觀展停留與步行節奏穩定，不把空間推向 lounge 或舞池方向。",
+        deliverable: "鎖定單一車道與 energy level，確保整組內容能長時間支撐展場動線。",
+      },
+      {
+        id: "Expo 03",
+        title: "展場視覺與音樂生成",
+        detail: "同步生成 exhibition soundscape 音樂 prompt 與帶展間材質感的封面視覺 prompt。",
+        deliverable: "取得可直接丟進 AI 工具的音樂、封面與背景視覺提示詞。",
+      },
+      {
+        id: "Expo 04",
+        title: "上架與策展包裝",
+        detail: "整理 metadata、transition 與 collection 語意，把單首整成可直接啟動的 exhibition session。",
+        deliverable: "完成 Track JSON、collection 語意與前台可展示的展場包裝文案。",
+      },
+    ],
+    promptSeed:
+      "exhibition background music, gallery ambient pulse, museum-grade spatial texture, minimal electronica, soft installation lighting, matte surfaces, slow circulation, premium art space",
+    promptModules: [
+      {
+        id: "Module 01",
+        title: "展場 Brief",
+        purpose: "把少量策展與空間意象整理成可執行的辦展展場音樂生產 brief。",
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位策展展場與商業空間音樂企劃師。
+
+請根據我提供的少量線索，輸出一份 辦展展場音樂 主題 brief。
+
+必須輸出：
+1. themeScenario
+2. 核心情緒 3-5 個
+3. 使用場景
+4. 建議 BPM（只能從 90 / 95 擇一）
+5. 建議 energy level（1-10）
+6. 視覺關鍵字
+7. 音樂風格關鍵字
+8. 前後接歌氛圍描述
+
+固定規則：
+- 走 premium exhibition、gallery flow、spatial restraint
+- 不要反問，直接補足缺漏
+- 內容需支援 long-loop 與平順 crossfade
+- 禁止寫成咖啡廳 BGM、飯店大廳鋼琴或夜店 lounge
+
+輸入線索：
+【貼上展牆、光束、留白空間、裝置作品、霧面材質、安靜人流】`,
+      },
+      {
+        id: "Module 02",
+        title: "展場音樂 Prompt",
+        purpose: "把 brief 轉為可直接生成的英文 exhibition soundscape prompt。",
+        upstreamModuleIds: ["Module 01"],
+        autoAdvanceToNext: true,
+        quickLinks: [
+          { label: "打開 Copilot", url: "https://copilot.microsoft.com/" },
+          { label: "打開 Suno", url: "https://suno.com/create" },
+        ],
+        outputSlots: 2,
+        outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
+        template: `You are a professional AI music prompt designer for exhibition and gallery environments.
+
+Generate 2 English prompts for instrumental exhibition background tracks.
+
+Requirements:
+- premium exhibition soundscape
+- minimal electronica / spatial ambient pulse / subtle gallery rhythm
+- exact BPM same as the brief
+- loop-friendly
+- smooth crossfade ready
+- low-distraction
+- no vocals
+
+Negative constraints:
+- no festival EDM
+- no cinematic trailer climax
+- no obvious pop hook
+- no aggressive drums
+- no vocal chops
+
+Brief:
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 03",
+        title: "展場視覺 Prompt",
+        purpose: "建立展間空間感與策展語彙的系列視覺提示詞。",
+        upstreamModuleIds: ["Module 01", "Module 02"],
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位高端商業場景視覺 prompt 設計師。
+
+目前這一輪流程會產出 4 首歌曲：
+- Module 02 的候選 Prompt 01 會生成 2 首歌
+- Module 02 的候選 Prompt 02 也會生成 2 首歌
+
+請根據 辦展展場音樂 brief 與 2 組音樂 prompt 產出：
+1. Song 01 封面圖英文 prompt
+2. Song 02 封面圖英文 prompt
+3. Song 03 封面圖英文 prompt
+4. Song 04 封面圖英文 prompt
+
+要求：
+- photorealistic
+- exhibition wall, installation lighting, matte surfaces, gallery corridor, premium spatial mood
+- 每首歌都要是獨立 prompt，不可合併成一次生成多張
+- 請明確標示 Song 01 / Song 02 / Song 03 / Song 04
+
+Brief：
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 04",
+        title: "展場上架 JSON",
+        purpose: "把辦展展場音樂生成結果整理成可直接上站的 Track 資產。",
+        upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
+        inputMode: "low_input_auto_context",
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        supplementalLabel: "少量補充資料",
+        supplementalPlaceholder:
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
+        autoAssembleNote:
+          "這一步會自動沿用前面已儲存的展場 Brief、音樂 Prompt、圖片 Prompt；你只補外部資源或少量指定欄位即可。",
+        autoAssembleInstructions: [
+          "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
+          "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一。",
+          "若本輪有 2 組音樂 prompt，預設要整理為 4 首歌的命名與上架資料。",
+          "每首歌必須對應獨立封面 prompt，不可混用。",
+        ],
+        template: `你是一位 TypeScript 音樂資料整理助手。
+
+請優先使用我上游已提供的展場 Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
+
+請整理成 Track JSON 與 transition 補充欄位：
+- title
+- slug
+- bpm
+- musicalKey
+- energyLevel
+- moodTags
+- media.audioUrl
+- media.coverImageUrl
+- media.backgroundVideoUrl（若目前沒有影片素材可先填空字串）
+- copy.descriptionZh
+- copy.descriptionEn
+- copy.themeScenario
+- prompts.musicPrompt
+- prompts.imagePrompt
+- prompts.videoPrompt（若目前沒有影片提示詞可先填空字串）
+- prompts.generationPrompt
+- transition.introCueSeconds
+- transition.mixInPointSeconds
+- transition.mixOutPointSeconds
+
+規則：
+- 只輸出 JSON
+- BPM 只能是 90 或 95
+- 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
+- 欄位不可省略
+
+少量補充資料（可為空）：
+【只貼外部資源或你想覆寫的欄位】`,
+      },
+    ],
+    acceptanceChecklist: [
+      {
+        id: "Check 01",
+        title: "展場辨識成立",
+        detail: "聽感應偏策展展場、沉浸式展示與高端空間氛圍，而不是飯店大廳、咖啡廳或 lounge 酒吧。",
+      },
+      {
+        id: "Check 02",
+        title: "車道控制正確",
+        detail: "BPM 只能落在 90 / 95，確保觀展步調穩定、耐聽且不搶作品注意力。",
+      },
+      {
+        id: "Check 03",
+        title: "可長時播放",
+        detail: "段落密度、空間留白與微脈衝需支援整段展期中的長時間循環播放。",
+      },
+      {
+        id: "Check 04",
+        title: "視覺與場景一致",
+        detail: "封面與文案必須呈現展牆、裝置燈光、霧面材質、動線留白與高級展間語彙。",
       },
     ],
   },

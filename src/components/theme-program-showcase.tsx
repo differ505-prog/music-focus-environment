@@ -17,8 +17,7 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Listening Modes</p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">{programs.length} 條內容主線，對應不同使用情境</h2>
         <p className="mt-3 text-sm leading-7 text-white/66 md:text-base">
-          public 首頁只保留成品層的內容敘事，讓使用者先理解每條內容線的用途、節奏與聆聽場景；完整 Prompt
-          workflow 與操作模組則集中在後台。
+          探索不同 BPM 車道與音樂情境，尋找最適合當下任務的聆聽體驗。
         </p>
       </div>
 

@@ -465,7 +465,7 @@ export function GlobalPlayer({
                 </div>
                 <div className="text-sm text-white/64">
                   清單共 {playlist.length} 首
-                  {playback.isCrossfading ? ` · Crossfade 進行中（${playback.crossfadeWindowSeconds}s）` : ""}
+                  {playback.isCrossfading ? ` · 無縫轉場中 (${playback.crossfadeWindowSeconds}s)` : ""}
                   {playback.repeatEnabled ? " · 循環播放" : ""}
                 </div>
               </div>

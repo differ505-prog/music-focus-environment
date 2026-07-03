@@ -258,8 +258,8 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
   const heroDescription = isAdmin
-    ? "集中管理主題作戰手冊、轉場參數、生成資料與 mix 數據，現在每條內容線都內建自己的策略藍圖、SOP、Prompt 模組與驗收清單。"
-    : "以 CEO Deep Focus 與 BPM180 慢跑兩條內容線為核心，現在加入 Featured Collections 與批次視角，讓使用者能先進入完整情境，再挑選最適合當下工作的曲目。";
+    ? "管理主題藍圖、轉場參數與生成資料，支援各內容線的 Prompt 模組與驗收流程。"
+    : "提供沉浸式的音樂專注環境。依據當下工作狀態，快速載入合適的曲目庫與自動接歌序列。";
 
   return (
     <main
@@ -314,7 +314,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   <p className="text-[11px] uppercase tracking-[0.28em] text-fuchsia-100/62">Start Session</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">立即開始 Focus Session</h3>
                   <p className="mt-3 text-sm leading-6 text-white/68">
-                    直接載入 {defaultHeroCollection?.title ?? "精選系列"}，打開播放器並從第一首開始進入工作狀態。
+                    載入 {defaultHeroCollection?.title ?? "精選系列"}，一鍵啟動專注流程。
                   </p>
                 </button>
                 <button
@@ -325,7 +325,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/62">Night Workflow</p>
                   <h3 className="mt-3 font-serif text-2xl text-white">開始深夜理性工作</h3>
                   <p className="mt-3 text-sm leading-6 text-white/68">
-                    載入 Night Ledger 系列，適合寫作、校對、財務整理與長時間低干擾專注。
+                    載入 Night Ledger，進入長時間低干擾的夜間工作狀態。
                   </p>
                 </button>
                 <div className="rounded-[26px] border border-white/10 bg-white/6 p-5">
@@ -337,8 +337,8 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </h3>
                   <p className="mt-3 text-sm leading-6 text-white/68">
                     {currentTrack
-                      ? `${autoDjPlan?.mixBrief ?? `目前播放清單 ${selectedAssets.length} 首`} 可直接用下方系列詳情與推薦區塊繼續擴充 session。`
-                      : "先從上方任一入口開始 session，系統會自動幫你排好 DJ 式曲序，再往下用系列詳情與 BPM filter 微調工作場景。"}
+                      ? `${autoDjPlan?.mixBrief ?? `目前播放清單 ${selectedAssets.length} 首`} 可使用下方 Filter 微調工作場景。`
+                      : "啟動上方 Session，系統將自動排配 DJ 曲序；或使用下方 Filter 自訂工作場景。"}
                   </p>
                   <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                     {autoDjPlan ? (
@@ -366,9 +366,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-3xl">
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Session Presets</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">把播放體驗包裝成可直接啟動的工作包</h2>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">工作包預設</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  這一層不是單首歌，而是可以直接開始的 session preset。使用者不需要自己先組清單，就能從首頁進入明確任務。
+                  免手動挑歌，一鍵啟動預先配置的專注流程。
                 </p>
               </div>
             </div>
@@ -417,9 +417,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
                 <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Featured Collections</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">先選情境，再進入曲目庫</h2>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">情境策展</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  這一層把單首卡片整理成可直接進入的內容入口，讓首頁更像精品化音樂產品，而不是只有歌曲清單。
+                  依據當下工作狀態，快速載入合適的曲目庫。
                 </p>
               </div>
               {latestBatch ? (
@@ -622,11 +622,11 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                   </p>
                 </div>
                 <div className="rounded-[24px] border border-cyan-300/12 bg-[#07101a]/90 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">Why It Feels Like DJ</p>
+                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/58">Auto DJ Intelligence</p>
                   <ul className="mt-3 grid gap-3 text-sm leading-6 text-white/68">
                     <li>不是只挑單首，而是啟動後就自動排成一條更像 DJ 的 session。</li>
                     <li>系統會優先維持主車道 BPM，再用能量曲線做細幅推進與收尾。</li>
-                    <li>首頁即可完成「理解內容 到 開始使用 到 自動接歌」的閉環。</li>
+                    <li>無縫銜接內容探索與自動接歌，提供不間斷的沉浸體驗。</li>
                   </ul>
                 </div>
               </div>
