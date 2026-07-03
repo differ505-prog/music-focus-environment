@@ -233,7 +233,15 @@ export function GlobalPlayer({
   const artworkStage = currentTrack && artworkSrc ? (
     <div
       ref={artworkContainerRef}
-      onClick={!isProjectionMode && !isArtworkFullscreen ? () => void handleCloseArtwork() : undefined}
+      onClick={
+        !isProjectionMode && !isArtworkFullscreen
+          ? (event) => {
+              if (event.target === event.currentTarget) {
+                void handleCloseArtwork();
+              }
+            }
+          : undefined
+      }
       onMouseMove={revealProjectionHud}
       onTouchStart={revealProjectionHud}
       className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#02040a]/96 p-4 md:p-8 ${isProjectionMode && isProjectionCursorHidden ? "cursor-none" : ""}`}
@@ -263,7 +271,13 @@ export function GlobalPlayer({
               ? "h-full w-full max-w-none rounded-none border-none shadow-none"
               : "rounded-[32px] border border-white/10 shadow-[0_34px_110px_rgba(0,0,0,0.45)]"
           } ${isProjectionMode ? "projection-stage-drift" : ""}`}
-          onDoubleClick={() => void handleToggleArtworkFullscreen()}
+          onClick={(event) => {
+            event.stopPropagation();
+          }}
+          onDoubleClick={(event) => {
+            event.stopPropagation();
+            void handleToggleArtworkFullscreen();
+          }}
         >
           {!isPureProjection ? (
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.06),transparent_48%),linear-gradient(180deg,rgba(255,255,255,0.02),transparent_28%,transparent_72%,rgba(255,255,255,0.03))]" />
