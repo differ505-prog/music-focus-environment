@@ -13,11 +13,8 @@ export function ThemeProgramShowcase({ programs, tracks }: ThemeProgramShowcaseP
   return (
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
-        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">聆聽路線</p>
-        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">依照使用情境，快速找到適合的音樂路線</h2>
-        <p className="mt-3 text-sm leading-7 text-white/66 md:text-base">
-          每條內容線都對應不同的工作、移動或空間氛圍，直接挑適合你的那一條就好。
-        </p>
+        <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">選路線</p>
+        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">直接挑一條開始</h2>
       </div>
 
       <div className="mt-6 grid grid-cols-1 gap-5 xl:grid-cols-2">
@@ -53,7 +50,7 @@ export function ThemeProgramShowcase({ programs, tracks }: ThemeProgramShowcaseP
               </div>
 
               <div className="mt-5 rounded-[20px] border border-white/8 bg-white/6 p-4">
-                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適合這個時候</p>
+                <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">適用情境</p>
                 <p className="mt-2 leading-6 text-white/76">{program.audience}</p>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -62,7 +59,7 @@ export function ThemeProgramShowcase({ programs, tracks }: ThemeProgramShowcaseP
                     href={`/collections/${primaryCollectionId}`}
                     className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
                   >
-                    打開系列
+                    查看系列
                   </Link>
                 ) : (
                   <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-sm text-amber-100/82">

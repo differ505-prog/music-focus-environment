@@ -98,10 +98,10 @@ export function BpmAnalysisPanel() {
     <section className="rounded-[28px] border border-amber-300/16 bg-black/20 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">BPM Analyzer Lab</p>
-          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">匯入後半自動 BPM 校正</h2>
+          <p className="text-xs uppercase tracking-[0.32em] text-amber-100/58">BPM 檢查</p>
+          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">匯入後確認 BPM</h2>
           <p className="mt-3 text-sm leading-7 text-white/68">
-            先把音檔拖進來，系統會先估 BPM、提示信心值，再讓你用 x2、÷2 或手動改值確認後寫回上架流程。這是高效率而非盲信演算法的工作台。
+            上傳音檔後，系統會先估算 BPM，你再用 x2、÷2 或手動輸入確認。
           </p>
         </div>
 
@@ -120,20 +120,20 @@ export function BpmAnalysisPanel() {
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
         <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">推薦工作流</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">使用步驟</p>
           <p className="mt-3 text-sm leading-7 text-white/72">
-            1. 上傳音檔 2. 看建議 BPM 與信心值 3. 用 x2 / ÷2 修正倍速誤判 4. 參考車道建議寫回 Track。
+            1. 上傳音檔 2. 看估算 BPM 與可信度 3. 用 x2 / ÷2 修正 4. 寫回曲目資料。
           </p>
         </div>
         <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">車道範圍</p>
+          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">可用範圍</p>
           <p className="mt-3 text-sm leading-7 text-white/72">{bpmOptions.join(" / ")} BPM</p>
         </div>
         <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
           <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">狀態摘要</p>
           <p className="mt-3 text-sm leading-7 text-white/72">
             {summary
-              ? `已分析 ${summary.fileCount} 首，其中 ${summary.exactLaneCount} 首已直接落在建議車道。`
+              ? `已分析 ${summary.fileCount} 首，其中 ${summary.exactLaneCount} 首已落在建議範圍。`
               : "尚未分析音檔。"}
           </p>
         </div>
@@ -148,7 +148,7 @@ export function BpmAnalysisPanel() {
       <div className="mt-5 grid gap-4">
         {items.length === 0 ? (
           <div className="rounded-[22px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm leading-7 text-white/48">
-            上傳本機音檔後，這裡會顯示建議 BPM、候選值、信心分數與車道建議。
+            上傳音檔後，這裡會顯示估算 BPM、可信度與建議範圍。
           </div>
         ) : (
           items.map((item) => {
@@ -179,15 +179,15 @@ export function BpmAnalysisPanel() {
                     <p className="mt-2 text-2xl font-semibold text-white">{item.result.estimatedBpm}</p>
                   </div>
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">信心值</p>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">可信度</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{formatConfidence(item.result.confidence)}</p>
                   </div>
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">建議車道</p>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">建議範圍</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{item.result.laneSuggestion}</p>
                   </div>
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">Peak 數</p>
+                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">節拍點數</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{item.result.peakCount}</p>
                   </div>
                 </div>
@@ -195,9 +195,9 @@ export function BpmAnalysisPanel() {
                 <div className="mt-4 rounded-[18px] border border-amber-300/12 bg-[#151108]/80 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div>
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">人工確認區</p>
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">人工確認</p>
                       <p className="mt-2 text-sm leading-6 text-amber-50/76">
-                        若偵測到倍速誤判，可用 x2 / ÷2 快速修正；確認後以最近車道作為上架 BPM 參考。
+                        如果節奏抓錯，可用 x2 或 ÷2 修正，再用最接近的建議值作為上架參考。
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
@@ -220,7 +220,7 @@ export function BpmAnalysisPanel() {
                         onClick={() => updateAdjustedBpm(item.id, nearestLane)}
                         className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
                       >
-                        對齊車道 {nearestLane}
+                        對齊 {nearestLane}
                       </button>
                     </div>
                   </div>
@@ -240,13 +240,13 @@ export function BpmAnalysisPanel() {
                       />
                     </label>
                     <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100/84">
-                      最近車道：{nearestLane}
+                      最近建議：{nearestLane}
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-4 rounded-[18px] border border-white/8 bg-black/24 p-4">
-                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">候選 BPM</p>
+                  <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">候選值</p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {item.result.candidates.map((candidate) => (
                       <span

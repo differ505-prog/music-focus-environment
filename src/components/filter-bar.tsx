@@ -27,9 +27,9 @@ export function FilterBar({
       <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
         <div className="space-y-3">
           <div className="flex flex-wrap items-center gap-3">
-            <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">依節奏挑選</p>
+            <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">BPM 篩選</p>
             <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5 text-xs text-white/62">
-              目前瀏覽 {activeCollectionLabel}
+              目前系列 {activeCollectionLabel}
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -62,18 +62,18 @@ export function FilterBar({
               onClick={onSelectAll}
               className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/18"
             >
-              加入目前顯示
+              加入全部
             </button>
             <button
               type="button"
               onClick={onClearSelection}
               className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
             >
-              清空播放清單
+              清空清單
             </button>
           </div>
           <p className="text-sm text-white/64">
-            目前顯示 {visibleCount} 首，播放清單已有 {selectedCount} 首。
+            顯示 {visibleCount} 首 · 清單 {selectedCount} 首
           </p>
         </div>
       </div>

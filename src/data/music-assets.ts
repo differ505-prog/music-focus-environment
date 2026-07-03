@@ -309,9 +309,8 @@ const trackCollectionsSeed = [
     id: "featured-obsidian-waters",
     label: "精選系列",
     title: "黑曜湖畔",
-    summary: "黑曜湖畔的深度專注組曲，收斂成冷靜、穩定、低干擾的心流節奏。",
-    description:
-      "把霧湖、森林與深色材質收斂成一條完整工作情境，適合直接整組打開，穩定進入長時間專注。",
+    summary: "冷靜穩定的深度專注組曲。",
+    description: "適合整組播放，快速進入長時間專注。",
     heroMetric: "4 首 105 BPM 心流曲",
     bpmFocus: [105],
     trackIds: [
@@ -326,9 +325,8 @@ const trackCollectionsSeed = [
     id: "night-ledger-series",
     label: "深夜理帳",
     title: "深夜理帳",
-    summary: "偏向財務整理、寫作與深夜校對的理性專注系列。",
-    description:
-      "從高樓夜景到書房秩序，把低干擾、長工時與夜間沉靜感整理成一條可連續播放的工作路線。",
+    summary: "適合寫作、校對與整理。",
+    description: "低干擾，適合夜間長時間工作。",
     heroMetric: "4 首夜間工作曲",
     bpmFocus: [85, 105],
     trackIds: [
@@ -343,9 +341,8 @@ const trackCollectionsSeed = [
     id: "architectural-calm",
     label: "空間沉浸",
     title: "空間靜域",
-    summary: "以玻璃、石材、胡桃木與火光構成的空間沉浸系列。",
-    description:
-      "把玻璃、石材、火光與湖景的材質語言串成同一條沉浸路線，讓工作現場更安靜、更有包覆感。",
+    summary: "安靜有包覆感的空間系曲目。",
+    description: "讓空間更安靜，專注更穩。",
     heroMetric: "玻璃 x 石材 x 火光",
     bpmFocus: [85, 105],
     trackIds: [
@@ -438,8 +435,8 @@ export const sessionPresets: SessionPreset[] = [
     id: "preset-focus-60",
     label: "60 分鐘快進",
     title: "黑曜湖畔短程專注",
-    summary: "用 60 分鐘快速進入穩定的深度專注節奏。",
-    description: "適合早晨開工、重要會議前整理思路，或需要快速進入沉浸式工作狀態的短程 session。",
+    summary: "60 分鐘進入專注。",
+    description: "適合開工前暖身。",
     durationMinutes: 60,
     collectionId: "featured-obsidian-waters",
     trackIds: ["obsidian-lake-focus", "walnut-command-drift"],
@@ -448,8 +445,8 @@ export const sessionPresets: SessionPreset[] = [
     id: "preset-ledger-90",
     label: "90 分鐘夜間工作",
     title: "深夜理帳長段工作",
-    summary: "給寫作、校對與財務整理的 90 分鐘理性工作包。",
-    description: "偏向深夜低干擾工作，節奏更克制，適合長段閱讀、編輯與資料整理。",
+    summary: "90 分鐘夜間工作組。",
+    description: "適合閱讀、編輯與整理。",
     durationMinutes: 90,
     collectionId: "night-ledger-series",
     trackIds: ["skyline-ember-ledger", "harbor-afterglow-study", "midnight-library-ledger"],
@@ -458,8 +455,8 @@ export const sessionPresets: SessionPreset[] = [
     id: "preset-architectural-75",
     label: "75 分鐘空間沉浸",
     title: "空間靜域工作場",
-    summary: "用空間材質與火光氛圍把工作現場收斂成穩定節奏。",
-    description: "適合需要 premium atmosphere 的寫作與 brainstorming，讓空間感先建立，再進入長段專注。",
+    summary: "讓工作節奏更穩。",
+    description: "適合寫作與發想。",
     durationMinutes: 75,
     collectionId: "architectural-calm",
     trackIds: ["harbor-afterglow-study", "obsidian-lake-focus", "lakeside-ember-terrace"],
@@ -527,7 +524,7 @@ export const themePrograms: ThemeProgram[] = [
     title: "深度專注心流",
     bpmDisplay: "85 / 105 / 110 / 120 BPM",
     summary:
-      "穩定推進的深度專注節奏，適合決策、coding 與長時間心流。",
+      "穩定推進的深度專注節奏，適合決策、深度工作與長時間專注。",
     audience: "深度工作、策略規劃、長時間沉浸專注",
     positioning:
       "以低干擾、高質感、長時段沉浸為核心，先用少量抽象母題建立 CEO 場景，再依 BPM 車道建立專注歌單。",
@@ -992,7 +989,7 @@ Brief：
     title: "海灘露天酒吧",
     bpmDisplay: "115 / 120 BPM",
     summary:
-      "海風、日落、輕舞池，適合戶外派對與輕鬆社交。",
+      "適合戶外派對與輕鬆社交。",
     audience: "海灘酒吧、露天派對、黃昏酒精社交、開放式 lounge 與微舞池情境",
     positioning:
       "不是 festival 主舞台，也不是純 chill lounge，而是 open-air beach bar DJ set：要有律動、有空氣、有 sunset glamour，同時仍保持可長時間播放與平順接歌的商業型場景音樂。",
@@ -1212,7 +1209,7 @@ Brief：
     title: "城市夜色 City Pop",
     bpmDisplay: "100 / 105 BPM",
     summary:
-      "霓虹、晚風、復古節奏，適合夜駕、散步與輕鬆工作。",
+      "適合夜駕、散步與輕鬆工作。",
     audience: "夜間開車、都會微醺、晚間散步、城市夜讀與帶復古感的輕鬆工作場景",
     positioning:
       "不是純懷舊音樂收藏，也不是 Lo-fi 背景聲，而是兼具夜景敘事與商業播放性的 modern city pop line：要有暖色 synth、律動 bass、霓虹反光與都會浪漫感。",
@@ -1430,7 +1427,7 @@ Brief：
     title: "沉浸式展場聲景",
     bpmDisplay: "Ambient / 90 / 95 BPM",
     summary:
-      "低干擾的沉浸聲場，適合展覽、快閃與 showroom。",
+      "適合展覽、快閃與 showroom。",
     audience: "藝術展覽、品牌快閃、策展空間、設計展間、showroom 與沉浸式展示場域",
     positioning:
       "不是飯店大廳 BGM，也不是純 ambient 噪景，而是帶有策展感與商業展示適配性的展場音樂線：要有空間感、質地感與流動感，同時不能搶走作品本身的注意力。",

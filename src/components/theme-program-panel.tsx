@@ -484,15 +484,15 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="mb-5">
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">
-          {isAdmin ? 'Theme Operations Manual' : 'Theme Programs'}
+          {isAdmin ? '主題手冊' : '主題內容'}
         </p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">
-          {isAdmin ? '主題作戰手冊' : '內容主題雙主線'}
+          {isAdmin ? '主題管理' : '內容主題'}
         </h2>
         <p className="mt-3 max-w-3xl text-sm leading-7 text-white/66">
           {isAdmin
-            ? '高頻操作的 Prompt Modules 已前置，低頻藍圖與驗收資訊改為收斂顯示；每一步也能貼上、儲存並把結果傳給後續步驟。'
-            : '前台先把網站的兩條內容主線建立出來，讓深度專注與 BPM180 慢跑各自擁有清楚定位與視覺節奏。'}
+            ? '常用步驟已集中在前面，其餘說明可展開查看。每一步都可貼上、儲存並接續使用。'
+            : '把不同路線整理成可直接使用的內容主題。'}
         </p>
       </div>
 
@@ -520,13 +520,13 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
               <div className="mt-5 rounded-[20px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">Prompt Modules</p>
+                    <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">製作步驟</p>
                     <p className="mt-2 text-xs leading-6 text-cyan-50/72">
-                      高頻操作區。先生成、貼上並儲存結果，後續步驟可直接複製與接續使用。
+                      常用步驟集中在這裡。先生成、貼上並儲存，後續可直接接著做。
                     </p>
                   </div>
                   <div className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-cyan-50/74">
-                    High Frequency
+                    常用
                   </div>
                 </div>
                 <div className="mt-4 grid gap-3">
@@ -558,7 +558,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                         {isLowInputModule ? (
                           <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
                             <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
-                              Low Input Mode
+                              少量補充
                             </p>
                             <p className="mt-2 text-xs leading-6 text-amber-50/76">
                               {module.autoAssembleNote ??
@@ -614,7 +614,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                             className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-xs text-fuchsia-50/82 transition hover:bg-fuchsia-400/14 disabled:cursor-not-allowed disabled:opacity-45"
                             disabled={!upstreamPayload}
                           >
-                            {isLowInputModule ? '一鍵組裝低輸入內容' : '插入上游結果'}
+                            {isLowInputModule ? '自動帶入前面內容' : '帶入前一步內容'}
                           </button>
                           <button
                             type="button"
@@ -634,12 +634,12 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                         {upstreamPayload ? (
                           <div className="mt-3 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
                             <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
-                              上游已儲存內容
+                              已帶入前一步內容
                             </p>
                             <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
                               {isLowInputModule
-                                ? '已偵測到前面步驟的儲存結果，可直接自動組裝進這一步，避免你手工整理原始資料。'
-                                : '已偵測到前面步驟的儲存結果，可直接插入本步驟，避免重複貼資料。'}
+                                ? '前面步驟的結果已可直接帶進這一步，減少手動整理。'
+                                : '前面步驟的結果已可直接帶進這一步，避免重複貼資料。'}
                             </p>
                           </div>
                         ) : null}
@@ -648,7 +648,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                           <div className="flex items-center justify-between gap-3">
                             <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
                               {isLowInputModule
-                                ? '組裝後輸入／工作區'
+                                ? '帶入後編輯區'
                                 : slotCount > 1
                                   ? `此步驟輸出（${slotCount} 組候選）`
                                   : '此步驟輸出'}
@@ -742,7 +742,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
 
             {isAdmin ? (
               <div className="mt-5">
-                {renderSectionToggle(program.id, 'workflow', 'Workflow')}
+                {renderSectionToggle(program.id, 'workflow', '步驟流程')}
                 {(collapsedSections[program.id] ?? defaultSectionState()).workflow ? null : (
                   <div className="mt-3 grid gap-3">
                     {program.workflow.map((step) => (
@@ -784,7 +784,7 @@ export function ThemeProgramPanel({ mode = 'public', programs }: ThemeProgramPan
                 </div>
 
                 <div>
-                  {renderSectionToggle(program.id, 'seed', 'Prompt Seed')}
+                  {renderSectionToggle(program.id, 'seed', '初始提示')}
                   {(collapsedSections[program.id] ?? defaultSectionState()).seed ? null : (
                     <div className="mt-3 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
                       <pre className="overflow-x-auto text-xs leading-6 text-cyan-50/82">

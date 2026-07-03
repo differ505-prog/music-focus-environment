@@ -181,8 +181,8 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
   const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "OmniSonic 後台工作台" : "OmniSonic";
   const heroDescription = isAdmin
-    ? "管理主題藍圖、轉場參數與生成資料，支援各內容線的 Prompt 模組與驗收流程。"
-    : "把不同使用情境整理成可直接開始的音樂路線。先選你現在的狀態，再快速進入對應的聆聽體驗。";
+    ? "集中管理主題內容、上架素材與製作流程。"
+    : "先選你現在想要的狀態，直接開始播放。";
 
   return (
     <main
@@ -203,7 +203,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           <div className="pointer-events-none absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/45 to-transparent" />
           <div className="max-w-3xl">
             <p className="text-xs uppercase tracking-[0.38em] text-fuchsia-100/58">
-              {isAdmin ? "Internal Studio Workspace" : "專注音樂路線"}
+              {isAdmin ? "管理工作台" : "選路線"}
             </p>
             <h1 className="mt-4 max-w-2xl bg-gradient-to-r from-white via-fuchsia-100 to-cyan-100 bg-clip-text font-serif text-4xl leading-tight text-transparent md:text-6xl">
               {heroTitle}
@@ -213,17 +213,17 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
             </p>
             <div className="mt-6 flex flex-wrap gap-3 text-sm text-white/60">
               <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-4 py-2">
-                低干擾
+                適合長時間播放
               </span>
               <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-4 py-2">
-                無縫播放
+                不中斷接續
               </span>
               <span className="rounded-full border border-white/12 bg-white/8 px-4 py-2">
-                長時專注
+                幫助維持專注
               </span>
               {isAdmin ? (
                 <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2">
-                  Theme Operations Manual
+                  主題手冊
                 </span>
               ) : null}
             </div>

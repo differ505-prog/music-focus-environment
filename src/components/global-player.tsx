@@ -302,8 +302,8 @@ export function GlobalPlayer({
               : nextTrack
                 ? `下一首 ${nextTrack.title}`
                 : isProjectionMode
-                  ? "封面已就緒"
-                  : "Esc 關閉"}
+                  ? "封面"
+                  : "雙擊全螢幕"}
           </p>
         </div>
       </div>
@@ -319,13 +319,13 @@ export function GlobalPlayer({
             <div className="min-w-0">
               <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
                 <Waves className="h-4 w-4" />
-                迷你播放器
+                播放器
               </p>
               <h3 className="mt-2 truncate font-serif text-lg text-white">
-                {currentTrack?.title ?? "尚未選擇播放曲目"}
+                {currentTrack?.title ?? "尚未播放"}
               </h3>
               <p className="mt-1 truncate text-xs text-white/55">
-                {nextTrack ? `下一首：${nextTrack.title}` : "從下方加入曲目即可開始播放"}
+                {nextTrack ? `下一首 ${nextTrack.title}` : "加入曲目即可播放"}
               </p>
             </div>
 
@@ -454,20 +454,20 @@ export function GlobalPlayer({
               <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
                 <div className="min-w-0">
                   <h3 className="truncate font-serif text-2xl text-white">
-                    {currentTrack?.title ?? "尚未選擇播放曲目"}
+                    {currentTrack?.title ?? "尚未播放"}
                   </h3>
                   <p className="mt-1 truncate text-sm text-white/62">
                     {showAdminDetails && sessionPlan
                       ? sessionPlan.nextTransitionSummary
                       : nextTrack
-                        ? `下一首：${nextTrack.title}`
-                        : "從下方加入曲目即可建立播放清單"}
+                        ? `下一首 ${nextTrack.title}`
+                        : "加入曲目開始播放"}
                   </p>
                 </div>
                 <div className="text-sm text-white/64">
-                  清單共 {playlist.length} 首
-                  {playback.isCrossfading ? ` · 無縫播放中` : ""}
-                  {playback.repeatEnabled ? " · 循環播放" : ""}
+                  {playlist.length} 首
+                  {playback.isCrossfading ? ` · 連續播放` : ""}
+                  {playback.repeatEnabled ? " · 循環" : ""}
                 </div>
               </div>
               {currentTrack ? (
@@ -500,12 +500,12 @@ export function GlobalPlayer({
                   ) : null}
                   {showAdminDetails ? (
                     <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
-                      {playback.prefersBackgroundPlayback ? "HTML5 Audio" : "Equal-Power Fade"}
+                      {playback.prefersBackgroundPlayback ? "背景播放" : "平滑轉場"}
                     </span>
                   ) : null}
                   {showAdminDetails && playback.prefersBackgroundPlayback ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      背景播放優化模式
+                      背景模式
                     </span>
                   ) : null}
                 </div>
@@ -627,7 +627,7 @@ export function GlobalPlayer({
               播放清單
             </div>
             {playlist.length === 0 ? (
-              <p className="text-sm text-white/48">先勾選素材或點卡片的播放，這裡就會出現整個清單。</p>
+              <p className="text-sm text-white/48">播放後會顯示清單。</p>
             ) : (
               <div className="flex gap-2 overflow-x-auto pb-1">
                 {playlist.map((track, index) => {
