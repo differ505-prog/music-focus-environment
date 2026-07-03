@@ -1,6 +1,7 @@
 import type {
   MixEvent,
   MixSession,
+  SessionPreset,
   ThemeProgram,
   Track,
   TrackBatch,
@@ -431,6 +432,39 @@ export const trackBatches: TrackBatch[] = trackBatchesSeed.map((batch) => ({
   ...batch,
   trackIds: [...batch.trackIds],
 }));
+
+export const sessionPresets: SessionPreset[] = [
+  {
+    id: "preset-focus-60",
+    label: "60 Min Focus",
+    title: "Obsidian Waters Sprint",
+    summary: "用 60 分鐘進入黑曜湖畔的深度工作節奏。",
+    description: "適合早晨開工、重要會議前整理思路，或需要快速進入沉浸式工作狀態的短程 session。",
+    durationMinutes: 60,
+    collectionId: "featured-obsidian-waters",
+    trackIds: ["obsidian-lake-focus", "walnut-command-drift"],
+  },
+  {
+    id: "preset-ledger-90",
+    label: "90 Min Night Work",
+    title: "Night Ledger Review",
+    summary: "給寫作、校對與財務整理的 90 分鐘理性工作包。",
+    description: "偏向深夜低干擾工作，節奏更克制，適合長段閱讀、編輯與資料整理。",
+    durationMinutes: 90,
+    collectionId: "night-ledger-series",
+    trackIds: ["skyline-ember-ledger", "harbor-afterglow-study", "midnight-library-ledger"],
+  },
+  {
+    id: "preset-architectural-75",
+    label: "75 Min Atmosphere",
+    title: "Architectural Calm Session",
+    summary: "用空間材質與火光氛圍把工作現場收斂成穩定節奏。",
+    description: "適合需要 premium atmosphere 的寫作與 brainstorming，讓空間感先建立，再進入長段專注。",
+    durationMinutes: 75,
+    collectionId: "architectural-calm",
+    trackIds: ["harbor-afterglow-study", "obsidian-lake-focus", "lakeside-ember-terrace"],
+  },
+];
 
 export const mixSessions: MixSession[] = [
   {
@@ -949,6 +983,444 @@ Brief：
         id: "Check 04",
         title: "主題視覺分流",
         detail: "封面與影片需呈現夜跑、城市、路面反光等意象，不可混入 CEO 書房語彙。",
+      },
+    ],
+  },
+  {
+    id: "beach-bar-dj",
+    label: "Beach Bar DJ",
+    title: "海灘露天酒吧 DJ 主題",
+    bpmDisplay: "115 / 120 BPM",
+    summary:
+      "主打海風、日落、露天吧台與 open-air DJ set 的夏夜場景，重點是微醺推進感、暖色光影與可持續混音的戶外派對能量。",
+    audience: "海灘酒吧、露天派對、黃昏酒精社交、開放式 lounge 與微舞池情境",
+    positioning:
+      "不是 festival 主舞台，也不是純 chill lounge，而是 open-air beach bar DJ set：要有律動、有空氣、有 sunset glamour，同時仍保持可長時間播放與平順接歌的商業型場景音樂。",
+    operatingPrinciples: [
+      "BPM 只走 115 / 120 兩條車道，維持可 mix 的舞池感與 beach lounge 之間的商業平衡。",
+      "聲音核心是 warm house groove、nu disco sheen、organic percussion、balearic beach texture，禁止過重 drop 或過硬工業感。",
+      "視覺與文案必須同時成立海風、沙灘、琥珀日落、露天酒吧吧檯與 DJ booth 的空間敘事。",
+    ],
+    layoutNotes: [
+      "前台視覺可走 sunset amber、teal ocean、wet wood deck、outdoor string lights，而不是 CEO 書房語彙。",
+      "卡片資訊要優先呈現 sunset set、open-air groove、cocktail hour、DJ energy 等使用情境。",
+      "後台 workflow 需保留可量產的 prompt 模板，方便未來規律上架 beach bar 系列內容。",
+    ],
+    workflow: [
+      {
+        id: "Beach 01",
+        title: "海灘場景母題",
+        detail: "輸入海風、木質露台、沙灘酒吧、金色日落、DJ booth、雞尾酒與人群溫度等抽象詞，生成完整夏夜場景。",
+        deliverable: "得到可直接進入音樂與視覺生成的 beach bar brief，含時間感、情緒、BPM 與接歌氛圍。",
+      },
+      {
+        id: "Beach 02",
+        title: "DJ Groove 決策",
+        detail: "只允許 115 / 120 BPM，讓內容維持可持續 mix 的戶外商業節奏，不走 festival 極端能量。",
+        deliverable: "鎖定單一車道與 energy level，讓每首歌能融入同一組 open-air DJ set。",
+      },
+      {
+        id: "Beach 03",
+        title: "海風視覺與音樂生成",
+        detail: "同步生成可商用的 beach bar DJ 音樂 prompt 與 sunset cover 視覺 prompt。",
+        deliverable: "取得可直接丟進 AI 工具的音樂、封面與背景視覺素材提示詞。",
+      },
+      {
+        id: "Beach 04",
+        title: "上架與 Session 包裝",
+        detail: "整理 metadata、transition 與系列包裝，把單首整成可直接啟動的 sunset DJ session。",
+        deliverable: "完成 Track JSON、collection 語意與可前台呈現的 session 包裝文案。",
+      },
+    ],
+    promptSeed:
+      "open-air beach bar DJ, sunset amber sky, ocean breeze, teak deck, cocktail hour, warm house groove, balearic rhythm, outdoor string lights",
+    promptModules: [
+      {
+        id: "Module 01",
+        title: "海灘酒吧 Brief",
+        purpose: "把少量夏夜意象整理成可執行的 open-air beach bar DJ 生產 brief。",
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位海灘酒吧與商業場景音樂企劃師。
+
+請根據我提供的少量線索，輸出一份 Beach Bar DJ 主題 brief。
+
+必須輸出：
+1. themeScenario
+2. 核心情緒 3-5 個
+3. 使用場景
+4. 建議 BPM（只能從 115 / 120 擇一）
+5. 建議 energy level（1-10）
+6. 視覺關鍵字
+7. 音樂風格關鍵字
+8. 前後接歌氛圍描述
+
+固定規則：
+- 走 sunset glamour、open-air groove、commercial DJ set
+- 不要反問，直接補足缺漏
+- 內容需支援 long-loop 與平順 crossfade
+- 禁止寫成大型 festival EDM 主舞台
+
+輸入線索：
+【貼上海風、木質露台、日落、酒吧、DJ booth、微醺人群】`,
+      },
+      {
+        id: "Module 02",
+        title: "Beach DJ 音樂 Prompt",
+        purpose: "把 brief 轉為可直接生成的英文 open-air DJ prompt。",
+        upstreamModuleIds: ["Module 01"],
+        autoAdvanceToNext: true,
+        quickLinks: [
+          { label: "打開 Copilot", url: "https://copilot.microsoft.com/" },
+          { label: "打開 Suno", url: "https://suno.com/create" },
+        ],
+        outputSlots: 2,
+        outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
+        template: `You are a professional AI music prompt designer for open-air beach bar DJ sessions.
+
+Generate 2 English prompts for instrumental beach bar DJ tracks.
+
+Requirements:
+- commercial beach bar groove
+- balearic house / warm nu disco / organic sunset rhythm
+- exact BPM same as the brief
+- open-air atmosphere, ocean breeze feeling
+- loop-friendly
+- smooth crossfade ready
+- no vocals
+
+Negative constraints:
+- no festival drop
+- no aggressive big-room EDM
+- no dark warehouse techno
+- no chaotic percussion switch
+- no vocal chops
+
+Brief:
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 03",
+        title: "Beach 視覺 Prompt",
+        purpose: "建立海灘露天酒吧與 DJ booth 的系列視覺提示詞。",
+        upstreamModuleIds: ["Module 01", "Module 02"],
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位高端商業場景視覺 prompt 設計師。
+
+目前這一輪流程會產出 4 首歌曲：
+- Module 02 的候選 Prompt 01 會生成 2 首歌
+- Module 02 的候選 Prompt 02 也會生成 2 首歌
+
+請根據 Beach Bar DJ brief 與 2 組音樂 prompt 產出：
+1. Song 01 封面圖英文 prompt
+2. Song 02 封面圖英文 prompt
+3. Song 03 封面圖英文 prompt
+4. Song 04 封面圖英文 prompt
+
+要求：
+- photorealistic
+- beach bar, sunset sky, ocean horizon, wood deck, string lights
+- stylish open-air DJ booth
+- warm amber / teal palette
+- 每首歌都要是獨立 prompt，不可合併成一次生成多張
+- 請明確標示 Song 01 / Song 02 / Song 03 / Song 04
+
+Brief：
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 04",
+        title: "Beach 上架 JSON",
+        purpose: "把 beach bar DJ 生成結果整理成可直接上站的 Track 資產。",
+        upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
+        inputMode: "low_input_auto_context",
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        supplementalLabel: "少量補充資料",
+        supplementalPlaceholder:
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
+        autoAssembleNote:
+          "這一步會自動沿用前面已儲存的 Beach Brief、音樂 Prompt、圖片 Prompt；你只補外部資源或少量指定欄位即可。",
+        autoAssembleInstructions: [
+          "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
+          "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一。",
+          "若本輪有 2 組音樂 prompt，預設要整理為 4 首歌的命名與上架資料。",
+          "每首歌必須對應獨立封面 prompt，不可混用。",
+        ],
+        template: `你是一位 TypeScript 音樂資料整理助手。
+
+請優先使用我上游已提供的 Beach Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
+
+請整理成 Track JSON 與 transition 補充欄位：
+- title
+- slug
+- bpm
+- musicalKey
+- energyLevel
+- moodTags
+- media.audioUrl
+- media.coverImageUrl
+- media.backgroundVideoUrl（若目前沒有影片素材可先填空字串）
+- copy.descriptionZh
+- copy.descriptionEn
+- copy.themeScenario
+- prompts.musicPrompt
+- prompts.imagePrompt
+- prompts.videoPrompt（若目前沒有影片提示詞可先填空字串）
+- prompts.generationPrompt
+- transition.introCueSeconds
+- transition.mixInPointSeconds
+- transition.mixOutPointSeconds
+
+規則：
+- 只輸出 JSON
+- BPM 只能是 115 或 120
+- 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
+- 欄位不可省略
+- 若我有補充外部資源欄位，請直接覆蓋對應欄位
+
+少量補充資料（可為空）：
+【只貼外部資源或你想覆寫的欄位】`,
+      },
+    ],
+    acceptanceChecklist: [
+      {
+        id: "Check 01",
+        title: "海灘酒吧辨識成立",
+        detail: "聽感應偏 sunset beach bar、戶外 DJ set 與商業 lounge groove，而不是大型 EDM 主舞台。",
+      },
+      {
+        id: "Check 02",
+        title: "車道控制正確",
+        detail: "BPM 只能落在 115 / 120，確保整組內容可混音且不失去戶外派對的推進感。",
+      },
+      {
+        id: "Check 03",
+        title: "可長時播放",
+        detail: "段落密度與 energy 必須支援 cocktail hour 到 night groove 的長時間連播。",
+      },
+      {
+        id: "Check 04",
+        title: "視覺與場景一致",
+        detail: "封面與文案必須呈現海風、木質露台、日落燈串與 open-air DJ booth 的空間語彙。",
+      },
+    ],
+  },
+  {
+    id: "city-pop-cruise",
+    label: "City Pop Cruise",
+    title: "城市夜色 City Pop 主題",
+    bpmDisplay: "100 / 105 BPM",
+    summary:
+      "主打霓虹街景、夏夜駕車、海灣高架與復古都會浪漫感，重點是 city pop 的光澤、groove 與可持續循環的夜間氛圍。",
+    audience: "夜間開車、都會微醺、晚間散步、城市夜讀與帶復古感的輕鬆工作場景",
+    positioning:
+      "不是純懷舊音樂收藏，也不是 Lo-fi 背景聲，而是兼具夜景敘事與商業播放性的 modern city pop line：要有暖色 synth、律動 bass、霓虹反光與都會浪漫感。",
+    operatingPrinciples: [
+      "BPM 只走 100 / 105，確保 city pop 能維持柔和律動與可長時間播放的夜色推進感。",
+      "聲音需結合 glossy electric piano、warm synth pad、clean bass groove、soft disco drum，禁止過硬 techno 或過度爵士即興。",
+      "視覺與文案必須同時成立海灣高架、霓虹反光、車窗夜景與昭和感現代化這組世界觀。",
+    ],
+    layoutNotes: [
+      "前台視覺可走 navy / magenta / amber neon palette，帶城市濕地反光與夏夜巡航感。",
+      "卡片資訊應優先呈現 drive、night breeze、retro urban glow、city lights 等使用語彙。",
+      "後台 workflow 保留 prompt 模板與上架結構，方便後續規律擴充 city pop 系列。",
+    ],
+    workflow: [
+      {
+        id: "City 01",
+        title: "夜色場景母題",
+        detail: "輸入霓虹街景、海灣高架、車窗倒影、夏夜海風、便利商店燈光等抽象詞，生成完整 city pop 場景。",
+        deliverable: "得到可直接進入音樂與視覺生成的 city pop brief，含情緒、時間感、BPM 與接歌氛圍。",
+      },
+      {
+        id: "City 02",
+        title: "Groove 車道決策",
+        detail: "只允許 100 / 105 BPM，讓夜間巡航感與商業播放性保持在同一個舒服區間。",
+        deliverable: "鎖定單一車道與 energy level，避免風格太軟或過度舞曲化。",
+      },
+      {
+        id: "City 03",
+        title: "City Pop 視覺與音樂生成",
+        detail: "同步生成 modern city pop 音樂 prompt 與帶霓虹夜景的視覺 prompt。",
+        deliverable: "取得可直接丟進 AI 工具的音樂、封面與背景視覺提示詞。",
+      },
+      {
+        id: "City 04",
+        title: "上架與夜色包裝",
+        detail: "整理 metadata、transition 與 collection 語意，把單首整成可直接啟動的 night drive session。",
+        deliverable: "完成 Track JSON、collection 語意與前台可展示的 session 包裝文案。",
+      },
+    ],
+    promptSeed:
+      "modern city pop, neon bay highway, night drive, coastal city lights, glossy electric piano, clean bass groove, summer breeze, retro urban glamour",
+    promptModules: [
+      {
+        id: "Module 01",
+        title: "City Pop Brief",
+        purpose: "把少量夜色與城市意象整理成可執行的 city pop 生產 brief。",
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位城市夜色與 city pop 音樂企劃師。
+
+請根據我提供的少量線索，輸出一份 City Pop 主題 brief。
+
+必須輸出：
+1. themeScenario
+2. 核心情緒 3-5 個
+3. 使用場景
+4. 建議 BPM（只能從 100 / 105 擇一）
+5. 建議 energy level（1-10）
+6. 視覺關鍵字
+7. 音樂風格關鍵字
+8. 前後接歌氛圍描述
+
+固定規則：
+- 走 urban romance、night drive、retro-modern glow
+- 不要反問，直接補足缺漏
+- 內容需支援 long-loop 與平順 crossfade
+- 禁止寫成純 lo-fi、純 jazz fusion 或過度誇張的 disco 派對
+
+輸入線索：
+【貼上霓虹街景、海灣高架、車窗倒影、夏夜海風、都會浪漫】`,
+      },
+      {
+        id: "Module 02",
+        title: "City Pop 音樂 Prompt",
+        purpose: "把 brief 轉為可直接生成的英文 modern city pop prompt。",
+        upstreamModuleIds: ["Module 01"],
+        autoAdvanceToNext: true,
+        quickLinks: [
+          { label: "打開 Copilot", url: "https://copilot.microsoft.com/" },
+          { label: "打開 Suno", url: "https://suno.com/create" },
+        ],
+        outputSlots: 2,
+        outputSlotLabels: ["候選 Prompt 01", "候選 Prompt 02"],
+        template: `You are a professional AI music prompt designer for modern city pop playlists.
+
+Generate 2 English prompts for instrumental city pop inspired tracks.
+
+Requirements:
+- modern city pop groove
+- glossy electric piano, warm synths, clean bass groove
+- exact BPM same as the brief
+- night-drive atmosphere
+- loop-friendly
+- smooth crossfade ready
+- no vocals
+
+Negative constraints:
+- no aggressive EDM drop
+- no hard techno edge
+- no chaotic jazz improvisation
+- no vocal chops
+- no lo-fi tape degradation as the main identity
+
+Brief:
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 03",
+        title: "City Pop 視覺 Prompt",
+        purpose: "建立都會夜色與 city pop 世界觀的系列視覺提示詞。",
+        upstreamModuleIds: ["Module 01", "Module 02"],
+        autoAdvanceToNext: true,
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        template: `你是一位高端商業場景視覺 prompt 設計師。
+
+目前這一輪流程會產出 4 首歌曲：
+- Module 02 的候選 Prompt 01 會生成 2 首歌
+- Module 02 的候選 Prompt 02 也會生成 2 首歌
+
+請根據 City Pop brief 與 2 組音樂 prompt 產出：
+1. Song 01 封面圖英文 prompt
+2. Song 02 封面圖英文 prompt
+3. Song 03 封面圖英文 prompt
+4. Song 04 封面圖英文 prompt
+
+要求：
+- photorealistic
+- neon city lights, bay highway, summer night breeze, reflective windows
+- modern-retro city pop tone
+- 每首歌都要是獨立 prompt，不可合併成一次生成多張
+- 請明確標示 Song 01 / Song 02 / Song 03 / Song 04
+
+Brief：
+【貼上 Module 01 結果】`,
+      },
+      {
+        id: "Module 04",
+        title: "City Pop 上架 JSON",
+        purpose: "把 city pop 生成結果整理成可直接上站的 Track 資產。",
+        upstreamModuleIds: ["Module 01", "Module 02", "Module 03"],
+        inputMode: "low_input_auto_context",
+        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
+        supplementalLabel: "少量補充資料",
+        supplementalPlaceholder:
+          "只補必要外部資訊，例如 audioUrl、coverImageUrl、durationSeconds，或你想指定的 title / slug。",
+        autoAssembleNote:
+          "這一步會自動沿用前面已儲存的 City Pop Brief、音樂 Prompt、圖片 Prompt；你只補外部資源或少量指定欄位即可。",
+        autoAssembleInstructions: [
+          "請先檢查資料夾內同名歌曲是否其實是不同歌曲，不能只因檔名一樣就視為重複檔。",
+          "若同名檔是不同歌曲，請為每一首重新命名，確保 title 與 slug 全部唯一。",
+          "若本輪有 2 組音樂 prompt，預設要整理為 4 首歌的命名與上架資料。",
+          "每首歌必須對應獨立封面 prompt，不可混用。",
+        ],
+        template: `你是一位 TypeScript 音樂資料整理助手。
+
+請優先使用我上游已提供的 City Pop Brief、音樂 prompt、封面 prompt，自動補完整體 Track JSON。
+
+請整理成 Track JSON 與 transition 補充欄位：
+- title
+- slug
+- bpm
+- musicalKey
+- energyLevel
+- moodTags
+- media.audioUrl
+- media.coverImageUrl
+- media.backgroundVideoUrl（若目前沒有影片素材可先填空字串）
+- copy.descriptionZh
+- copy.descriptionEn
+- copy.themeScenario
+- prompts.musicPrompt
+- prompts.imagePrompt
+- prompts.videoPrompt（若目前沒有影片提示詞可先填空字串）
+- prompts.generationPrompt
+- transition.introCueSeconds
+- transition.mixInPointSeconds
+- transition.mixOutPointSeconds
+
+規則：
+- 只輸出 JSON
+- BPM 只能是 100 或 105
+- 若本輪素材實際包含 4 首歌，就輸出 4 份 Track JSON 陣列
+- 欄位不可省略
+
+少量補充資料（可為空）：
+【只貼外部資源或你想覆寫的欄位】`,
+      },
+    ],
+    acceptanceChecklist: [
+      {
+        id: "Check 01",
+        title: "城市夜色辨識成立",
+        detail: "聽感應偏 modern city pop、night drive 與都會浪漫感，而不是 lo-fi study 或 disco 舞池主場。",
+      },
+      {
+        id: "Check 02",
+        title: "車道控制正確",
+        detail: "BPM 只能落在 100 / 105，確保 groove 輕盈、耐聽且保有可長時播放的城市節奏。",
+      },
+      {
+        id: "Check 03",
+        title: "可長時播放",
+        detail: "段落密度、合成器光澤與節奏推進需支援夜讀、夜駕與晚間微工作場景。",
+      },
+      {
+        id: "Check 04",
+        title: "視覺與場景一致",
+        detail: "封面與文案必須呈現霓虹街景、車窗反光、海灣高架與夏夜都會浪漫語彙。",
       },
     ],
   },

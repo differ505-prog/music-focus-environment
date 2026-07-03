@@ -32,6 +32,7 @@ type PlaybackContextValue = {
   playback: PlaybackSnapshot;
   toggleAsset: (assetId: string) => void;
   playTrack: (assetId: string) => void;
+  startSession: (assetIds: string[], initialTrackId?: string) => void;
   playPause: () => void;
   toggleRepeat: () => void;
 };
@@ -150,6 +151,19 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     controllerRef.current?.play(assetId);
   };
 
+  const startSession = (assetIds: string[], initialTrackId?: string) => {
+    const nextIds = Array.from(new Set(assetIds)).filter((assetId) => tracks.some((track) => track.id === assetId));
+
+    if (nextIds.length === 0) {
+      return;
+    }
+
+    setIsPlayerOpen(true);
+    setIsPlayerMinimized(false);
+    setSelectedIds(nextIds);
+    setPendingPlayId(initialTrackId && nextIds.includes(initialTrackId) ? initialTrackId : nextIds[0]);
+  };
+
   const playPause = () => {
     if (!controllerRef.current) {
       return;
@@ -177,6 +191,7 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       playback,
       toggleAsset,
       playTrack,
+      startSession,
       playPause,
       toggleRepeat,
     }),

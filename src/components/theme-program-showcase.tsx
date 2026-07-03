@@ -1,5 +1,7 @@
 'use client';
 
+import Link from "next/link";
+
 import type { ThemeProgram, Track, TrackBatch } from "@/types/music";
 
 type ThemeProgramShowcaseProps = {
@@ -13,7 +15,7 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
     <section className="rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="max-w-3xl">
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">Listening Modes</p>
-        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">兩條內容主線，兩種進入情境</h2>
+        <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">{programs.length} 條內容主線，對應不同使用情境</h2>
         <p className="mt-3 text-sm leading-7 text-white/66 md:text-base">
           public 首頁只保留成品層的內容敘事，讓使用者先理解每條內容線的用途、節奏與聆聽場景；完整 Prompt
           workflow 與操作模組則集中在後台。
@@ -25,6 +27,7 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
           const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
           const featuredCount = programTracks.filter((track) => track.featured).length;
           const programBatches = batches.filter((batch) => batch.themeProgramId === program.id);
+          const liveCollections = new Set(programTracks.flatMap((track) => track.collectionIds ?? [])).size;
 
           return (
             <article
@@ -54,6 +57,9 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
                 <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5 text-cyan-100/80">
                   批次 {programBatches.length}
                 </span>
+                <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                  系列 {liveCollections}
+                </span>
               </div>
 
               <div className="mt-5 rounded-[20px] border border-white/8 bg-white/6 p-4">
@@ -81,6 +87,20 @@ export function ThemeProgramShowcase({ programs, tracks, batches }: ThemeProgram
                     </div>
                   ))}
                 </div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-3">
+                {programTracks.length > 0 && liveCollections > 0 ? (
+                  <Link
+                    href={`/collections/${programTracks[0].collectionIds?.[0] ?? ""}`}
+                    className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
+                  >
+                    查看代表系列頁
+                  </Link>
+                ) : (
+                  <span className="rounded-full border border-amber-300/18 bg-amber-300/10 px-4 py-2 text-sm text-amber-100/82">
+                    內容線已建好，曲目庫建置中
+                  </span>
+                )}
               </div>
             </article>
           );

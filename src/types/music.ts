@@ -60,6 +60,17 @@ export type TrackBatch = {
   trackIds: string[];
 };
 
+export type SessionPreset = {
+  id: string;
+  label: string;
+  title: string;
+  summary: string;
+  description: string;
+  durationMinutes: number;
+  collectionId: string;
+  trackIds: string[];
+};
+
 export type Track = {
   id: string;
   slug: string;
