@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useMemo, useState } from "react";
 import { Check, ChevronDown, ChevronUp, Headphones, Sparkles } from "lucide-react";
 
-import { generatedSceneImageUrl } from "@/data/music-assets";
+import { generatedSceneImageUrl, trackBatches, trackCollections } from "@/data/music-assets";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
 import type { Track } from "@/types/music";
 
@@ -37,6 +37,21 @@ export function MediaCard({
     return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
   }, [asset.media.coverImageUrl, imageErrored]);
 
+  const collectionLabels = useMemo(() => {
+    return (asset.collectionIds ?? [])
+      .map((collectionId) => trackCollections.find((collection) => collection.id === collectionId)?.label)
+      .filter((label): label is string => Boolean(label));
+  }, [asset.collectionIds]);
+
+  const primaryCollectionTitle = useMemo(() => {
+    const primaryCollectionId = asset.collectionIds?.[0];
+    return trackCollections.find((collection) => collection.id === primaryCollectionId)?.title;
+  }, [asset.collectionIds]);
+
+  const batchLabel = useMemo(() => {
+    return trackBatches.find((batch) => batch.id === asset.batchId)?.label ?? null;
+  }, [asset.batchId]);
+
   const compatibilityTone =
     compatibility?.status === "exact"
       ? "border-emerald-300/25 bg-emerald-300/12 text-emerald-100"
@@ -60,9 +75,16 @@ export function MediaCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-[#03070d] via-[#03070d]/18 to-transparent" />
         <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-          <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
-            {asset.bpm} BPM
-          </span>
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
+              {asset.bpm} BPM
+            </span>
+            {asset.featured ? (
+              <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
+                Featured
+              </span>
+            ) : null}
+          </div>
           <label className="flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/32 px-3 py-2 text-xs text-white/75 backdrop-blur-xl">
             <input
               type="checkbox"
@@ -76,7 +98,7 @@ export function MediaCard({
         <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.34em] text-white/45">
-              CEO Focus Library
+              {primaryCollectionTitle ?? (asset.themeProgramId === "slow-jog-180" ? "Slow Jog Library" : "CEO Focus Library")}
             </p>
             <h3 className="font-serif text-2xl text-white">{asset.title}</h3>
           </div>
@@ -91,6 +113,19 @@ export function MediaCard({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
+        {collectionLabels.map((label) => (
+          <span
+            key={`${asset.id}-${label}`}
+            className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
+          >
+            {label}
+          </span>
+        ))}
+        {batchLabel ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
+            {batchLabel}
+          </span>
+        ) : null}
         <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
           {asset.musicalKey}
         </span>
@@ -183,6 +218,10 @@ export function MediaCard({
           </p>
           <p className="leading-6">{asset.copy.descriptionZh}</p>
           <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p>
+          <p className="mt-3 text-white/52">
+            {primaryCollectionTitle ? `收錄系列：${primaryCollectionTitle}` : "收錄系列：獨立曲目"}
+            {batchLabel ? `，上架批次：${batchLabel}` : ""}
+          </p>
           <div className="mt-3 flex flex-wrap gap-2">
             {asset.moodTags.map((tag) => (
               <span

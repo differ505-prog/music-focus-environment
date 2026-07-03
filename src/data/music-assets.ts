@@ -1,4 +1,12 @@
-import type { MixEvent, MixSession, ThemeProgram, Track, TrackTransitionProfile } from "@/types/music";
+import type {
+  MixEvent,
+  MixSession,
+  ThemeProgram,
+  Track,
+  TrackBatch,
+  TrackCollection,
+  TrackTransitionProfile,
+} from "@/types/music";
 import { bpmLaneOptions } from "@/lib/bpm-lanes";
 
 function buildMusicPrompt(bpm: number) {
@@ -295,6 +303,86 @@ const trackNarratives: TrackNarrativeSeed[] = [
   },
 ] as const;
 
+const trackCollectionsSeed = [
+  {
+    id: "featured-obsidian-waters",
+    label: "Featured Collection",
+    title: "Obsidian Waters",
+    summary: "黑曜湖畔的 CEO Deep Focus 精選組曲，專注於冷靜決策、霧湖空間感與平直心流。",
+    description:
+      "把黑曜森林、霧湖辦公室與深色材質語言收斂成一條完整內容線，讓使用者不是只挑單首，而是直接進入同一種工作情境。",
+    heroMetric: "4 首 105 BPM 精選",
+    bpmFocus: [105],
+    trackIds: [
+      "obsidian-lake-focus",
+      "walnut-command-drift",
+      "lakeside-ember-terrace",
+      "midnight-library-ledger",
+    ],
+    tone: "fuchsia",
+  },
+  {
+    id: "night-ledger-series",
+    label: "Night Ledger",
+    title: "Night Ledger Sessions",
+    summary: "偏向財務整理、寫作與深夜校對的理性專注系列。",
+    description:
+      "從高樓書桌到雙層書牆，把長工時、低干擾與秩序感做成可連續播放的深色工作場景。",
+    heroMetric: "4 首理性深夜工作曲",
+    bpmFocus: [85, 105],
+    trackIds: [
+      "skyline-ember-ledger",
+      "harbor-afterglow-study",
+      "walnut-command-drift",
+      "midnight-library-ledger",
+    ],
+    tone: "cyan",
+  },
+  {
+    id: "architectural-calm",
+    label: "Architectural Calm",
+    title: "Architectural Calm Loops",
+    summary: "以玻璃、石材、胡桃木與火光構成的空間導向沉浸系列。",
+    description:
+      "把豪宅書房、湖畔露台與深色客廳的材質語言串成同一種 premium atmosphere，強化網站的策展入口感。",
+    heroMetric: "玻璃 x 胡桃木 x 火光",
+    bpmFocus: [85, 105],
+    trackIds: [
+      "skyline-ember-ledger",
+      "harbor-afterglow-study",
+      "obsidian-lake-focus",
+      "lakeside-ember-terrace",
+    ],
+    tone: "amber",
+  },
+] as const;
+
+const trackBatchesSeed = [
+  {
+    id: "batch-2026-07-03-obsidian",
+    label: "Batch 07.03",
+    title: "Obsidian Waters 105 BPM Batch",
+    summary: "依據 CEO Deep Focus 黑曜湖畔 brief 一次上架的 4 首 105 BPM 曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-03T12:08:00.000Z",
+    trackIds: [
+      "obsidian-lake-focus",
+      "walnut-command-drift",
+      "lakeside-ember-terrace",
+      "midnight-library-ledger",
+    ],
+  },
+  {
+    id: "batch-2026-07-02-nightfall",
+    label: "Batch 07.02",
+    title: "Night Work Foundations Batch",
+    summary: "建立首頁基礎內容庫的首批 85 BPM 深度工作曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-02T22:52:00.000Z",
+    trackIds: ["skyline-ember-ledger", "harbor-afterglow-study"],
+  },
+] as const;
+
 export const tracks: Track[] = trackNarratives.map((item, index) => ({
   id: item.slug.replace(/-/g, "-"),
   slug: item.slug,
@@ -324,7 +412,24 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
       `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
   },
   transition: transitionProfiles[index],
+  themeProgramId: item.bpm === 180 ? "slow-jog-180" : "ceo-focus-lanes",
+  collectionIds: trackCollectionsSeed
+    .filter((collection) => (collection.trackIds as readonly string[]).includes(item.slug))
+    .map((collection) => collection.id),
+  batchId: trackBatchesSeed.find((batch) => (batch.trackIds as readonly string[]).includes(item.slug))?.id,
+  featured: item.bpm === 105,
   createdAt: item.createdAt ?? `2026-07-0${index + 1}T21:00:00.000Z`,
+}));
+
+export const trackCollections: TrackCollection[] = trackCollectionsSeed.map((collection) => ({
+  ...collection,
+  trackIds: [...collection.trackIds],
+  bpmFocus: [...collection.bpmFocus],
+}));
+
+export const trackBatches: TrackBatch[] = trackBatchesSeed.map((batch) => ({
+  ...batch,
+  trackIds: [...batch.trackIds],
 }));
 
 export const mixSessions: MixSession[] = [

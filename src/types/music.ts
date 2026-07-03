@@ -36,6 +36,30 @@ export type TrackTransitionProfile = {
   mixOutPointSeconds: number;
 };
 
+export type TrackCollectionTone = "fuchsia" | "cyan" | "amber";
+
+export type TrackCollection = {
+  id: string;
+  label: string;
+  title: string;
+  summary: string;
+  description: string;
+  heroMetric: string;
+  bpmFocus: number[];
+  trackIds: string[];
+  tone: TrackCollectionTone;
+};
+
+export type TrackBatch = {
+  id: string;
+  label: string;
+  title: string;
+  summary: string;
+  themeProgramId: string;
+  publishedAt: string;
+  trackIds: string[];
+};
+
 export type Track = {
   id: string;
   slug: string;
@@ -50,6 +74,10 @@ export type Track = {
   copy: TrackCopy;
   prompts: TrackPrompts;
   transition: TrackTransitionProfile;
+  themeProgramId?: string;
+  collectionIds?: string[];
+  batchId?: string;
+  featured?: boolean;
   createdAt: string;
 };
 
