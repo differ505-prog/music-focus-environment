@@ -8,7 +8,6 @@ import {
   generatedSceneImageUrl,
   mixEvents,
   mixSessions,
-  sessionPresets,
   trackBatches,
   trackCollections,
   themePrograms,
@@ -55,14 +54,6 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
       : trackCollections.find((collection) => collection.id === activeCollectionId) ?? null;
   }, [activeCollectionId]);
 
-  const defaultHeroCollection = useMemo(() => {
-    return trackCollections.find((collection) => collection.id === "featured-obsidian-waters") ?? trackCollections[0] ?? null;
-  }, []);
-
-  const nightLedgerCollection = useMemo(() => {
-    return trackCollections.find((collection) => collection.id === "night-ledger-series") ?? null;
-  }, []);
-
   const filteredAssets = useMemo(() => {
     return tracks.filter((asset) => {
       const matchesBpm = activeBpms.length === 0 || activeBpms.includes(asset.bpm);
@@ -81,6 +72,22 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
 
   const latestBatch = useMemo(() => {
     return [...trackBatches].sort((left, right) => right.publishedAt.localeCompare(left.publishedAt))[0] ?? null;
+  }, []);
+
+  const publicThemeEntries = useMemo(() => {
+    return themePrograms.map((program) => {
+      const programTracks = tracks.filter((track) => track.themeProgramId === program.id);
+      const primaryCollection =
+        trackCollections.find((collection) =>
+          collection.trackIds.some((trackId) => programTracks.some((track) => track.id === trackId)),
+        ) ?? null;
+
+      return {
+        program,
+        programTracks,
+        primaryCollection,
+      };
+    });
   }, []);
 
   const bpmCompatibilityMap = useMemo(() => {
@@ -162,33 +169,33 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
     setSelectedIds([]);
   };
 
-  const handleStartCollectionSession = (collectionId: string) => {
-    const targetCollection = trackCollections.find((collection) => collection.id === collectionId);
+  const handleStartThemeSession = (programId: string) => {
+    const programTracks = tracks.filter((track) => track.themeProgramId === programId);
 
-    if (!targetCollection || targetCollection.trackIds.length === 0) {
+    if (programTracks.length === 0) {
       return;
     }
 
-    setActiveCollectionId(collectionId);
-    startSession(targetCollection.trackIds, targetCollection.trackIds[0]);
+    setActiveCollectionId("all");
+    setActiveBpms(Array.from(new Set(programTracks.map((track) => track.bpm))));
+    startSession(
+      programTracks.map((track) => track.id),
+      programTracks[0]?.id,
+    );
   };
 
-  const handleStartPresetSession = (presetId: string) => {
-    const preset = sessionPresets.find((item) => item.id === presetId);
+  const handleBrowseTheme = (programId: string) => {
+    const programTracks = tracks.filter((track) => track.themeProgramId === programId);
 
-    if (!preset) {
-      return;
-    }
-
-    setActiveCollectionId(preset.collectionId);
-    startSession(preset.trackIds, preset.trackIds[0]);
+    setActiveCollectionId("all");
+    setActiveBpms(Array.from(new Set(programTracks.map((track) => track.bpm))));
   };
 
   const isAdmin = mode === "admin";
   const heroTitle = isAdmin ? "音樂創作後台工作台" : "音樂創作與專注力環境";
   const heroDescription = isAdmin
     ? "管理主題藍圖、轉場參數與生成資料，支援各內容線的 Prompt 模組與驗收流程。"
-    : "提供沉浸式的音樂專注環境。依據當下工作狀態，快速載入合適的曲目庫與自動接歌序列。";
+    : "把不同使用情境整理成可直接開始的音樂路線。先選你現在的狀態，再快速進入對應的聆聽體驗。";
 
   return (
     <main
@@ -234,44 +241,23 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
               ) : null}
             </div>
             {!isAdmin ? (
-              <div className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
-                <button
-                  type="button"
-                  onClick={() => defaultHeroCollection && handleStartCollectionSession(defaultHeroCollection.id)}
-                  className="rounded-[26px] border border-fuchsia-300/20 bg-fuchsia-300/10 p-5 text-left transition hover:-translate-y-0.5 hover:bg-fuchsia-300/14"
-                >
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-fuchsia-100/62">Start Session</p>
-                  <h3 className="mt-3 font-serif text-2xl text-white">立即開始 Focus Session</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/68">
-                    載入 {defaultHeroCollection?.title ?? "精選系列"}，一鍵啟動專注流程。
-                  </p>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => nightLedgerCollection && handleStartCollectionSession(nightLedgerCollection.id)}
-                  className="rounded-[26px] border border-cyan-300/20 bg-cyan-300/10 p-5 text-left transition hover:-translate-y-0.5 hover:bg-cyan-300/14"
-                >
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-cyan-100/62">Night Workflow</p>
-                  <h3 className="mt-3 font-serif text-2xl text-white">開始深夜理性工作</h3>
-                  <p className="mt-3 text-sm leading-6 text-white/68">
-                    載入 Night Ledger，進入長時間低干擾的夜間工作狀態。
-                  </p>
-                </button>
-                <div className="rounded-[26px] border border-white/10 bg-white/6 p-5">
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/44">目前播放</p>
-                  <h3 className="mt-3 font-serif text-2xl text-white">
-                    {currentTrack
-                      ? currentTrack.title
-                      : "尚未開始播放"}
-                  </h3>
-                  <p className="mt-3 text-sm leading-6 text-white/68">
-                    {currentTrack
-                      ? `播放清單目前有 ${selectedAssets.length} 首，系統會自動延續相近的聆聽氛圍。`
-                      : "從上方直接開始播放，或用下方篩選找到適合現在狀態的曲目。"}
-                  </p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
-                    {autoDjPlan ? (
+              <div className="mt-8 rounded-[30px] border border-white/10 bg-white/6 p-5">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-3xl">
+                    <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Theme Routes</p>
+                    <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">從不同路線進入，不只一種聆聽方式</h2>
+                    <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
+                      每條主題線都保留同等入口。已上架的可以直接開始，尚在建置中的也會清楚保留位置。
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-xs text-white/62">
+                    {currentTrack ? (
                       <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
+                        目前播放：{currentTrack.title}
+                      </span>
+                    ) : null}
+                    {autoDjPlan ? (
+                      <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
                         已排好下一首
                       </span>
                     ) : null}
@@ -280,69 +266,80 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                     </span>
                   </div>
                 </div>
+
+                <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {publicThemeEntries.map(({ program, programTracks, primaryCollection }) => {
+                    const hasPublishedTracks = programTracks.length > 0;
+
+                    return (
+                      <article
+                        key={program.id}
+                        className="rounded-[26px] border border-white/10 bg-black/18 p-5 text-left transition hover:-translate-y-0.5 hover:bg-white/8"
+                      >
+                        <div className="flex flex-wrap items-center gap-2 text-xs text-white/62">
+                          <span className="rounded-full border border-fuchsia-300/18 bg-fuchsia-300/10 px-3 py-1.5">
+                            {program.label}
+                          </span>
+                          <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
+                            {program.bpmDisplay}
+                          </span>
+                          <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
+                            {hasPublishedTracks ? `${programTracks.length} 首已上架` : "內容建置中"}
+                          </span>
+                        </div>
+                        <h3 className="mt-4 font-serif text-2xl text-white">{program.title}</h3>
+                        <p className="mt-3 text-sm leading-6 text-white/68">{program.summary}</p>
+                        <p className="mt-3 text-sm leading-6 text-white/56">{program.audience}</p>
+                        <div className="mt-5 flex flex-wrap gap-3">
+                          <button
+                            type="button"
+                            onClick={() => handleStartThemeSession(program.id)}
+                            disabled={!hasPublishedTracks}
+                            className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
+                          >
+                            {hasPublishedTracks ? "立即開始" : "建置中"}
+                          </button>
+                          {primaryCollection ? (
+                            <Link
+                              href={`/collections/${primaryCollection.id}`}
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
+                            >
+                              查看系列
+                            </Link>
+                          ) : hasPublishedTracks ? (
+                            <button
+                              type="button"
+                              onClick={() => handleBrowseTheme(program.id)}
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
+                            >
+                              瀏覽曲目
+                            </button>
+                          ) : (
+                            <a
+                              href="#theme-routes-detail"
+                              className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
+                            >
+                              查看主題說明
+                            </a>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
               </div>
             ) : null}
           </div>
         </section>
 
         {!isAdmin ? (
-          <section className="mt-6 rounded-[30px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Session Presets</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">工作包預設</h2>
-                <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  免手動挑歌，一鍵啟動預先配置的專注流程。
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-3">
-              {sessionPresets.map((preset) => (
-                <article
-                  key={preset.id}
-                  className="rounded-[24px] border border-white/10 bg-white/6 p-5 text-sm text-white/72"
-                >
-                  <p className="text-[11px] uppercase tracking-[0.28em] text-white/42">{preset.label}</p>
-                  <h3 className="mt-3 font-serif text-2xl text-white">{preset.title}</h3>
-                  <p className="mt-3 leading-6 text-white/68">{preset.summary}</p>
-                  <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
-                    <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1.5">
-                      {preset.durationMinutes} 分鐘
-                    </span>
-                    <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
-                      {preset.trackIds.length} 首曲目
-                    </span>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleStartPresetSession(preset.id)}
-                      className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18"
-                    >
-                      啟動 Preset
-                    </button>
-                    <Link
-                      href={`/collections/${preset.collectionId}`}
-                      className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-sm font-medium text-white/76 transition hover:bg-white/12 hover:text-white"
-                    >
-                      查看系列頁
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {!isAdmin ? (
           <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
               <div className="max-w-2xl">
-                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Featured Collections</p>
-                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">情境策展</h2>
+                <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">Published Collections</p>
+                <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列</h2>
                 <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">
-                  依據當下工作狀態，快速載入合適的曲目庫。
+                  這裡放的是目前已經整理完成、可直接瀏覽與播放的系列。
                 </p>
               </div>
               {latestBatch ? (
@@ -363,9 +360,9 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
                 }`}
               >
                 <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">Library View</p>
-                <h3 className="mt-3 font-serif text-2xl text-white">All Library</h3>
+                <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
                 <p className="mt-3 text-sm leading-6 text-white/68">
-                  回到完整曲目庫，搭配 BPM filter 直接瀏覽全站內容，不套用特定策展系列。
+                  回到完整曲目庫，直接瀏覽目前已上架的所有內容。
                 </p>
                 <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
                   <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
@@ -445,7 +442,7 @@ export function FocusStudioApp({ mode = "public" }: FocusStudioAppProps) {
           />
         </div>
 
-        <div className="mt-6">
+        <div id="theme-routes-detail" className="mt-6">
           {isAdmin ? (
             <ThemeProgramPanel mode={mode} programs={themePrograms} />
           ) : (
