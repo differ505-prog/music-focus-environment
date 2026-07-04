@@ -1,14 +1,17 @@
 'use client';
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Waves } from "lucide-react";
 
+import { bpmOptions } from "@/data/music-assets";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
 import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import { PlayerProgressBar } from "@/components/player-progress-bar";
 import { PlayerTransportControls } from "@/components/player-transport-controls";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
+import { analyzeAudioBufferForBpm, type BpmAnalysis } from "@/lib/bpm-analyzer";
+import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -45,6 +48,13 @@ function formatTime(value: number) {
   return `${minutes}:${seconds}`;
 }
 
+type TrackBpmDetectionState =
+  | { status: "idle" | "loading" }
+  | { status: "ready"; result: BpmAnalysis }
+  | { status: "error"; message: string };
+
+const detectedBpmCache = new Map<string, BpmAnalysis>();
+
 export function GlobalPlayer({
   playlist,
   currentTrack,
@@ -64,6 +74,7 @@ export function GlobalPlayer({
   onClose,
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
+  const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
   const {
     artworkContainerRef,
@@ -94,6 +105,86 @@ export function GlobalPlayer({
 
     return sessionPlan.trackPlans.find((plan) => plan.trackId === nextTrack.id) ?? null;
   }, [nextTrack, sessionPlan]);
+  useEffect(() => {
+    let cancelled = false;
+
+    async function detectTrackBpm(track: Track) {
+      if (typeof window === "undefined" || !window.AudioContext) {
+        setDetectedBpmState({ status: "error", message: "目前環境不支援 BPM 偵測" });
+        return;
+      }
+
+      const cacheKey = `${track.id}:${track.media.audioUrl}`;
+      const cached = detectedBpmCache.get(cacheKey);
+
+      if (cached) {
+        setDetectedBpmState({ status: "ready", result: cached });
+        return;
+      }
+
+      setDetectedBpmState({ status: "loading" });
+
+      const audioContext = new window.AudioContext();
+
+      try {
+        const response = await fetch(track.media.audioUrl);
+
+        if (!response.ok) {
+          throw new Error("音檔載入失敗");
+        }
+
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+        const result = analyzeAudioBufferForBpm(audioBuffer, bpmOptions);
+
+        detectedBpmCache.set(cacheKey, result);
+
+        if (!cancelled) {
+          setDetectedBpmState({ status: "ready", result });
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setDetectedBpmState({
+            status: "error",
+            message: error instanceof Error ? error.message : "BPM 偵測失敗",
+          });
+        }
+      } finally {
+        void audioContext.close().catch(() => {});
+      }
+    }
+
+    if (!currentTrack?.media.audioUrl) {
+      setDetectedBpmState({ status: "idle" });
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    void detectTrackBpm(currentTrack);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentTrack]);
+
+  const detectedBpmMeta = useMemo(() => {
+    if (!currentTrack || detectedBpmState.status !== "ready") {
+      return null;
+    }
+
+    const detectedBpm = detectedBpmState.result.estimatedBpm;
+    const diff = Math.abs(currentTrack.bpm - detectedBpm);
+    const compatibility = getBpmCompatibility(currentTrack.bpm, detectedBpm);
+
+    return {
+      detectedBpm,
+      diff,
+      confidencePercent: Math.round(detectedBpmState.result.confidence * 100),
+      compatibility,
+    };
+  }, [currentTrack, detectedBpmState]);
+
   const publicTrackSummary = currentTrack
     ? `${currentTrack.bpm} BPM · 約 ${Math.round(currentTrack.durationSeconds / 60)} 分鐘`
     : null;
@@ -154,7 +245,13 @@ export function GlobalPlayer({
                 {currentTrack?.title ?? "尚未播放"}
               </h3>
               <p className="mt-1 truncate text-xs text-white/55">
-                {nextTrack ? `下一首 ${nextTrack.title}` : "加入曲目即可播放"}
+                {detectedBpmMeta
+                  ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
+                  : detectedBpmState.status === "loading"
+                    ? "BPM 偵測中..."
+                    : nextTrack
+                      ? `下一首 ${nextTrack.title}`
+                      : "加入曲目即可播放"}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-2">
@@ -239,6 +336,32 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
                       : publicTrackSummary}
                   </span>
+                  {detectedBpmState.status === "loading" ? (
+                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                      BPM 偵測中...
+                    </span>
+                  ) : null}
+                  {detectedBpmMeta ? (
+                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                      偵測 {detectedBpmMeta.detectedBpm} BPM · {detectedBpmMeta.confidencePercent}%
+                    </span>
+                  ) : null}
+                  {detectedBpmMeta && detectedBpmMeta.diff > 0 ? (
+                    <span
+                      className={`rounded-full border px-3 py-1 ${
+                        detectedBpmMeta.compatibility.status === "adjacent"
+                          ? "border-amber-300/20 bg-amber-300/10 text-amber-100/85"
+                          : "border-rose-300/20 bg-rose-300/10 text-rose-100/85"
+                      }`}
+                    >
+                      Metadata {currentTrack.bpm} / 偵測 {detectedBpmMeta.detectedBpm}
+                    </span>
+                  ) : null}
+                  {detectedBpmState.status === "error" ? (
+                    <span className="rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1 text-rose-100/85">
+                      {detectedBpmState.message}
+                    </span>
+                  ) : null}
                   {showAdminDetails ? (
                     <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
                       {currentTrack.transition.sourceLufs.toFixed(1)} → {currentTrack.transition.targetLufs.toFixed(1)} LUFS
