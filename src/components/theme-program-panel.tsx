@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import type { ThemeProgram } from "@/types/music";
 
@@ -14,6 +14,7 @@ type SectionState = Record<SectionKey, boolean>;
 
 type FeedbackMap = Record<string, string>;
 type SupplementalInputMap = Record<string, string>;
+type WorkingPromptDraftMap = Record<string, string>;
 
 type StoredModuleOutput = {
   value: string;
@@ -24,8 +25,6 @@ type StoredModuleOutputMap = Record<string, StoredModuleOutput>;
 
 const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v2';
 const MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY = 'theme-manual-module-supplemental-inputs-v1';
-const AUTO_PREFILL_START = '===== 系統自動預填開始 =====';
-const AUTO_PREFILL_END = '===== 系統自動預填結束 =====';
 
 const defaultSectionState = (): SectionState => ({
   strategy: true,
@@ -41,6 +40,14 @@ function buildModuleKey(programId: string, moduleId: string) {
 
 function buildModuleSlotKey(programId: string, moduleId: string, slotIndex: number) {
   return `${buildModuleKey(programId, moduleId)}::slot-${slotIndex}`;
+}
+
+function buildModuleSectionId(programId: string, moduleId: string) {
+  return `theme-module-${programId}-${moduleId}`;
+}
+
+function buildModuleTextareaId(programId: string, moduleId: string, slotIndex: number) {
+  return `theme-module-textarea-${programId}-${moduleId}-${slotIndex}`;
 }
 
 function getModuleOutputSlotCount(module: ThemeProgram['promptModules'][number]) {
@@ -116,6 +123,17 @@ function getReferencedUpstreamModules(
     .filter((module): module is ThemeProgram['promptModules'][number] => Boolean(module));
 }
 
+function getMissingUpstreamModules(
+  program: ThemeProgram,
+  moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
+  moduleOutputs: Record<string, string>,
+) {
+  return getReferencedUpstreamModules(program, moduleIndex, targetModule).filter(
+    (module) => !combineModuleOutputs(program.id, module, moduleOutputs).trim(),
+  );
+}
+
 function buildUpstreamPayload(
   program: ThemeProgram,
   moduleIndex: number,
@@ -132,6 +150,42 @@ function buildUpstreamPayload(
   return upstreamModules
     .map((item) => `${item.title}\n${item.output}`)
     .join('\n\n--------------------\n\n');
+}
+
+function buildWorkingPrompt(
+  program: ThemeProgram,
+  moduleIndex: number,
+  targetModule: ThemeProgram['promptModules'][number],
+  moduleOutputs: Record<string, string>,
+  supplementalInputs: SupplementalInputMap,
+) {
+  const upstreamModules = getReferencedUpstreamModules(program, moduleIndex, targetModule);
+  const upstreamPayload = buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
+  const resolvedTemplate = upstreamModules.reduce((template, module) => {
+    const output = combineModuleOutputs(program.id, module, moduleOutputs).trim();
+    const replacement = output || `【待補 ${module.title} 結果】`;
+    return template.replaceAll(`【貼上 ${module.id} 結果】`, replacement);
+  }, targetModule.template);
+
+  if (targetModule.inputMode === 'low_input_auto_context') {
+    const assembledContext = buildLowInputAssembly(
+      program,
+      moduleIndex,
+      targetModule,
+      moduleOutputs,
+      supplementalInputs[buildModuleKey(program.id, targetModule.id)] ?? '',
+    );
+
+    return `${resolvedTemplate}\n\n自動整理參考資料：\n${assembledContext}`;
+  }
+
+  const hasExplicitPlaceholders = extractTemplateReferencedModuleIds(targetModule.template).length > 0;
+
+  if (!hasExplicitPlaceholders && upstreamPayload) {
+    return `${resolvedTemplate}\n\n參考資料：\n${upstreamPayload}`;
+  }
+
+  return resolvedTemplate;
 }
 
 function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
@@ -173,50 +227,37 @@ function buildLowInputAssembly(
   ].join('\n');
 }
 
-function wrapAutoPrefillValue(value: string) {
-  return `${AUTO_PREFILL_START}\n${value.trim()}\n${AUTO_PREFILL_END}`;
-}
-
-function extractManualContent(value: string) {
-  const trimmed = value.trim();
-
-  if (!trimmed) {
-    return '';
+async function copyTextToClipboard(value: string) {
+  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(value);
+      return true;
+    } catch {
+      // Fallback below.
+    }
   }
 
-  const autoBlockPattern = new RegExp(
-    `${AUTO_PREFILL_START}[\\s\\S]*?${AUTO_PREFILL_END}\\n?`,
-    'g',
-  );
-
-  return trimmed.replace(autoBlockPattern, '').trim();
-}
-
-function buildNextModulePrefill(
-  program: ThemeProgram,
-  moduleIndex: number,
-  targetModule: ThemeProgram['promptModules'][number],
-  moduleOutputs: Record<string, string>,
-  supplementalInputs: SupplementalInputMap,
-) {
-  if (targetModule.inputMode === 'low_input_auto_context') {
-    return buildLowInputAssembly(
-      program,
-      moduleIndex,
-      targetModule,
-      moduleOutputs,
-      supplementalInputs[buildModuleKey(program.id, targetModule.id)] ?? '',
-    );
+  if (typeof document === 'undefined') {
+    return false;
   }
 
-  return buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
-}
+  const textarea = document.createElement('textarea');
+  textarea.value = value;
+  textarea.setAttribute('readonly', 'true');
+  textarea.style.position = 'fixed';
+  textarea.style.opacity = '0';
+  textarea.style.pointerEvents = 'none';
+  document.body.appendChild(textarea);
+  textarea.focus();
+  textarea.select();
 
-function applyAutoPrefillToValue(currentValue: string, nextAutoValue: string) {
-  const autoBlock = wrapAutoPrefillValue(nextAutoValue);
-  const manualContent = extractManualContent(currentValue);
-
-  return manualContent ? `${autoBlock}\n\n${manualContent}` : autoBlock;
+  try {
+    return document.execCommand('copy');
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textarea);
+  }
 }
 
 export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
@@ -224,6 +265,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
   const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
+  const [workingPromptDrafts, setWorkingPromptDrafts] = useState<WorkingPromptDraftMap>({});
+  const previousGeneratedWorkingPromptsRef = useRef<WorkingPromptDraftMap>({});
 
   useEffect(() => {
     setCollapsedSections((current) => {
@@ -304,6 +347,47 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     }
   }, []);
 
+  useEffect(() => {
+    const nextGeneratedPrompts: WorkingPromptDraftMap = {};
+
+    setWorkingPromptDrafts((current) => {
+      let didChange = false;
+      const nextDrafts = { ...current };
+
+      for (const program of programs) {
+        for (let moduleIndex = 1; moduleIndex < program.promptModules.length; moduleIndex += 1) {
+          const targetModule = program.promptModules[moduleIndex];
+          const moduleKey = buildModuleKey(program.id, targetModule.id);
+          const generatedPrompt = buildWorkingPrompt(
+            program,
+            moduleIndex,
+            targetModule,
+            moduleOutputs,
+            supplementalInputs,
+          );
+
+          nextGeneratedPrompts[moduleKey] = generatedPrompt;
+
+          const currentDraft = current[moduleKey] ?? '';
+          const previousGeneratedPrompt = previousGeneratedWorkingPromptsRef.current[moduleKey] ?? '';
+          const shouldSync =
+            !currentDraft ||
+            currentDraft === previousGeneratedPrompt ||
+            (currentDraft.includes('【待補') && !generatedPrompt.includes('【待補'));
+
+          if (shouldSync && currentDraft !== generatedPrompt) {
+            nextDrafts[moduleKey] = generatedPrompt;
+            didChange = true;
+          }
+        }
+      }
+
+      return didChange ? nextDrafts : current;
+    });
+
+    previousGeneratedWorkingPromptsRef.current = nextGeneratedPrompts;
+  }, [programs, moduleOutputs, supplementalInputs]);
+
   const setFeedback = (key: string, message: string) => {
     setFeedbackMap((current) => ({
       ...current,
@@ -319,6 +403,24 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         [section]: !(current[programId] ?? defaultSectionState())[section],
       },
     }));
+  };
+
+  const focusModuleFirstOutput = (programId: string, moduleId: string) => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    const textarea = document.getElementById(buildModuleTextareaId(programId, moduleId, 0)) as HTMLTextAreaElement | null;
+    const section = document.getElementById(buildModuleSectionId(programId, moduleId));
+
+    section?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+    if (textarea) {
+      window.setTimeout(() => {
+        textarea.focus();
+        textarea.select();
+      }, 160);
+    }
   };
 
   const handleModuleOutputChange = (programId: string, moduleId: string, slotIndex: number, value: string) => {
@@ -347,6 +449,15 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     });
   };
 
+  const handleWorkingPromptDraftChange = (programId: string, moduleId: string, value: string) => {
+    const key = buildModuleKey(programId, moduleId);
+
+    setWorkingPromptDrafts((current) => ({
+      ...current,
+      [key]: value,
+    }));
+  };
+
   const handleSaveModuleOutput = (programId: string, moduleId: string) => {
     if (typeof window === 'undefined') {
       return;
@@ -368,22 +479,15 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       nextOutputs[slotKey] = moduleOutputs[slotKey] ?? '';
     }
 
-    const nextModule = targetProgram.promptModules[moduleIndex + 1];
+    const currentModuleOutput = combineModuleOutputs(programId, targetPromptModule, nextOutputs);
 
-    if (targetPromptModule.autoAdvanceToNext && nextModule) {
-      const nextAutoValue = buildNextModulePrefill(
-        targetProgram,
-        moduleIndex + 1,
-        nextModule,
-        nextOutputs,
-        supplementalInputs,
-      );
-
-      if (nextAutoValue.trim()) {
-        const nextSlotKey = buildModuleSlotKey(programId, nextModule.id, 0);
-        nextOutputs[nextSlotKey] = applyAutoPrefillToValue(nextOutputs[nextSlotKey] ?? '', nextAutoValue);
-      }
+    if (!currentModuleOutput.trim()) {
+      setFeedback(moduleKey, '目前沒有可儲存內容，請先把 AI 回傳結果貼到下方輸出框');
+      focusModuleFirstOutput(programId, moduleId);
+      return;
     }
+
+    const nextModule = targetProgram.promptModules[moduleIndex + 1];
 
     const storedOutputs = Object.fromEntries(
       Object.entries(nextOutputs).map(([entryKey, value]) => [
@@ -422,45 +526,72 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       return;
     }
 
-    try {
-      await navigator.clipboard.writeText(value);
+    const copied = await copyTextToClipboard(value);
+
+    if (copied) {
       setFeedback(feedbackKey, successMessage);
-    } catch {
+    } else {
       setFeedback(feedbackKey, '複製失敗，請改用手動複製');
     }
   };
 
-  const handleInsertUpstream = (program: ThemeProgram, moduleIndex: number) => {
+  const handleInsertUpstream = async (program: ThemeProgram, moduleIndex: number) => {
     const targetModule = program.promptModules[moduleIndex];
-    const upstreamPayload = buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs);
-    const currentValue = moduleOutputs[buildModuleSlotKey(program.id, targetModule.id, 0)] ?? '';
+    const missingUpstreamModules = getMissingUpstreamModules(program, moduleIndex, targetModule, moduleOutputs);
 
-    if (!upstreamPayload) {
-      setFeedback(buildModuleKey(program.id, targetModule.id), '目前沒有已儲存的上游結果');
+    if (missingUpstreamModules.length > 0) {
+      setFeedback(
+        buildModuleKey(program.id, targetModule.id),
+        `請先完成並儲存 ${missingUpstreamModules.map((module) => module.title).join(' / ')}`,
+      );
       return;
     }
 
-    const nextValue = currentValue.trim()
-      ? `${currentValue.trim()}\n\n===== 上游結果 =====\n\n${upstreamPayload}`
-      : upstreamPayload;
-
-    handleModuleOutputChange(program.id, targetModule.id, 0, nextValue);
-    setFeedback(buildModuleKey(program.id, targetModule.id), '已插入上游結果');
-  };
-
-  const handleAssembleLowInput = (program: ThemeProgram, moduleIndex: number) => {
-    const targetModule = program.promptModules[moduleIndex];
-    const moduleKey = buildModuleKey(program.id, targetModule.id);
-    const assembledInput = buildLowInputAssembly(
+    const nextPrompt = buildWorkingPrompt(
       program,
       moduleIndex,
       targetModule,
       moduleOutputs,
-      supplementalInputs[moduleKey] ?? '',
+      supplementalInputs,
+    );
+    const hasUpstreamPayload = Boolean(buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs).trim());
+
+    handleWorkingPromptDraftChange(program.id, targetModule.id, nextPrompt);
+    const copied = await copyTextToClipboard(nextPrompt);
+
+    if (copied) {
+      setFeedback(
+        buildModuleKey(program.id, targetModule.id),
+        hasUpstreamPayload
+          ? '已帶入工作框，並直接複製到剪貼簿'
+          : '已帶入模板並複製；待上一步內容補齊後會自動更新',
+      );
+    } else {
+      setFeedback(
+        buildModuleKey(program.id, targetModule.id),
+        hasUpstreamPayload ? '已帶入工作框，可直接取用或再編輯' : '已帶入模板；待上一步內容補齊後會自動更新',
+      );
+    }
+  };
+
+  const handleAssembleLowInput = async (program: ThemeProgram, moduleIndex: number) => {
+    const targetModule = program.promptModules[moduleIndex];
+    const assembledPrompt = buildWorkingPrompt(
+      program,
+      moduleIndex,
+      targetModule,
+      moduleOutputs,
+      supplementalInputs,
     );
 
-    handleModuleOutputChange(program.id, targetModule.id, 0, assembledInput);
-    setFeedback(moduleKey, '已自動組裝低輸入內容');
+    handleWorkingPromptDraftChange(program.id, targetModule.id, assembledPrompt);
+    const copied = await copyTextToClipboard(assembledPrompt);
+
+    if (copied) {
+      setFeedback(buildModuleKey(program.id, targetModule.id), '已自動帶入工作框，並直接複製到剪貼簿');
+    } else {
+      setFeedback(buildModuleKey(program.id, targetModule.id), '已自動帶入工作框');
+    }
   };
 
   const renderSectionToggle = (programId: string, section: SectionKey, label: string) => {
@@ -492,7 +623,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         {programs.map((program) => (
           <article
             key={program.id}
-            className="rounded-[24px] border border-white/10 bg-black/18 p-4 text-sm text-white/72"
+            className="min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/18 p-4 text-sm text-white/72"
           >
             <div className="flex flex-wrap items-center gap-3">
               <span className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1 text-xs uppercase tracking-[0.28em] text-fuchsia-100/85">
@@ -527,13 +658,26 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                   const feedback = feedbackMap[moduleKey];
                   const slotCount = getModuleOutputSlotCount(module);
                   const combinedOutput = combineModuleOutputs(program.id, module, moduleOutputs);
+                  const hasSavedCurrentModuleOutput = Boolean(combinedOutput.trim());
                   const supplementalInput = supplementalInputs[moduleKey] ?? '';
                   const isLowInputModule = module.inputMode === 'low_input_auto_context';
+                  const missingUpstreamModules = getMissingUpstreamModules(program, moduleIndex, module, moduleOutputs);
+                  const hasMissingUpstreamModules = missingUpstreamModules.length > 0;
+                  const canInsertUpstream = moduleIndex > 0;
+                  const workingPrompt = buildWorkingPrompt(
+                    program,
+                    moduleIndex,
+                    module,
+                    moduleOutputs,
+                    supplementalInputs,
+                  );
+                  const workingPromptValue = workingPromptDrafts[moduleKey] ?? workingPrompt;
 
                   return (
                     <div
                       key={module.id}
-                      className="rounded-[18px] border border-cyan-300/12 bg-black/18 p-4"
+                      id={buildModuleSectionId(program.id, module.id)}
+                      className="min-w-0 overflow-hidden rounded-[18px] border border-cyan-300/12 bg-black/18 p-4"
                     >
                       <div className="flex flex-wrap items-center gap-3">
                         <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-50/72">
@@ -542,9 +686,69 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <h4 className="text-sm font-medium text-white">{module.title}</h4>
                       </div>
                       <p className="mt-2 text-xs leading-6 text-cyan-50/70">{module.purpose}</p>
-                      <pre className="mt-3 overflow-x-auto rounded-[16px] border border-white/8 bg-[#07101a]/90 p-4 text-xs leading-6 text-cyan-50/82">
+                      <pre className="mt-3 overflow-hidden whitespace-pre-wrap break-words rounded-[16px] border border-white/8 bg-[#07101a]/90 p-4 text-xs leading-6 text-cyan-50/82">
                         <code>{module.template}</code>
                       </pre>
+
+                      {moduleIndex === 0 ? (
+                        <div className="mt-4 rounded-[16px] border border-amber-300/14 bg-[#181208]/84 p-4">
+                          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
+                            下一步來源說明
+                          </p>
+                          <p className="mt-2 text-xs leading-6 text-amber-50/78">
+                            Module 02 讀取的是下方「此步驟輸出」已儲存內容，不是上面的模板。請把 AI 回傳的 brief 貼到下方，再按「儲存此步驟結果」。
+                          </p>
+                          <p className="mt-2 text-xs leading-6 text-amber-50/70">
+                            {hasSavedCurrentModuleOutput ? '目前狀態：已儲存，可供下一步帶入。' : '目前狀態：尚未儲存，下一步會顯示待補提示。'}
+                          </p>
+                        </div>
+                      ) : null}
+
+                      {moduleIndex > 0 ? (
+                        <div className="mt-4 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-4">
+                          <div className="flex flex-wrap items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
+                                自動組裝工作指令
+                              </p>
+                              <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
+                                {hasMissingUpstreamModules
+                                  ? `尚未取得 ${missingUpstreamModules.map((item) => item.title).join(' / ')} 的已儲存結果。`
+                                  : '這一框會把前一步已儲存內容自動帶入模板，直接複製給 AI 使用。'}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                hasMissingUpstreamModules
+                                  ? (() => {
+                                      setFeedback(
+                                        moduleKey,
+                                        `請先完成並儲存 ${missingUpstreamModules[0].title}`,
+                                      );
+                                      focusModuleFirstOutput(program.id, missingUpstreamModules[0].id);
+                                    })()
+                                  : handleCopyText(
+                                      `${moduleKey}::working-prompt`,
+                                      workingPromptValue,
+                                      '自動組裝工作指令已複製',
+                                    )
+                              }
+                              className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] text-fuchsia-50/82 transition hover:bg-fuchsia-400/14"
+                            >
+                              {hasMissingUpstreamModules ? `前往 ${missingUpstreamModules[0].title}` : '複製此框'}
+                            </button>
+                          </div>
+                          <textarea
+                            value={workingPromptValue}
+                            onChange={(event) =>
+                              handleWorkingPromptDraftChange(program.id, module.id, event.target.value)
+                            }
+                            className="mt-3 min-h-48 w-full rounded-[16px] border border-white/8 bg-[#090512]/90 p-4 text-xs leading-6 text-fuchsia-50/82 outline-none transition placeholder:text-fuchsia-50/28 focus:border-fuchsia-300/28"
+                            placeholder="這裡會顯示可直接送進 AI 的完整工作指令。"
+                          />
+                        </div>
+                      ) : null}
 
                       {isLowInputModule ? (
                         <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
@@ -602,10 +806,17 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                               ? handleAssembleLowInput(program, moduleIndex)
                               : handleInsertUpstream(program, moduleIndex)
                           }
-                          className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-2 text-xs text-fuchsia-50/82 transition hover:bg-fuchsia-400/14 disabled:cursor-not-allowed disabled:opacity-45"
-                          disabled={!upstreamPayload}
+                          className={`rounded-full border px-3 py-2 text-xs transition ${
+                            canInsertUpstream
+                              ? 'border-fuchsia-400/20 bg-fuchsia-400/10 text-fuchsia-50/82 hover:bg-fuchsia-400/14'
+                              : 'border-white/10 bg-white/6 text-white/62 hover:bg-white/10'
+                          }`}
                         >
-                          {isLowInputModule ? '自動帶入前面內容' : '帶入前一步內容'}
+                          {hasMissingUpstreamModules
+                            ? '先完成上一步'
+                            : isLowInputModule
+                              ? '帶入並複製前面內容'
+                              : '帶入並複製上一步內容'}
                         </button>
                         <button
                           type="button"
@@ -636,7 +847,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                       ) : null}
 
                       <div className="mt-4">
-                        <div className="flex items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center justify-between gap-3">
                           <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
                             {isLowInputModule
                               ? '帶入後編輯區'
@@ -645,7 +856,11 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                 : '此步驟輸出'}
                           </p>
                           <span className="text-xs text-cyan-50/64">
-                            {feedback ?? feedbackMap[`${moduleKey}::template`] ?? feedbackMap[`${moduleKey}::output`] ?? '可貼上 AI 生成結果'}
+                            {feedback ??
+                              feedbackMap[`${moduleKey}::working-prompt`] ??
+                              feedbackMap[`${moduleKey}::template`] ??
+                              feedbackMap[`${moduleKey}::output`] ??
+                              '可貼上 AI 生成結果'}
                           </span>
                         </div>
                         <div className="mt-3 grid gap-3">
@@ -656,9 +871,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                             return (
                               <div
                                 key={slotKey}
-                                className="rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
+                                className="min-w-0 overflow-hidden rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
                               >
-                                <div className="flex items-center justify-between gap-3">
+                                <div className="flex flex-wrap items-center justify-between gap-3">
                                   <p className="text-xs uppercase tracking-[0.2em] text-white/48">{slotLabel}</p>
                                   <button
                                     type="button"
@@ -675,6 +890,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                   </button>
                                 </div>
                                 <textarea
+                                  id={buildModuleTextareaId(program.id, module.id, slotIndex)}
                                   value={moduleOutputs[slotKey] ?? ''}
                                   onChange={(event) =>
                                     handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)
@@ -690,12 +906,22 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                           <button
                             type="button"
                             onClick={() => handleSaveModuleOutput(program.id, module.id)}
-                            className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs font-medium text-cyan-50 transition hover:bg-cyan-300/16"
+                            className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
+                              hasSavedCurrentModuleOutput
+                                ? 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50 hover:bg-cyan-300/16'
+                                : 'border-white/10 bg-white/8 text-white/82 hover:bg-white/12'
+                            }`}
                           >
                             {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
                           </button>
                           <span className="text-xs text-white/45">
-                            {slotCount > 1 ? '儲存後，後續模組可直接取用這兩組候選內容。' : '儲存後，後續模組可直接取用這份內容。'}
+                            {hasSavedCurrentModuleOutput
+                              ? slotCount > 1
+                                ? '已可重新儲存；後續模組會讀取這兩組候選內容。'
+                                : '已可重新儲存；後續模組會讀取這份內容。'
+                              : slotCount > 1
+                                ? '請先把 AI 回傳的候選內容貼到下方輸出框，再儲存。'
+                                : '請先把 AI 回傳內容貼到下方輸出框，再儲存。'}
                           </span>
                         </div>
                       </div>
@@ -765,7 +991,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                 {renderSectionToggle(program.id, 'seed', '初始提示')}
                 {(collapsedSections[program.id] ?? defaultSectionState()).seed ? null : (
                   <div className="mt-3 rounded-[18px] border border-cyan-300/12 bg-[#07101a]/88 p-4">
-                    <pre className="overflow-x-auto text-xs leading-6 text-cyan-50/82">
+                    <pre className="overflow-hidden whitespace-pre-wrap break-words text-xs leading-6 text-cyan-50/82">
                       <code>{program.promptSeed}</code>
                     </pre>
                   </div>

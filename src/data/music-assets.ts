@@ -454,6 +454,130 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     createdAt: "2026-07-04T00:24:00.000Z",
   },
+  {
+    title: "The Initiation",
+    slug: "the-initiation",
+    musicalKey: "A Minor",
+    energyLevel: 5.8,
+    moodTags: ["冷藍螢幕光", "碳纖桌墊", "沉浸啟動"],
+    descriptionZh:
+      "冷藍螢幕光、深色桌面與極度克制的空間光線構成的 85 BPM 進場心流曲，適合開工前切換、收束注意力與快速進入深度工作。",
+    descriptionEn:
+      "An 85 BPM flow-entry track shaped by cold screen light, dark desk textures, and rigorously controlled lighting, built for switching into deep work with immediate calm and precision.",
+    themeScenario:
+      "極簡豪宅裡的深色辦公桌只保留筆電螢幕冷光作為主光源，壁爐與夜景退到遠景，讓思緒在第一個循環就完成收束並沉進安靜心流。",
+    bpm: 85,
+    durationSeconds: 287,
+    media: {
+      audioUrl: "/audio/the-initiation.mp3",
+      coverImageUrl: "/img/the-initiation-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, 85 BPM exact tempo, cold screen glow, dark minimalist mansion workspace, carbon fiber desk texture, tightly controlled pulse, no vocals, loop-friendly, smooth equal-power crossfade ready, premium and restrained, designed for entering flow with absolute calm.",
+      imagePrompt:
+        "A photorealistic, close-up perspective of a luxurious workspace in a minimalist mansion at night, designed for dark mode friendly aesthetics. A sleek dark wood desk features a single MacBook emitting a crisp, cold blue screen glow that illuminates a carbon fiber desk pad. Geometric shadows fall across matte metal accessories. In the blurred background, floor-to-ceiling glass windows reveal a distant night skyline and a modern, low-profile linear fireplace emitting a very subtle, moody ember glow. Absolute clarity, deep focus atmosphere, extremely controlled lighting, architectural photography, completely devoid of neon lights, 8k resolution, highly detailed.",
+      videoPrompt:
+        "Slow cinematic close-up of a dark luxury desk at night, crisp blue laptop glow washing across a carbon fiber desk pad, geometric shadow movement over matte metal accessories, distant skyline and restrained fireplace blur in the background, premium deep focus atmosphere, no neon.",
+      generationPrompt:
+        "情境：絕對冷靜、螢幕冷光、碳纖桌墊、遠景壁爐與夜景。BPM 固定 85，不可漂移；需支援進場沉浸、long-loop、no vocals、smooth crossfade 與極度克制的深夜行政專注感。",
+    },
+    createdAt: "2026-07-04T13:37:24.000Z",
+  },
+  {
+    title: "Deep Submersion",
+    slug: "deep-submersion",
+    musicalKey: "F Minor",
+    energyLevel: 6.1,
+    moodTags: ["玻璃反射", "清水模", "極簡運算"],
+    descriptionZh:
+      "玻璃反射、清水模與外部超跑倒影構成的 85 BPM 深潛專注循環，適合高密度推演、深夜運算與長時間不被打斷的理性工作。",
+    descriptionEn:
+      "An 85 BPM deep-focus loop built from glass reflections, polished concrete, and the shadow of latent power, designed for extended analytical work, overnight computation, and uninterrupted executive processing.",
+    themeScenario:
+      "凌晨三點的豪宅工作區被玻璃與深色混凝土包圍，螢幕冷光壓住所有情緒，只留下低調但持續推進的底層動能。",
+    bpm: 85,
+    durationSeconds: 406,
+    media: {
+      audioUrl: "/audio/deep-submersion.mp3",
+      coverImageUrl: "/img/deep-submersion-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental minimal techno for deep focus, 85 BPM exact tempo, dark polished concrete atmosphere, glass reflections, authoritative low-end propulsion, no vocals, no flashy lead, no festival drop, loop-friendly, smooth equal-power crossfade ready, premium and severely restrained.",
+      imagePrompt:
+        "Photorealistic architectural interior photography of a dark, luxurious executive workspace at 3 AM. The composition is dominated by sleek glass partitions and dark polished concrete. A glowing laptop screen serves as the absolute focal point on a matte black desk. Through the expansive glass window, the limitless dark night skyline is visible, along with the faint, streamlined reflection of a matte black supercar parked outside. A dark walnut wood wall features a heavily tinted, moody glass fireplace with restrained flames. Authoritative steadiness, dark premium aesthetic, zero neon, moody but controlled, 8k, ultra-realistic.",
+      videoPrompt:
+        "Slow architectural camera drift through a dark executive workspace at 3 AM, sleek glass partitions, polished concrete reflections, laptop glow as the focal point, faint matte-black supercar reflection outside, restrained fireplace flames, premium controlled atmosphere, no neon.",
+      generationPrompt:
+        "情境：Minimal Techno、玻璃反射、清水模、超跑倒影與內斂動能。BPM 固定 85，不可漂移；需維持 no vocals、no flashy lead、long-loop、smooth crossfade 與極深沉的行政心流感。",
+    },
+    createdAt: "2026-07-04T13:37:50.000Z",
+  },
+  {
+    title: "Strategic Warmth",
+    slug: "strategic-warmth",
+    musicalKey: "D Minor",
+    energyLevel: 5.9,
+    moodTags: ["木質火光", "權威沉穩", "長時推演"],
+    descriptionZh:
+      "木質牆面、壁爐暖光與深色辦公室平衡出的 85 BPM 權威型專注曲，適合長時間決策、審稿與需要心理支撐的高壓工作。",
+    descriptionEn:
+      "An 85 BPM executive-focus track balancing dark wood, restrained fireplace warmth, and calm architectural tension, built for long-form decision-making, review, and composed authority under pressure.",
+    themeScenario:
+      "晚間書房裡，筆電冷光與壁爐暖光維持微妙平衡，空間依舊深色克制，但多了一層讓決策更穩的底氣與餘裕。",
+    bpm: 85,
+    durationSeconds: 235,
+    media: {
+      audioUrl: "/audio/strategic-warmth.mp3",
+      coverImageUrl: "/img/strategic-warmth-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental executive deep work electronic, 85 BPM exact tempo, dark ribbed wood and fireplace warmth, controlled low-pressure groove, premium authority, no vocals, no busy fills, loop-friendly, elegant and smooth equal-power crossfade ready, emotionally supportive but restrained.",
+      imagePrompt:
+        "A photorealistic, medium-wide shot of a high-end executive study immersed in a late-night deep work session. A sophisticated balance of dark ribbed wood paneling and carbon fiber elements. The primary light source is the sharp glow of a laptop screen on a premium desk, beautifully contrasted by the warm, controlled flames of a contemporary fireplace integrated into the wall. Expansive glass windows frame a muted, moody night skyline. The scene exudes isolated secrecy and restrained momentum, perfect for a dark mode interface, avoiding any bright or entertainment-style lighting, cinematic lighting, 8k, photorealism.",
+      videoPrompt:
+        "Slow cinematic medium-wide shot inside a dark executive study at night, laptop glow on a premium desk contrasted with controlled fireplace flames, muted skyline beyond expansive glass, ribbed wood textures, restrained premium movement, no bright entertainment lighting.",
+      generationPrompt:
+        "情境：木質調、壁爐火光、權威沉穩與高壓長工時決策。BPM 固定 85，不可漂移；需維持 no vocals、穩定低壓節奏、long-loop、smooth crossfade 與克制但有支撐感的夜間工作氛圍。",
+    },
+    createdAt: "2026-07-04T13:38:42.000Z",
+  },
+  {
+    title: "Infinite Loop",
+    slug: "infinite-loop",
+    musicalKey: "E Minor",
+    energyLevel: 5.6,
+    moodTags: ["無邊界黑夜", "廣角空間", "長迴圈"],
+    descriptionZh:
+      "把工作區、夜景、跑車與壁爐整合成同一個黑夜空間的 85 BPM 長迴圈曲，適合長時沉浸、夜間規劃與幾乎無感的平滑連續播放。",
+    descriptionEn:
+      "An 85 BPM long-loop focus track that merges workspace, skyline, fireplace, and shadowed supercar into one seamless nocturnal field, built for expansive immersion and smooth continuous playback.",
+    themeScenario:
+      "廣角視野裡，桌面、玻璃外的城市與黑夜中的車身剪影被收進同一個靜默場域，節拍像沒有邊界的夜色一樣緩慢延伸。",
+    bpm: 85,
+    durationSeconds: 6,
+    media: {
+      audioUrl: "/audio/infinite-loop.mp3",
+      coverImageUrl: "/img/infinite-loop-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental cinematic deep focus electronic, 85 BPM exact tempo, expansive dark luxury workspace, geometric shadows, distant skyline silence, no vocals, no bright hooks, loop-friendly, smooth equal-power crossfade ready, intimate yet vast, designed for seamless long-form immersion.",
+      imagePrompt:
+        "A photorealistic, cinematic wide shot of an ultra-luxury minimalist workspace merging with the limitless night. Floor-to-ceiling glass windows look out onto a sleeping city skyline and the shadowy, aggressive silhouette of a streamlined supercar parked in the dark courtyard. Inside, a clean dark wood desk with a subtly glowing MacBook sits adjacent to a minimal, moody fireplace with low embers. The lighting is extremely controlled, emphasizing geometric shadows and premium matte metal textures. Dark mode friendly, expansive yet intimate, absolute silence, no neon, high-end editorial photography, 8k resolution.",
+      videoPrompt:
+        "Slow cinematic wide shot of an ultra-luxury minimalist workspace at night, subtle laptop glow, low ember fireplace, shadowed supercar silhouette outside floor-to-ceiling glass, geometric shadows across matte surfaces, expansive but intimate deep focus atmosphere, no neon.",
+      generationPrompt:
+        "情境：Cinematic Soundscape、無邊界黑夜、廣角空間、夜景與跑車剪影。BPM 固定 85，不可漂移；需支援 long-loop、smooth crossfade、no vocals、低干擾與無痕延伸的深夜沉浸感。",
+    },
+    createdAt: "2026-07-04T13:39:43.000Z",
+  },
 ] as const;
 
 const trackCollectionsSeed = [
@@ -552,6 +676,15 @@ const trackBatchesSeed = [
       "walnut-river-focus",
       "blackglass-skyline-study",
     ],
+  },
+  {
+    id: "batch-2026-07-04-mansion",
+    label: "07.04 上架",
+    title: "豪宅冷光 85 BPM 上架",
+    summary: "本輪上架的 4 首深夜行政專注曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-04T13:39:43.000Z",
+    trackIds: ["the-initiation", "deep-submersion", "strategic-warmth", "infinite-loop"],
   },
 ] as const;
 
@@ -746,7 +879,6 @@ export const themePrograms: ThemeProgram[] = [
         title: "主題母版 Brief",
         purpose: "把少量抽象線索擴寫成可執行的 CEO Deep Focus 生產 brief。",
         autoAdvanceToNext: true,
-        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位高端沉浸式音樂企劃師。
 
 請根據我提供的少量線索，輸出一份「深度專注心流（CEO Deep Focus）」主題 brief。
@@ -975,7 +1107,6 @@ Brief：
         title: "跑步主題 Brief",
         purpose: "把少量跑步意象整理成固定 180 BPM 的運動生產 brief。",
         autoAdvanceToNext: true,
-        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位跑步音樂內容策劃師。
 
 請根據我提供的抽象線索，輸出一份 BPM 180 Slow Jog brief。
@@ -1211,7 +1342,6 @@ Brief：
         title: "海灘酒吧 Brief",
         purpose: "把少量夏夜意象整理成可執行的 open-air beach bar DJ 生產 brief。",
         autoAdvanceToNext: true,
-        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位海灘酒吧與商業場景音樂企劃師。
 
 請根據我提供的少量線索，輸出一份 Beach Bar DJ 主題 brief。
@@ -1431,7 +1561,6 @@ Brief：
         title: "City Pop Brief",
         purpose: "把少量夜色與城市意象整理成可執行的 city pop 生產 brief。",
         autoAdvanceToNext: true,
-        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位城市夜色與 city pop 音樂企劃師。
 
 請根據我提供的少量線索，輸出一份 City Pop 主題 brief。
@@ -1649,7 +1778,6 @@ Brief：
         title: "展場 Brief",
         purpose: "把少量策展與空間意象整理成可執行的沉浸式展場聲景生產 brief。",
         autoAdvanceToNext: true,
-        quickLinks: [{ label: "打開 Copilot", url: "https://copilot.microsoft.com/" }],
         template: `你是一位策展展場與商業空間音樂企劃師。
 
 請根據我提供的少量線索，輸出一份「沉浸式展場聲景」主題 brief。

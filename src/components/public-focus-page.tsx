@@ -49,6 +49,14 @@ export function PublicFocusPage() {
 
   const visibleTracks = activeSubroute?.tracks ?? [];
 
+  const handleSelectRoute = (routeId: string) => {
+    setActiveRouteId(routeId);
+  };
+
+  const handleSelectBpm = (bpm: number) => {
+    setActiveRouteBpm(bpm);
+  };
+
   const handleQueueTracks = () => {
     if (visibleTracks.length === 0) {
       return;
@@ -83,8 +91,8 @@ export function PublicFocusPage() {
         playbackCurrentTrackId={playback.currentTrackId}
         playbackNextTrackId={playback.nextTrackId}
         bpmCompatibilityMap={bpmCompatibilityMap}
-        onSelectRoute={setActiveRouteId}
-        onSelectBpm={setActiveRouteBpm}
+        onSelectRoute={handleSelectRoute}
+        onSelectBpm={handleSelectBpm}
         onRandomPlay={handleRandomPlay}
         onQueueTracks={handleQueueTracks}
         onClearSelection={() => setSelectedIds([])}
