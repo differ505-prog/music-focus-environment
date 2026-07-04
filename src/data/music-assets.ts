@@ -153,6 +153,27 @@ const transitionProfiles: TrackTransitionProfile[] = [
   }),
 ];
 
+function createFallbackTransitionProfile(item: TrackNarrativeSeed): TrackTransitionProfile {
+  const durationSeconds = item.durationSeconds ?? 240;
+  const tempoLockBars = item.bpm >= 170 ? 4 : 2;
+  const introCueSeconds = item.bpm >= 170 ? 0.12 : 0.24;
+  const mixInPointSeconds = item.bpm >= 170 ? 8 : item.bpm >= 120 ? 12 : 16;
+  const outroBufferSeconds = Math.max(Number((60 / item.bpm).toFixed(3)) * tempoLockBars * 4, 12);
+  const mixOutPointSeconds = Math.max(
+    Math.min(durationSeconds - outroBufferSeconds, durationSeconds - 1),
+    mixInPointSeconds + 16,
+  );
+
+  return createTransitionProfile({
+    bpm: item.bpm,
+    introCueSeconds,
+    sourceLufs: item.bpm >= 170 ? -14.2 : item.bpm >= 120 ? -14.28 : -14.4,
+    tempoLockBars,
+    mixInPointSeconds,
+    mixOutPointSeconds: Number(mixOutPointSeconds.toFixed(2)),
+  });
+}
+
 const trackNarratives: TrackNarrativeSeed[] = [
   {
     title: "Skyline Ember Ledger",
@@ -716,7 +737,7 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
       item.prompts?.generationPrompt ??
       `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
   },
-  transition: transitionProfiles[index],
+  transition: transitionProfiles[index] ?? createFallbackTransitionProfile(item),
   themeProgramId: item.bpm === 180 ? "slow-jog-180" : "ceo-focus-lanes",
   collectionIds: trackCollectionsSeed
     .filter((collection) => (collection.trackIds as readonly string[]).includes(item.slug))
