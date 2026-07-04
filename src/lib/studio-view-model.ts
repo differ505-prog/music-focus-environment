@@ -18,10 +18,32 @@ export function extractBpms(bpmDisplay: string) {
   return Array.from(new Set((bpmDisplay.match(/\d+/g) ?? []).map(Number))).sort((left, right) => left - right);
 }
 
+function buildUncategorizedProgram(bpms: readonly number[]): ThemeProgram {
+  return {
+    id: "uncategorized-lane",
+    label: "未分類",
+    title: "未分類",
+    bpmDisplay: bpms.length > 0 ? `${bpms.join(" / ")} BPM` : "待確認 BPM",
+    summary: "這裡放暫時不落在既有主題車道、等待人工覆核的曲目。",
+    audience: "管理與人工覆核",
+    positioning: "先正常可見，再由人工決定是否歸入正式主題。",
+    operatingPrinciples: [],
+    layoutNotes: [],
+    workflow: [],
+    promptSeed: "",
+    promptModules: [],
+    acceptanceChecklist: [],
+  };
+}
+
 export function buildPublicRouteEntries(programs: readonly ThemeProgram[], trackList: readonly Track[]): PublicRouteEntry[] {
-  return programs.map((program) => {
-    const programTracks = trackList.filter((track) => track.themeProgramId === program.id);
-    const configuredBpms = extractBpms(program.bpmDisplay);
+  const configuredBpmMap = new Map(programs.map((program) => [program.id, extractBpms(program.bpmDisplay)] as const));
+
+  const routeEntries = programs.map((program) => {
+    const configuredBpms = configuredBpmMap.get(program.id) ?? [];
+    const programTracks = trackList.filter(
+      (track) => track.themeProgramId === program.id && configuredBpms.includes(track.bpm),
+    );
     const subroutes = configuredBpms.map((bpm) => {
       const bpmTracks = programTracks.filter((track) => track.bpm === bpm);
 
@@ -40,6 +62,41 @@ export function buildPublicRouteEntries(programs: readonly ThemeProgram[], track
       totalMinutes: Math.max(1, Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
     };
   });
+
+  const uncategorizedTracks = trackList.filter((track) => {
+    const configuredBpms = configuredBpmMap.get(track.themeProgramId ?? "");
+
+    if (!configuredBpms) {
+      return true;
+    }
+
+    return !configuredBpms.includes(track.bpm);
+  });
+
+  if (uncategorizedTracks.length === 0) {
+    return routeEntries;
+  }
+
+  const uncategorizedBpms = Array.from(new Set(uncategorizedTracks.map((track) => track.bpm))).sort((left, right) => left - right);
+
+  return [
+    ...routeEntries,
+    {
+      program: buildUncategorizedProgram(uncategorizedBpms),
+      programTracks: uncategorizedTracks,
+      configuredBpms: uncategorizedBpms,
+      subroutes: uncategorizedBpms.map((bpm) => {
+        const bpmTracks = uncategorizedTracks.filter((track) => track.bpm === bpm);
+
+        return {
+          bpm,
+          tracks: bpmTracks,
+          totalMinutes: Math.max(1, Math.round(bpmTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
+        };
+      }),
+      totalMinutes: Math.max(1, Math.round(uncategorizedTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
+    },
+  ];
 }
 
 export function buildBpmCompatibilityMap(

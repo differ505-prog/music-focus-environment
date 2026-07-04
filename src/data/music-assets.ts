@@ -482,12 +482,12 @@ const trackNarratives: TrackNarrativeSeed[] = [
     energyLevel: 5.8,
     moodTags: ["冷藍螢幕光", "碳纖桌墊", "沉浸啟動"],
     descriptionZh:
-      "冷藍螢幕光、深色桌面與極度克制的空間光線構成的 85 BPM 進場心流曲，適合開工前切換、收束注意力與快速進入深度工作。",
+      "冷藍螢幕光、深色桌面與極度克制的空間光線構成的 125 BPM 進場心流曲，適合開工前切換、收束注意力與快速進入深度工作。",
     descriptionEn:
-      "An 85 BPM flow-entry track shaped by cold screen light, dark desk textures, and rigorously controlled lighting, built for switching into deep work with immediate calm and precision.",
+      "A 125 BPM flow-entry track shaped by cold screen light, dark desk textures, and rigorously controlled lighting, built for switching into deep work with immediate calm and precision.",
     themeScenario:
       "極簡豪宅裡的深色辦公桌只保留筆電螢幕冷光作為主光源，壁爐與夜景退到遠景，讓思緒在第一個循環就完成收束並沉進安靜心流。",
-    bpm: 85,
+    bpm: 125,
     durationSeconds: 287,
     media: {
       audioUrl: "/audio/the-initiation.mp3",
@@ -496,13 +496,13 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     prompts: {
       musicPrompt:
-        "Instrumental deep focus electronic, 85 BPM exact tempo, cold screen glow, dark minimalist mansion workspace, carbon fiber desk texture, tightly controlled pulse, no vocals, loop-friendly, smooth equal-power crossfade ready, premium and restrained, designed for entering flow with absolute calm.",
+        "Instrumental deep focus electronic, 125 BPM exact tempo, cold screen glow, dark minimalist mansion workspace, carbon fiber desk texture, tightly controlled pulse, no vocals, loop-friendly, smooth equal-power crossfade ready, premium and restrained, designed for entering flow with absolute calm.",
       imagePrompt:
         "A photorealistic, close-up perspective of a luxurious workspace in a minimalist mansion at night, designed for dark mode friendly aesthetics. A sleek dark wood desk features a single MacBook emitting a crisp, cold blue screen glow that illuminates a carbon fiber desk pad. Geometric shadows fall across matte metal accessories. In the blurred background, floor-to-ceiling glass windows reveal a distant night skyline and a modern, low-profile linear fireplace emitting a very subtle, moody ember glow. Absolute clarity, deep focus atmosphere, extremely controlled lighting, architectural photography, completely devoid of neon lights, 8k resolution, highly detailed.",
       videoPrompt:
         "Slow cinematic close-up of a dark luxury desk at night, crisp blue laptop glow washing across a carbon fiber desk pad, geometric shadow movement over matte metal accessories, distant skyline and restrained fireplace blur in the background, premium deep focus atmosphere, no neon.",
       generationPrompt:
-        "情境：絕對冷靜、螢幕冷光、碳纖桌墊、遠景壁爐與夜景。BPM 固定 85，不可漂移；需支援進場沉浸、long-loop、no vocals、smooth crossfade 與極度克制的深夜行政專注感。",
+        "情境：絕對冷靜、螢幕冷光、碳纖桌墊、遠景壁爐與夜景。BPM 固定 125，不可漂移；需支援進場沉浸、long-loop、no vocals、smooth crossfade 與極度克制的深夜行政專注感。",
     },
     createdAt: "2026-07-04T13:37:24.000Z",
   },
