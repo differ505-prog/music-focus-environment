@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useRef } from "react";
+import { useEffect, useRef, type MouseEvent } from "react";
 
 const adminNavItems = [
   {
@@ -23,19 +23,28 @@ export function StudioNav() {
   const isAdminPage = pathname.startsWith("/admin");
 
   const clickCountRef = useRef(0);
-  const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const clickTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const handleSecretClick = (e: React.MouseEvent) => {
-    // 如果已經在首頁，防止重新載入
-    if (pathname === '/') {
-      e.preventDefault();
+  const resetSecretClickState = () => {
+    clickCountRef.current = 0;
+
+    if (clickTimeoutRef.current) {
+      clearTimeout(clickTimeoutRef.current);
+      clickTimeoutRef.current = null;
     }
+  };
+
+  useEffect(() => resetSecretClickState, []);
+
+  const handleSecretClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    event.preventDefault();
 
     clickCountRef.current += 1;
-    
+
     if (clickCountRef.current >= 3) {
+      resetSecretClickState();
       router.push("/admin");
-      clickCountRef.current = 0;
+      return;
     }
 
     if (clickTimeoutRef.current) {
@@ -43,8 +52,14 @@ export function StudioNav() {
     }
 
     clickTimeoutRef.current = setTimeout(() => {
-      clickCountRef.current = 0;
-    }, 1000); // 1秒內連點三次
+      const shouldReturnHome = pathname !== "/";
+
+      resetSecretClickState();
+
+      if (shouldReturnHome) {
+        router.push("/");
+      }
+    }, 650);
   };
 
   if (!isAdminPage) {

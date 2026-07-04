@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { Loader2, Radar, ShieldAlert } from "lucide-react";
 
-import { bpmOptions, themePrograms } from "@/data/music-assets";
+import { bpmOptions, themePrograms, tracks as baseTracks } from "@/data/music-assets";
 import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
 import {
   buildTrackBpmReviewItems,
   clearTrackReviewOverride,
+  extractAllowedBpms,
   getTrackReviewStorageEventName,
   readTrackBpmDetections,
   readTrackReviewOverrides,
@@ -23,7 +24,10 @@ type TrackBpmReviewPanelProps = {
 export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [refreshTick, setRefreshTick] = useState(0);
+  const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
+  const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
 
   useEffect(() => {
     const eventName = getTrackReviewStorageEventName();
@@ -46,30 +50,77 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
   );
 
   const handleScanAllTracks = async () => {
+    if (isScanning) {
+      return;
+    }
+
     setIsScanning(true);
+    setScanNotice(null);
+    setScanProgressLabel(`準備掃描 ${tracks.length} 首曲目...`);
 
     try {
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
+
+      let successCount = 0;
+      let skippedCount = 0;
+      let failedCount = 0;
+
       for (const [index, track] of tracks.entries()) {
         if (!track.media.audioUrl) {
+          skippedCount += 1;
           continue;
         }
 
+        const baseTrack = baseTrackMap.get(track.id) ?? track;
+        const allowedBpms = extractAllowedBpms(
+          baseTrack.themeProgramId ? (programMap.get(baseTrack.themeProgramId) ?? null) : null,
+        );
         setScanProgressLabel(`${index + 1} / ${tracks.length} · ${track.title}`);
-        const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions);
+        try {
+          const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions, {
+            metadataBpm: track.bpm,
+            allowedBpms,
+          });
 
-        saveTrackBpmDetection({
-          trackId: track.id,
-          audioUrl: track.media.audioUrl,
-          detectedBpm: result.estimatedBpm,
-          confidence: result.confidence,
-          laneSuggestion: result.laneSuggestion,
-          peakCount: result.peakCount,
-          sampleDurationSeconds: result.sampleDurationSeconds,
-          detectedAt: new Date().toISOString(),
-        });
+          saveTrackBpmDetection({
+            trackId: track.id,
+            audioUrl: track.media.audioUrl,
+            detectedBpm: result.estimatedBpm,
+            rawDetectedBpm: result.rawDetectedBpm,
+            confidence: result.confidence,
+            laneSuggestion: result.laneSuggestion,
+            peakCount: result.peakCount,
+            sampleDurationSeconds: result.sampleDurationSeconds,
+            detectedAt: new Date().toISOString(),
+            resolvedByReference: result.resolvedByReference,
+          });
+          successCount += 1;
+        } catch (error) {
+          failedCount += 1;
+          const message = error instanceof Error ? error.message : "未知錯誤";
+          setScanNotice(`「${track.title}」掃描失敗：${message}`);
+        }
+      }
+
+      const summary = [`完成 ${successCount} 首`];
+
+      if (failedCount > 0) {
+        summary.push(`失敗 ${failedCount} 首`);
+      }
+
+      if (skippedCount > 0) {
+        summary.push(`跳過 ${skippedCount} 首`);
+      }
+
+      const summaryLabel = `掃描完成 · ${summary.join(" / ")}`;
+      setScanProgressLabel(summaryLabel);
+
+      if (failedCount === 0) {
+        setScanNotice("全部可掃描曲目已完成 BPM 分析。");
       }
     } finally {
-      setScanProgressLabel(null);
       setIsScanning(false);
       setRefreshTick((current) => current + 1);
     }
@@ -114,6 +165,12 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
         </div>
       </div>
 
+      {scanNotice ? (
+        <div className="mt-4 rounded-[20px] border border-amber-300/16 bg-amber-300/8 px-4 py-3 text-sm text-amber-100/88">
+          {scanNotice}
+        </div>
+      ) : null}
+
       <div className="mt-5 grid gap-4">
         {reviewItems.length === 0 ? (
           <div className="rounded-[22px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm leading-7 text-white/48">
@@ -123,6 +180,8 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
           reviewItems.map((item) => {
             const isUncategorized = item.effectiveThemeProgramId === "uncategorized-lane";
             const confidencePercent = Math.round(item.detection.confidence * 100);
+            const rawDetectedBpm = item.detection.rawDetectedBpm ?? item.detection.detectedBpm;
+            const detectionWasResolved = rawDetectedBpm !== item.detection.detectedBpm;
 
             return (
               <article
@@ -139,7 +198,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   </div>
                   <div className="inline-flex items-center gap-2 rounded-full border border-rose-300/18 bg-rose-300/10 px-3 py-1 text-xs text-rose-100/88">
                     <ShieldAlert className="h-3.5 w-3.5" />
-                    差 {item.bpmDiff} BPM
+                    {item.canReturnToSuggestedRoute ? `可回 ${item.suggestedProgramTitle}` : `差 ${item.bpmDiff} BPM`}
                   </div>
                 </div>
 
@@ -151,6 +210,9 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">偵測 BPM</p>
                     <p className="mt-2 text-2xl font-semibold text-white">{item.detection.detectedBpm}</p>
+                    {detectionWasResolved ? (
+                      <p className="mt-1 text-xs text-white/48">原始脈衝 {rawDetectedBpm} BPM，已折算回路線節拍</p>
+                    ) : null}
                   </div>
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">可信度</p>
@@ -159,12 +221,32 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
                     <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">路線建議</p>
                     <p className="mt-2 text-sm font-medium text-white">
-                      {item.routeMismatch ? "建議未分類" : isUncategorized ? "已在未分類" : "原路線仍可接受"}
+                      {item.canReturnToSuggestedRoute
+                        ? `建議放回 ${item.suggestedProgramTitle}`
+                        : item.routeMismatch
+                          ? "建議未分類"
+                          : isUncategorized
+                            ? "已在未分類"
+                            : "原路線仍可接受"}
                     </p>
                   </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
+                  {item.canReturnToSuggestedRoute && item.suggestedThemeProgramId ? (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        updateTrackReviewOverride(item.track.id, {
+                          themeProgramId: item.suggestedThemeProgramId ?? undefined,
+                          ignoreBpmMismatch: false,
+                        })
+                      }
+                      className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-100/84 transition hover:bg-emerald-300/16"
+                    >
+                      放回 {item.suggestedProgramTitle}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => updateTrackReviewOverride(item.track.id, { themeProgramId: "uncategorized-lane" })}

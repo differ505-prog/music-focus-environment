@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Waves } from "lucide-react";
 
-import { bpmOptions } from "@/data/music-assets";
+import { bpmOptions, themePrograms } from "@/data/music-assets";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
 import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
@@ -13,7 +13,7 @@ import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
 import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
-import { saveTrackBpmDetection } from "@/lib/track-review-store";
+import { extractAllowedBpms, saveTrackBpmDetection } from "@/lib/track-review-store";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -77,6 +77,7 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const themeProgramMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
   const {
     artworkContainerRef,
@@ -127,18 +128,26 @@ export function GlobalPlayer({
       setDetectedBpmState({ status: "loading" });
 
       try {
-        const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions);
+        const allowedBpms = extractAllowedBpms(
+          track.themeProgramId ? (themeProgramMap.get(track.themeProgramId) ?? null) : null,
+        );
+        const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions, {
+          metadataBpm: track.bpm,
+          allowedBpms,
+        });
 
         detectedBpmCache.set(cacheKey, result);
         saveTrackBpmDetection({
           trackId: track.id,
           audioUrl: track.media.audioUrl,
           detectedBpm: result.estimatedBpm,
+          rawDetectedBpm: result.rawDetectedBpm,
           confidence: result.confidence,
           laneSuggestion: result.laneSuggestion,
           peakCount: result.peakCount,
           sampleDurationSeconds: result.sampleDurationSeconds,
           detectedAt: new Date().toISOString(),
+          resolvedByReference: result.resolvedByReference,
         });
 
         if (!cancelled) {
@@ -166,7 +175,7 @@ export function GlobalPlayer({
     return () => {
       cancelled = true;
     };
-  }, [currentTrack]);
+  }, [currentTrack, themeProgramMap]);
 
   const detectedBpmMeta = useMemo(() => {
     if (!currentTrack || detectedBpmState.status !== "ready") {
@@ -174,16 +183,137 @@ export function GlobalPlayer({
     }
 
     const detectedBpm = detectedBpmState.result.estimatedBpm;
+    const rawDetectedBpm = detectedBpmState.result.rawDetectedBpm;
     const diff = Math.abs(currentTrack.bpm - detectedBpm);
     const compatibility = getBpmCompatibility(currentTrack.bpm, detectedBpm);
 
     return {
       detectedBpm,
+      rawDetectedBpm,
       diff,
       confidencePercent: Math.round(detectedBpmState.result.confidence * 100),
       compatibility,
+      resolvedByReference: detectedBpmState.result.resolvedByReference,
     };
   }, [currentTrack, detectedBpmState]);
+  const transitionMeta = useMemo(() => {
+    if (!currentTrack || !nextTrack) {
+      return null;
+    }
+
+    return {
+      outStartLabel: playback.crossfadeOutStartSeconds != null ? formatTime(playback.crossfadeOutStartSeconds) : null,
+      inStartLabel: playback.crossfadeInStartSeconds != null ? formatTime(playback.crossfadeInStartSeconds) : null,
+      targetMixInLabel:
+        playback.crossfadeTargetMixInSeconds != null ? formatTime(playback.crossfadeTargetMixInSeconds) : null,
+      fadeWindowLabel: `${playback.crossfadeWindowSeconds.toFixed(2)}s`,
+    };
+  }, [currentTrack, nextTrack, playback]);
+  const progressMarkers = useMemo(() => {
+    if (!showAdminDetails || !transitionMeta || playback.crossfadeOutStartSeconds == null) {
+      return [];
+    }
+
+    return [
+      {
+        seconds: playback.crossfadeOutStartSeconds,
+        label: "Mix Out",
+        tone: "fuchsia" as const,
+      },
+    ];
+  }, [showAdminDetails, transitionMeta, playback.crossfadeOutStartSeconds]);
+  const progressRanges = useMemo(() => {
+    if (
+      !showAdminDetails ||
+      !transitionMeta ||
+      playback.crossfadeOutStartSeconds == null ||
+      playback.duration <= 0
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        startSeconds: playback.crossfadeOutStartSeconds,
+        endSeconds: playback.duration,
+        label: playback.isCrossfading ? "進行中 Crossfade" : "預定 Crossfade",
+        tone: "fuchsia" as const,
+      },
+    ];
+  }, [showAdminDetails, transitionMeta, playback.crossfadeOutStartSeconds, playback.duration, playback.isCrossfading]);
+  const nextTrackProgressMarkers = useMemo(() => {
+    if (
+      !showAdminDetails ||
+      !transitionMeta ||
+      nextTrack == null ||
+      playback.crossfadeInStartSeconds == null ||
+      playback.crossfadeTargetMixInSeconds == null
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        seconds: playback.crossfadeInStartSeconds,
+        label: "Next In",
+        tone: "cyan" as const,
+      },
+      {
+        seconds: playback.crossfadeTargetMixInSeconds,
+        label: "Target Mix In",
+        tone: "amber" as const,
+      },
+    ];
+  }, [
+    showAdminDetails,
+    transitionMeta,
+    nextTrack,
+    playback.crossfadeInStartSeconds,
+    playback.crossfadeTargetMixInSeconds,
+  ]);
+  const nextTrackProgressRanges = useMemo(() => {
+    if (
+      !showAdminDetails ||
+      !transitionMeta ||
+      nextTrack == null ||
+      playback.crossfadeInStartSeconds == null ||
+      playback.crossfadeTargetMixInSeconds == null
+    ) {
+      return [];
+    }
+
+    return [
+      {
+        startSeconds: playback.crossfadeInStartSeconds,
+        endSeconds: playback.crossfadeTargetMixInSeconds,
+        label: "Next Crossfade Zone",
+        tone: "cyan" as const,
+      },
+    ];
+  }, [
+    showAdminDetails,
+    transitionMeta,
+    nextTrack,
+    playback.crossfadeInStartSeconds,
+    playback.crossfadeTargetMixInSeconds,
+  ]);
+  const transitionDeltaToneClass = useMemo(() => {
+    const bpmDelta = playback.transitionBpmDelta;
+
+    if (bpmDelta == null) {
+      return null;
+    }
+
+    if (bpmDelta <= 2) {
+      return "border-emerald-300/20 bg-emerald-300/10 text-emerald-100/85";
+    }
+
+    if (bpmDelta <= 4) {
+      return "border-amber-300/20 bg-amber-300/10 text-amber-100/85";
+    }
+
+    return "border-rose-300/20 bg-rose-300/10 text-rose-100/85";
+  }, [playback.transitionBpmDelta]);
 
   const publicTrackSummary = currentTrack
     ? `${currentTrack.bpm} BPM · 約 ${Math.round(currentTrack.durationSeconds / 60)} 分鐘`
@@ -246,7 +376,7 @@ export function GlobalPlayer({
               </h3>
               <p className="mt-1 truncate text-xs text-white/55">
                 {detectedBpmMeta
-                  ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
+                  ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? ` · 原始 ${detectedBpmMeta.rawDetectedBpm}` : detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
                   : detectedBpmState.status === "loading"
                     ? "BPM 偵測中..."
                     : nextTrack
@@ -346,6 +476,11 @@ export function GlobalPlayer({
                       偵測 {detectedBpmMeta.detectedBpm} BPM · {detectedBpmMeta.confidencePercent}%
                     </span>
                   ) : null}
+                  {detectedBpmMeta && detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? (
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                      原始脈衝 {detectedBpmMeta.rawDetectedBpm} BPM
+                    </span>
+                  ) : null}
                   {detectedBpmMeta && detectedBpmMeta.diff > 0 ? (
                     <span
                       className={`rounded-full border px-3 py-1 ${
@@ -376,6 +511,26 @@ export function GlobalPlayer({
                   {showAdminDetails ? (
                     <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
                       {playback.prefersBackgroundPlayback ? "背景播放" : "平滑轉場"}
+                    </span>
+                  ) : null}
+                  {showAdminDetails && transitionMeta ? (
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                      Mix Out {transitionMeta.outStartLabel ?? "--:--"} · Fade {transitionMeta.fadeWindowLabel}
+                    </span>
+                  ) : null}
+                  {showAdminDetails && transitionMeta ? (
+                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                      Next In {transitionMeta.inStartLabel ?? "--:--"} → Mix In {transitionMeta.targetMixInLabel ?? "--:--"}
+                    </span>
+                  ) : null}
+                  {showAdminDetails && playback.transitionStrategyLabel ? (
+                    <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
+                      {playback.transitionStrategyLabel}
+                    </span>
+                  ) : null}
+                  {showAdminDetails && transitionDeltaToneClass && playback.transitionBpmDelta != null ? (
+                    <span className={`rounded-full border px-3 py-1 ${transitionDeltaToneClass}`}>
+                      Δ BPM {playback.transitionBpmDelta}
                     </span>
                   ) : null}
                   {showAdminDetails && playback.prefersBackgroundPlayback ? (
@@ -411,6 +566,14 @@ export function GlobalPlayer({
                 <p className="text-[11px] uppercase tracking-[0.26em] text-cyan-100/58">接歌策略</p>
                 <p className="mt-3 font-serif text-xl text-white">{sessionPlan.laneLabel}</p>
                 <p className="mt-2 text-sm leading-6 text-white/68">{sessionPlan.strategySummary}</p>
+                {playback.transitionStrategyLabel ? (
+                  <p className="mt-3 text-sm leading-6 text-cyan-100/82">
+                    {playback.transitionStrategyLabel}
+                    {transitionMeta
+                      ? ` · Mix Out ${transitionMeta.outStartLabel ?? "--:--"} / Next In ${transitionMeta.inStartLabel ?? "--:--"} / Target ${transitionMeta.targetMixInLabel ?? "--:--"}`
+                      : ""}
+                  </p>
+                ) : null}
               </div>
               <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">下一步</p>
@@ -431,6 +594,12 @@ export function GlobalPlayer({
             duration={playback.duration}
             onSeek={onSeek}
             formatTime={formatTime}
+            markers={progressMarkers}
+            ranges={progressRanges}
+            secondaryDuration={showAdminDetails && nextTrack ? nextTrack.durationSeconds : undefined}
+            secondaryLabel={nextTrack ? `下一首進點 · ${nextTrack.title}` : undefined}
+            secondaryMarkers={nextTrackProgressMarkers}
+            secondaryRanges={nextTrackProgressRanges}
           />
 
           <PlayerPlaylistStrip

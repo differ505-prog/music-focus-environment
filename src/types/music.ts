@@ -204,6 +204,11 @@ export type PlaybackSnapshot = {
   isPlaying: boolean;
   isCrossfading: boolean;
   crossfadeWindowSeconds: number;
+  crossfadeOutStartSeconds: number | null;
+  crossfadeInStartSeconds: number | null;
+  crossfadeTargetMixInSeconds: number | null;
+  transitionStrategyLabel: string | null;
+  transitionBpmDelta: number | null;
   engine: PlaybackEngine;
   prefersBackgroundPlayback: boolean;
   repeatEnabled: boolean;

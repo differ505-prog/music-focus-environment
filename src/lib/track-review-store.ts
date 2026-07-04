@@ -5,11 +5,13 @@ export type StoredTrackBpmDetection = {
   trackId: string;
   audioUrl: string;
   detectedBpm: number;
+  rawDetectedBpm?: number;
   confidence: number;
   laneSuggestion: number;
   peakCount: number;
   sampleDurationSeconds: number;
   detectedAt: string;
+  resolvedByReference?: boolean;
 };
 
 export type TrackReviewOverride = {
@@ -21,6 +23,7 @@ export type TrackReviewOverride = {
 
 export type TrackBpmReviewItem = {
   track: Track;
+  baseTrack: Track;
   detection: StoredTrackBpmDetection;
   effectiveBpm: number;
   effectiveThemeProgramId: string;
@@ -29,6 +32,9 @@ export type TrackBpmReviewItem = {
   bpmDiff: number;
   routeMismatch: boolean;
   ignored: boolean;
+  suggestedThemeProgramId: string | null;
+  suggestedProgramTitle: string | null;
+  canReturnToSuggestedRoute: boolean;
 };
 
 function isPresent<T>(value: T | null | undefined): value is T {
@@ -150,6 +156,7 @@ export function buildTrackBpmReviewItems(
   detections: Record<string, StoredTrackBpmDetection> = readTrackBpmDetections(),
 ) {
   const programMap = new Map(programs.map((program) => [program.id, program] as const));
+  const baseTrackMap = new Map(baseTracks.map((track) => [track.id, track] as const));
 
   return trackList
     .map((track): TrackBpmReviewItem | null => {
@@ -159,21 +166,30 @@ export function buildTrackBpmReviewItems(
         return null;
       }
 
+      const baseTrack = baseTrackMap.get(track.id) ?? track;
       const override = overrides[track.id];
       const effectiveBpm = override?.bpm ?? track.bpm;
-      const effectiveThemeProgramId = override?.themeProgramId ?? track.themeProgramId ?? "";
+      const effectiveThemeProgramId = override?.themeProgramId ?? track.themeProgramId ?? baseTrack.themeProgramId ?? "";
       const effectiveProgram = programMap.get(effectiveThemeProgramId) ?? null;
       const allowedBpms = extractAllowedBpms(effectiveProgram);
       const bpmDiff = Math.abs(effectiveBpm - detection.detectedBpm);
       const routeMismatch = allowedBpms.length > 0 && !allowedBpms.includes(detection.detectedBpm);
       const ignored = Boolean(override?.ignoreBpmMismatch);
+      const baseProgramId = baseTrack.themeProgramId ?? null;
+      const baseProgram = baseProgramId ? programMap.get(baseProgramId) ?? null : null;
+      const baseAllowedBpms = extractAllowedBpms(baseProgram);
+      const suggestedThemeProgramId =
+        baseProgramId && baseAllowedBpms.includes(detection.detectedBpm) ? baseProgramId : null;
+      const canReturnToSuggestedRoute =
+        Boolean(suggestedThemeProgramId) && suggestedThemeProgramId !== effectiveThemeProgramId;
 
-      if (bpmDiff < 3 || ignored) {
+      if ((bpmDiff < 3 && !routeMismatch && !canReturnToSuggestedRoute) || ignored) {
         return null;
       }
 
       return {
         track,
+        baseTrack,
         detection,
         effectiveBpm,
         effectiveThemeProgramId,
@@ -182,6 +198,9 @@ export function buildTrackBpmReviewItems(
         bpmDiff,
         routeMismatch,
         ignored,
+        suggestedThemeProgramId,
+        suggestedProgramTitle: suggestedThemeProgramId ? (baseProgram?.title ?? "原始路線") : null,
+        canReturnToSuggestedRoute,
       };
     })
     .filter(isPresent)
