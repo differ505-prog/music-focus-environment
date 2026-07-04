@@ -1,0 +1,195 @@
+import { themePrograms, tracks as baseTracks } from "@/data/music-assets";
+import type { ThemeProgram, Track } from "@/types/music";
+
+export type StoredTrackBpmDetection = {
+  trackId: string;
+  audioUrl: string;
+  detectedBpm: number;
+  confidence: number;
+  laneSuggestion: number;
+  peakCount: number;
+  sampleDurationSeconds: number;
+  detectedAt: string;
+};
+
+export type TrackReviewOverride = {
+  bpm?: number;
+  themeProgramId?: string;
+  ignoreBpmMismatch?: boolean;
+  reviewedAt?: string;
+};
+
+export type TrackBpmReviewItem = {
+  track: Track;
+  detection: StoredTrackBpmDetection;
+  effectiveBpm: number;
+  effectiveThemeProgramId: string;
+  effectiveProgramTitle: string;
+  allowedBpms: number[];
+  bpmDiff: number;
+  routeMismatch: boolean;
+  ignored: boolean;
+};
+
+function isPresent<T>(value: T | null | undefined): value is T {
+  return value != null;
+}
+
+const TRACK_BPM_DETECTIONS_STORAGE_KEY = "track-bpm-detections-v1";
+const TRACK_REVIEW_OVERRIDES_STORAGE_KEY = "track-review-overrides-v1";
+const TRACK_REVIEW_STORAGE_EVENT = "track-review-storage-updated";
+
+function canUseStorage() {
+  return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
+}
+
+function emitTrackReviewStorageUpdate() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(new Event(TRACK_REVIEW_STORAGE_EVENT));
+}
+
+function readJsonRecord<T>(storageKey: string): Record<string, T> {
+  if (!canUseStorage()) {
+    return {};
+  }
+
+  try {
+    const rawValue = window.localStorage.getItem(storageKey);
+
+    if (!rawValue) {
+      return {};
+    }
+
+    const parsedValue = JSON.parse(rawValue);
+    return parsedValue && typeof parsedValue === "object" ? parsedValue : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeJsonRecord<T>(storageKey: string, value: Record<string, T>) {
+  if (!canUseStorage()) {
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(value));
+  emitTrackReviewStorageUpdate();
+}
+
+export function getTrackReviewStorageEventName() {
+  return TRACK_REVIEW_STORAGE_EVENT;
+}
+
+export function readTrackBpmDetections() {
+  return readJsonRecord<StoredTrackBpmDetection>(TRACK_BPM_DETECTIONS_STORAGE_KEY);
+}
+
+export function saveTrackBpmDetection(detection: StoredTrackBpmDetection) {
+  const nextDetections = {
+    ...readTrackBpmDetections(),
+    [detection.trackId]: detection,
+  };
+
+  writeJsonRecord(TRACK_BPM_DETECTIONS_STORAGE_KEY, nextDetections);
+}
+
+export function readTrackReviewOverrides() {
+  return readJsonRecord<TrackReviewOverride>(TRACK_REVIEW_OVERRIDES_STORAGE_KEY);
+}
+
+export function updateTrackReviewOverride(trackId: string, patch: Partial<TrackReviewOverride>) {
+  const currentOverrides = readTrackReviewOverrides();
+  const nextOverride: TrackReviewOverride = {
+    ...(currentOverrides[trackId] ?? {}),
+    ...patch,
+    reviewedAt: new Date().toISOString(),
+  };
+
+  writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, {
+    ...currentOverrides,
+    [trackId]: nextOverride,
+  });
+}
+
+export function clearTrackReviewOverride(trackId: string) {
+  const currentOverrides = { ...readTrackReviewOverrides() };
+  delete currentOverrides[trackId];
+  writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, currentOverrides);
+}
+
+export function extractAllowedBpms(program: ThemeProgram | null | undefined) {
+  return Array.from(new Set((program?.bpmDisplay.match(/\d+/g) ?? []).map(Number))).sort((left, right) => left - right);
+}
+
+export function buildRuntimeTracks(
+  trackList: readonly Track[] = baseTracks,
+  overrides: Record<string, TrackReviewOverride> = readTrackReviewOverrides(),
+) {
+  return trackList.map((track) => {
+    const override = overrides[track.id];
+
+    if (!override) {
+      return track;
+    }
+
+    return {
+      ...track,
+      bpm: override.bpm ?? track.bpm,
+      themeProgramId: override.themeProgramId ?? track.themeProgramId,
+    };
+  });
+}
+
+export function buildTrackBpmReviewItems(
+  trackList: readonly Track[] = baseTracks,
+  programs: readonly ThemeProgram[] = themePrograms,
+  overrides: Record<string, TrackReviewOverride> = readTrackReviewOverrides(),
+  detections: Record<string, StoredTrackBpmDetection> = readTrackBpmDetections(),
+) {
+  const programMap = new Map(programs.map((program) => [program.id, program] as const));
+
+  return trackList
+    .map((track): TrackBpmReviewItem | null => {
+      const detection = detections[track.id];
+
+      if (!detection || detection.audioUrl !== track.media.audioUrl) {
+        return null;
+      }
+
+      const override = overrides[track.id];
+      const effectiveBpm = override?.bpm ?? track.bpm;
+      const effectiveThemeProgramId = override?.themeProgramId ?? track.themeProgramId ?? "";
+      const effectiveProgram = programMap.get(effectiveThemeProgramId) ?? null;
+      const allowedBpms = extractAllowedBpms(effectiveProgram);
+      const bpmDiff = Math.abs(effectiveBpm - detection.detectedBpm);
+      const routeMismatch = allowedBpms.length > 0 && !allowedBpms.includes(detection.detectedBpm);
+      const ignored = Boolean(override?.ignoreBpmMismatch);
+
+      if (bpmDiff < 3 || ignored) {
+        return null;
+      }
+
+      return {
+        track,
+        detection,
+        effectiveBpm,
+        effectiveThemeProgramId,
+        effectiveProgramTitle: effectiveProgram?.title ?? "未指定路線",
+        allowedBpms,
+        bpmDiff,
+        routeMismatch,
+        ignored,
+      };
+    })
+    .filter(isPresent)
+    .sort((left, right) => {
+      if (right.bpmDiff !== left.bpmDiff) {
+        return right.bpmDiff - left.bpmDiff;
+      }
+
+      return left.track.title.localeCompare(right.track.title);
+    });
+}

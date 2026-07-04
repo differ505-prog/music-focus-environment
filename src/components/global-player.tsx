@@ -10,8 +10,10 @@ import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import { PlayerProgressBar } from "@/components/player-progress-bar";
 import { PlayerTransportControls } from "@/components/player-transport-controls";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
-import { analyzeAudioBufferForBpm, type BpmAnalysis } from "@/lib/bpm-analyzer";
+import type { BpmAnalysis } from "@/lib/bpm-analyzer";
+import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
+import { saveTrackBpmDetection } from "@/lib/track-review-store";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -124,20 +126,20 @@ export function GlobalPlayer({
 
       setDetectedBpmState({ status: "loading" });
 
-      const audioContext = new window.AudioContext();
-
       try {
-        const response = await fetch(track.media.audioUrl);
-
-        if (!response.ok) {
-          throw new Error("音檔載入失敗");
-        }
-
-        const arrayBuffer = await response.arrayBuffer();
-        const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
-        const result = analyzeAudioBufferForBpm(audioBuffer, bpmOptions);
+        const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions);
 
         detectedBpmCache.set(cacheKey, result);
+        saveTrackBpmDetection({
+          trackId: track.id,
+          audioUrl: track.media.audioUrl,
+          detectedBpm: result.estimatedBpm,
+          confidence: result.confidence,
+          laneSuggestion: result.laneSuggestion,
+          peakCount: result.peakCount,
+          sampleDurationSeconds: result.sampleDurationSeconds,
+          detectedAt: new Date().toISOString(),
+        });
 
         if (!cancelled) {
           setDetectedBpmState({ status: "ready", result });
@@ -149,8 +151,6 @@ export function GlobalPlayer({
             message: error instanceof Error ? error.message : "BPM 偵測失敗",
           });
         }
-      } finally {
-        void audioContext.close().catch(() => {});
       }
     }
 

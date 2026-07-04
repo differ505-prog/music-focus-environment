@@ -8,12 +8,15 @@ import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
 import { FilterBar } from "@/components/filter-bar";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
+import { TrackBpmReviewPanel } from "@/components/track-bpm-review-panel";
 import { usePlayback } from "@/components/playback-provider";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
-import { mixEvents, mixSessions, themePrograms, trackCollections, tracks } from "@/data/music-assets";
+import { mixEvents, mixSessions, themePrograms, trackCollections } from "@/data/music-assets";
+import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { buildBpmCompatibilityMap, buildMixInsights } from "@/lib/studio-view-model";
 
 export function AdminStudioPage() {
+  const tracks = useRuntimeTracks();
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
   const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack } = usePlayback();
@@ -141,6 +144,10 @@ export function AdminStudioPage() {
 
       <div id="theme-routes-detail" className="mt-6">
         <ThemeProgramPanel programs={themePrograms} />
+      </div>
+
+      <div className="mt-6">
+        <TrackBpmReviewPanel tracks={tracks} />
       </div>
 
       <div className="mt-6">

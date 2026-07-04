@@ -5,16 +5,18 @@ import { useEffect, useMemo, useState } from "react";
 import { AppSceneShell } from "@/components/app-scene-shell";
 import { PublicFocusBrowser } from "@/components/public-focus-browser";
 import { usePlayback } from "@/components/playback-provider";
-import { themePrograms, tracks } from "@/data/music-assets";
+import { themePrograms } from "@/data/music-assets";
+import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { buildBpmCompatibilityMap, buildPublicRouteEntries } from "@/lib/studio-view-model";
 
 export function PublicFocusPage() {
+  const tracks = useRuntimeTracks();
   const [activeRouteId, setActiveRouteId] = useState<string>(themePrograms[0]?.id ?? "");
   const [activeRouteBpm, setActiveRouteBpm] = useState<number | null>(null);
   const { selectedIds, setSelectedIds, currentTrack, playback, toggleAsset, playTrack, startRandomSession } = usePlayback();
 
-  const routeEntries = useMemo(() => buildPublicRouteEntries(themePrograms, tracks), []);
-  const bpmCompatibilityMap = useMemo(() => buildBpmCompatibilityMap(tracks, currentTrack), [currentTrack]);
+  const routeEntries = useMemo(() => buildPublicRouteEntries(themePrograms, tracks), [tracks]);
+  const bpmCompatibilityMap = useMemo(() => buildBpmCompatibilityMap(tracks, currentTrack), [currentTrack, tracks]);
   const activeRouteEntry = useMemo(
     () => routeEntries.find((entry) => entry.program.id === activeRouteId) ?? routeEntries[0] ?? null,
     [activeRouteId, routeEntries],

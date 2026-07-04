@@ -5,8 +5,9 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { usePathname } from "next/navigation";
 import { Waves } from "lucide-react";
 
-import { generatedSceneImageUrl, tracks } from "@/data/music-assets";
+import { generatedSceneImageUrl } from "@/data/music-assets";
 import { GlobalPlayer } from "@/components/global-player";
+import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { buildAutoDjQueue, createAutoDjSessionPlan } from "@/lib/auto-dj";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
@@ -54,6 +55,7 @@ function shuffleIds<T>(items: T[]) {
 }
 
 export function PlaybackProvider({ children }: { children: ReactNode }) {
+  const tracks = useRuntimeTracks();
   const pathname = usePathname();
   const mode = pathname.startsWith("/admin") ? "admin" : "public";
   const controllerRef = useRef<HowlerPlaylistController | null>(null);

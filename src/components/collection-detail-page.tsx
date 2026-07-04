@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useMemo } from "react";
 
 import { ContentCardOverview } from "@/components/content-card-overview";
-import { sessionPresets, trackBatches, trackCollections, tracks } from "@/data/music-assets";
+import { sessionPresets, trackBatches, trackCollections } from "@/data/music-assets";
+import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { usePlayback } from "@/components/playback-provider";
 
 type CollectionDetailPageProps = {
@@ -12,6 +13,7 @@ type CollectionDetailPageProps = {
 };
 
 export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps) {
+  const tracks = useRuntimeTracks();
   const { startSession } = usePlayback();
 
   const collection = useMemo(() => {
