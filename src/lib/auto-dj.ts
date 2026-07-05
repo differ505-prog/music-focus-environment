@@ -3,6 +3,55 @@ import type { AutoDjPhase, AutoDjSessionPlan, AutoDjTrackPlan, Track } from "@/t
 
 const phaseCurve = [0.18, 0.42, 0.68, 0.36] as const;
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+function getCueLeadSeconds(track: Track) {
+  return Math.max(track.transition.mixInPointSeconds - track.transition.introCueSeconds, 0);
+}
+
+function getCueReadinessScore(track: Track) {
+  const cueLeadSeconds = getCueLeadSeconds(track);
+  const grooveReadiness = 1 - clamp(cueLeadSeconds / 18, 0, 1);
+  const fadeCoverage = clamp(
+    track.transition.crossfadeSeconds / Math.max(cueLeadSeconds, track.transition.beatDurationSeconds, 0.25),
+    0,
+    1,
+  );
+
+  return grooveReadiness * 0.68 + fadeCoverage * 0.32;
+}
+
+function getContinuityScore(previousTrack: Track, candidate: Track, phase: AutoDjPhase) {
+  const cueReadiness = getCueReadinessScore(candidate);
+  const energyDrop = Math.max(previousTrack.energyLevel - candidate.energyLevel, 0);
+  const energyLift = Math.max(candidate.energyLevel - previousTrack.energyLevel, 0);
+  const sameLane = previousTrack.bpm === candidate.bpm;
+  const is85Lane = previousTrack.bpm === 85 && candidate.bpm === 85;
+  const continuityBias = sameLane ? (is85Lane ? 18 : 11) : 4;
+  const downshiftPenalty = energyDrop * (cueReadiness < 0.55 ? 20 : cueReadiness < 0.68 ? 13 : 7);
+  const liftBonus =
+    phase === "lift" ? energyLift * (cueReadiness >= 0.62 ? 7 : 3) : phase === "lock" ? energyLift * 1.5 : 0;
+
+  return continuityBias + cueReadiness * 26 + liftBonus - downshiftPenalty;
+}
+
+function getContinuityLabel(previousTrack: Track, candidate: Track) {
+  const cueReadiness = getCueReadinessScore(candidate);
+  const energyDrop = previousTrack.energyLevel - candidate.energyLevel;
+
+  if (cueReadiness >= 0.72 && energyDrop <= 0.3) {
+    return "心流延續強";
+  }
+
+  if (cueReadiness >= 0.58 && energyDrop <= 0.8) {
+    return "延續穩定";
+  }
+
+  return "可能 downshift";
+}
+
 function getPhaseMeta(index: number, total: number): Pick<AutoDjTrackPlan, "phase" | "phaseLabel" | "phaseDescription"> {
   if (total <= 1) {
     return {
@@ -51,13 +100,15 @@ function getCompatibilityScore(previousTrack: Track, candidate: Track, phase: Au
   const energyDiffFromPrevious = Math.abs(previousTrack.energyLevel - candidate.energyLevel);
   const energyDiffFromTarget = Math.abs(candidate.energyLevel - targetEnergy);
   const sharedMoodCount = candidate.moodTags.filter((tag) => previousTrack.moodTags.includes(tag)).length;
+  const continuityScore = getContinuityScore(previousTrack, candidate, phase);
 
   let score =
     (compatibility.status === "exact" ? 120 : compatibility.status === "adjacent" ? 82 : 24) -
     bpmDiff * 4 -
     energyDiffFromPrevious * 7 -
     energyDiffFromTarget * 11 +
-    sharedMoodCount * 6;
+    sharedMoodCount * 6 +
+    continuityScore;
 
   if (phase === "lock" && compatibility.status === "exact") {
     score += 18;
@@ -156,7 +207,7 @@ export function createAutoDjSessionPlan(
     const phaseMeta = getPhaseMeta(index, playlist.length);
     const previousTrack = index > 0 ? playlist[index - 1] : null;
     const transitionSummary = previousTrack
-      ? `${previousTrack.bpm} -> ${track.bpm} BPM，Energy ${previousTrack.energyLevel.toFixed(1)} -> ${track.energyLevel.toFixed(1)}`
+      ? `${previousTrack.bpm} -> ${track.bpm} BPM，Energy ${previousTrack.energyLevel.toFixed(1)} -> ${track.energyLevel.toFixed(1)}，${getContinuityLabel(previousTrack, track)}`
       : `以 ${track.bpm} BPM 與 Energy ${track.energyLevel.toFixed(1)} 穩定開場`;
 
     return {
