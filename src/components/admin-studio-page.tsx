@@ -9,6 +9,7 @@ import { FilterBar } from "@/components/filter-bar";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
 import { TrackBpmReviewPanel } from "@/components/track-bpm-review-panel";
+import { TrackTransitionReviewPanel } from "@/components/track-transition-review-panel";
 import { usePlayback } from "@/components/playback-provider";
 import { ThemeProgramPanel } from "@/components/theme-program-panel";
 import { mixEvents, mixSessions, themePrograms, trackCollections } from "@/data/music-assets";
@@ -32,14 +33,14 @@ export function AdminStudioPage() {
         const matchesCollection = !activeCollection || activeCollection.trackIds.includes(asset.id);
         return matchesBpm && matchesCollection;
       }),
-    [activeBpms, activeCollection],
+    [activeBpms, activeCollection, tracks],
   );
   const availableBpmOptions = useMemo(
     () => Array.from(new Set(tracks.map((track) => track.bpm))).sort((left, right) => left - right),
-    [],
+    [tracks],
   );
-  const bpmCompatibilityMap = useMemo(() => buildBpmCompatibilityMap(tracks, currentTrack), [currentTrack]);
-  const mixInsights = useMemo(() => buildMixInsights(tracks, mixSessions, mixEvents), []);
+  const bpmCompatibilityMap = useMemo(() => buildBpmCompatibilityMap(tracks, currentTrack), [currentTrack, tracks]);
+  const mixInsights = useMemo(() => buildMixInsights(tracks, mixSessions, mixEvents), [tracks]);
 
   return (
     <AppSceneShell
@@ -148,6 +149,10 @@ export function AdminStudioPage() {
 
       <div className="mt-6">
         <TrackBpmReviewPanel tracks={tracks} />
+      </div>
+
+      <div className="mt-6">
+        <TrackTransitionReviewPanel tracks={tracks} />
       </div>
 
       <div className="mt-6">

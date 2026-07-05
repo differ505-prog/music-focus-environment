@@ -74,15 +74,15 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     return selectedIds
       .map((assetId) => tracks.find((asset) => asset.id === assetId) ?? null)
       .filter((asset): asset is Track => Boolean(asset));
-  }, [selectedIds]);
+  }, [selectedIds, tracks]);
 
   const currentTrack = useMemo(() => {
     return tracks.find((asset) => asset.id === playback.currentTrackId) ?? null;
-  }, [playback.currentTrackId]);
+  }, [playback.currentTrackId, tracks]);
 
   const nextTrack = useMemo(() => {
     return tracks.find((asset) => asset.id === playback.nextTrackId) ?? null;
-  }, [playback.nextTrackId]);
+  }, [playback.nextTrackId, tracks]);
 
   const autoDjPlan = useMemo(() => {
     return createAutoDjSessionPlan(selectedAssets, playback.currentTrackId, playback.nextTrackId);

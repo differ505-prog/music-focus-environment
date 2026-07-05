@@ -28,7 +28,7 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
     return collection.trackIds
       .map((trackId) => tracks.find((track) => track.id === trackId) ?? null)
       .filter((track): track is (typeof tracks)[number] => Boolean(track));
-  }, [collection]);
+  }, [collection, tracks]);
 
   const presets = useMemo(() => {
     return sessionPresets.filter((preset) => preset.collectionId === collectionId);

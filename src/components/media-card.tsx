@@ -166,6 +166,11 @@ export function MediaCard({
           </span>
         ) : null}
         {showAdminDetails ? (
+          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
+            目前 Mix In {asset.transition.mixInPointSeconds.toFixed(2)}s
+          </span>
+        ) : null}
+        {showAdminDetails ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
             {asset.transition.sourceLufs.toFixed(1)} LUFS
           </span>

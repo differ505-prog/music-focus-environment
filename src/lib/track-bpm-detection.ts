@@ -13,6 +13,7 @@ function getAudioContextConstructor() {
   }
 
   const browserWindow = window as Window & {
+    AudioContext?: typeof AudioContext;
     webkitAudioContext?: typeof AudioContext;
   };
 
