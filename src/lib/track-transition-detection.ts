@@ -13,6 +13,18 @@ export type MixInSuggestionAnalysis = {
   summary: string;
 };
 
+type CandidateMetrics = {
+  second: number;
+  score: number;
+  energy: number;
+  onset: number;
+  sustainedRhythm: number;
+  beatRegularity: number;
+  transientMean: number;
+  transientCoverage: number;
+  qualifies: boolean;
+};
+
 function getAudioContextConstructor() {
   if (typeof window === "undefined") {
     return null;
@@ -134,6 +146,31 @@ function calculateSustainedRhythmScore(
   return longestRun / blockScores.length;
 }
 
+function qualifiesAsDrumSection(metrics: {
+  sustainedRhythm: number;
+  beatRegularity: number;
+  transientMean: number;
+  transientCoverage: number;
+  onset: number;
+  hasBeatGrid: boolean;
+}) {
+  const baseQualified =
+    metrics.transientMean >= 0.17 &&
+    metrics.transientCoverage >= 0.22 &&
+    metrics.onset >= 0.02 &&
+    metrics.sustainedRhythm >= 0.28;
+
+  if (!baseQualified) {
+    return false;
+  }
+
+  if (!metrics.hasBeatGrid) {
+    return true;
+  }
+
+  return metrics.beatRegularity >= 0.52;
+}
+
 function buildMonoPcm(audioBuffer: AudioBuffer) {
   const channelCount = audioBuffer.numberOfChannels;
   const sampleCount = audioBuffer.length;
@@ -213,14 +250,18 @@ export function analyzeAudioBufferForMixInSuggestion(
   const searchEndSeconds = clamp(Math.min(trackDurationSeconds * 0.45, 48), searchStartSeconds, Math.max(trackDurationSeconds - 2, searchStartSeconds));
   const analysisWindowSeconds = beatDurationSeconds ? Math.max(beatDurationSeconds * 8, 3) : 4;
   const windowFrameCount = Math.max(4, Math.round(analysisWindowSeconds / frameDurationSeconds));
-  let bestCandidate = {
+  let bestCandidate: CandidateMetrics = {
     second: searchStartSeconds,
     score: -1,
     energy: 0,
     onset: 0,
     sustainedRhythm: 0,
     beatRegularity: 0,
+    transientMean: 0,
+    transientCoverage: 0,
+    qualifies: false,
   };
+  let bestQualifiedCandidate: CandidateMetrics | null = null;
 
   for (
     let frameIndex = Math.floor(searchStartSeconds / frameDurationSeconds);
@@ -243,8 +284,15 @@ export function analyzeAudioBufferForMixInSuggestion(
     const candidateSecond = frameIndex * frameDurationSeconds;
     const earlyBias = 1 - candidateSecond / Math.max(searchEndSeconds, 1);
     const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
-    const weakPulsePenalty =
-      avgTransient < 0.15 || transientCoverage < 0.18 || avgOnset < 0.018 || sustainedRhythm < 0.22 ? 0.45 : 1;
+    const qualifies = qualifiesAsDrumSection({
+      sustainedRhythm,
+      beatRegularity,
+      transientMean: avgTransient,
+      transientCoverage,
+      onset: avgOnset,
+      hasBeatGrid: beatFrameSpan != null,
+    });
+    const weakPulsePenalty = qualifies ? 1 : 0.25;
     const score =
       (sustainedRhythm * 0.34 +
         beatRegularity * 0.28 +
@@ -255,16 +303,34 @@ export function analyzeAudioBufferForMixInSuggestion(
         earlyBias * 0.02) *
       weakPulsePenalty;
 
-    if (score > bestCandidate.score) {
-      bestCandidate = {
-        second: candidateSecond,
-        score,
-        energy: avgEnergy,
-        onset: avgOnset,
-        sustainedRhythm,
-        beatRegularity,
-      };
+    const candidate: CandidateMetrics = {
+      second: candidateSecond,
+      score,
+      energy: avgEnergy,
+      onset: avgOnset,
+      sustainedRhythm,
+      beatRegularity,
+      transientMean: avgTransient,
+      transientCoverage,
+      qualifies,
+    };
+
+    if (
+      qualifies &&
+      (!bestQualifiedCandidate ||
+        score > bestQualifiedCandidate.score ||
+        (Math.abs(score - bestQualifiedCandidate.score) < 0.025 && candidateSecond < bestQualifiedCandidate.second))
+    ) {
+      bestQualifiedCandidate = candidate;
     }
+
+    if (score > bestCandidate.score) {
+      bestCandidate = candidate;
+    }
+  }
+
+  if (bestQualifiedCandidate) {
+    bestCandidate = bestQualifiedCandidate;
   }
 
   if (beatFrameSpan && beatFrameSpan >= 2) {
@@ -286,9 +352,20 @@ export function analyzeAudioBufferForMixInSuggestion(
 
       const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, transientSlice, frameDurationSeconds);
       const beatRegularity = calculateBeatRegularityScore(onsetSlice, beatFrameSpan);
+      const avgTransient = average(transientSlice);
+      const avgOnset = average(onsetSlice);
       const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
+      const qualifies = qualifiesAsDrumSection({
+        sustainedRhythm,
+        beatRegularity,
+        transientMean: avgTransient,
+        transientCoverage,
+        onset: avgOnset,
+        hasBeatGrid: true,
+      });
 
       if (
+        qualifies &&
         sustainedRhythm >= bestCandidate.sustainedRhythm * 0.9 &&
         beatRegularity >= Math.max(bestCandidate.beatRegularity * 0.9, 0.45) &&
         transientCoverage >= 0.16
@@ -321,11 +398,11 @@ export function analyzeAudioBufferForMixInSuggestion(
     0.98,
   );
   const summary =
-    bestCandidate.sustainedRhythm >= 0.68 && bestCandidate.beatRegularity >= 0.55
+    bestCandidate.qualifies && bestCandidate.sustainedRhythm >= 0.68 && bestCandidate.beatRegularity >= 0.55
       ? "已優先鎖定連續穩定且有明顯鼓點的區段，可作為建議進點。"
-      : confidence >= 0.5
+      : bestCandidate.qualifies && confidence >= 0.5
         ? "有抓到拍點區段，但鼓點存在感或連續穩定度普通，建議人工試聽確認。"
-        : "前段缺少連續穩定鼓點，建議人工確認。";
+        : "前段沒有通過鼓點資格門檻，建議人工確認。";
 
   return {
     suggestedMixInSeconds,

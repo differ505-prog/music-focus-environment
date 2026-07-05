@@ -570,37 +570,6 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     createdAt: "2026-07-04T13:38:42.000Z",
   },
-  {
-    title: "Infinite Loop",
-    slug: "infinite-loop",
-    musicalKey: "E Minor",
-    energyLevel: 5.6,
-    moodTags: ["無邊界黑夜", "廣角空間", "長迴圈"],
-    descriptionZh:
-      "把工作區、夜景、跑車與壁爐整合成同一個黑夜空間的 85 BPM 長迴圈曲，適合長時沉浸、夜間規劃與幾乎無感的平滑連續播放。",
-    descriptionEn:
-      "An 85 BPM long-loop focus track that merges workspace, skyline, fireplace, and shadowed supercar into one seamless nocturnal field, built for expansive immersion and smooth continuous playback.",
-    themeScenario:
-      "廣角視野裡，桌面、玻璃外的城市與黑夜中的車身剪影被收進同一個靜默場域，節拍像沒有邊界的夜色一樣緩慢延伸。",
-    bpm: 85,
-    durationSeconds: 6,
-    media: {
-      audioUrl: "/audio/infinite-loop.mp3",
-      coverImageUrl: "/img/infinite-loop-cover.png",
-      backgroundVideoUrl: "",
-    },
-    prompts: {
-      musicPrompt:
-        "Instrumental cinematic deep focus electronic, 85 BPM exact tempo, expansive dark luxury workspace, geometric shadows, distant skyline silence, no vocals, no bright hooks, loop-friendly, smooth equal-power crossfade ready, intimate yet vast, designed for seamless long-form immersion.",
-      imagePrompt:
-        "A photorealistic, cinematic wide shot of an ultra-luxury minimalist workspace merging with the limitless night. Floor-to-ceiling glass windows look out onto a sleeping city skyline and the shadowy, aggressive silhouette of a streamlined supercar parked in the dark courtyard. Inside, a clean dark wood desk with a subtly glowing MacBook sits adjacent to a minimal, moody fireplace with low embers. The lighting is extremely controlled, emphasizing geometric shadows and premium matte metal textures. Dark mode friendly, expansive yet intimate, absolute silence, no neon, high-end editorial photography, 8k resolution.",
-      videoPrompt:
-        "Slow cinematic wide shot of an ultra-luxury minimalist workspace at night, subtle laptop glow, low ember fireplace, shadowed supercar silhouette outside floor-to-ceiling glass, geometric shadows across matte surfaces, expansive but intimate deep focus atmosphere, no neon.",
-      generationPrompt:
-        "情境：Cinematic Soundscape、無邊界黑夜、廣角空間、夜景與跑車剪影。BPM 固定 85，不可漂移；需支援 long-loop、smooth crossfade、no vocals、低干擾與無痕延伸的深夜沉浸感。",
-    },
-    createdAt: "2026-07-04T13:39:43.000Z",
-  },
 ] as const;
 
 const trackCollectionsSeed = [
@@ -707,7 +676,7 @@ const trackBatchesSeed = [
     summary: "本輪上架的 4 首深夜行政專注曲目。",
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-04T13:39:43.000Z",
-    trackIds: ["the-initiation", "deep-submersion", "strategic-warmth", "infinite-loop"],
+    trackIds: ["the-initiation", "deep-submersion", "strategic-warmth"],
   },
 ] as const;
 
