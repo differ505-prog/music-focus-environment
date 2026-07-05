@@ -13,6 +13,7 @@ import {
   readTrackReviewOverrides,
   saveTrackMixInSuggestion,
   updateTrackReviewOverride,
+  updateTrackReviewOverrides,
 } from "@/lib/track-review-store";
 import type { Track } from "@/types/music";
 
@@ -49,6 +50,14 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
   const reviewItems = useMemo(
     () => buildTrackTransitionReviewItems(tracks, overrides, suggestions),
     [overrides, refreshTick, suggestions, tracks],
+  );
+  const pendingApplyItems = useMemo(
+    () => reviewItems.filter((item) => item.diffSeconds >= 0.01),
+    [reviewItems],
+  );
+  const pendingRestoreItems = useMemo(
+    () => reviewItems.filter((item) => overrides[item.track.id]?.mixInPointSeconds != null),
+    [overrides, reviewItems],
   );
 
   const handleScanAllTracks = async () => {
@@ -111,6 +120,40 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
     }
   };
 
+  const handleApplyAllSuggestions = () => {
+    if (pendingApplyItems.length === 0) {
+      return;
+    }
+
+    updateTrackReviewOverrides(
+      pendingApplyItems.map((item) => ({
+        trackId: item.track.id,
+        patch: {
+          mixInPointSeconds: item.suggestion.suggestedMixInSeconds,
+        },
+      })),
+    );
+
+    setScanNotice(`已一鍵採用 ${pendingApplyItems.length} 首曲目的建議 Mix In。`);
+  };
+
+  const handleRestoreAllMixIns = () => {
+    if (pendingRestoreItems.length === 0) {
+      return;
+    }
+
+    updateTrackReviewOverrides(
+      pendingRestoreItems.map((item) => ({
+        trackId: item.track.id,
+        patch: {
+          mixInPointSeconds: undefined,
+        },
+      })),
+    );
+
+    setScanNotice(`已一鍵還原 ${pendingRestoreItems.length} 首曲目的 Base Mix In。`);
+  };
+
   return (
     <section className="rounded-[28px] border border-cyan-300/16 bg-black/20 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
@@ -122,15 +165,35 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void handleScanAllTracks()}
-          disabled={isScanning}
-          className="inline-flex items-center gap-3 rounded-full border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Waves className="h-4 w-4" />}
-          {isScanning ? "分析中..." : "掃描接歌進點"}
-        </button>
+        <div className="flex flex-wrap justify-end gap-3">
+          <button
+            type="button"
+            onClick={handleRestoreAllMixIns}
+            disabled={isScanning || pendingRestoreItems.length === 0}
+            className="inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            一鍵還原全部 Base Mix In
+            {pendingRestoreItems.length > 0 ? ` (${pendingRestoreItems.length})` : ""}
+          </button>
+          <button
+            type="button"
+            onClick={handleApplyAllSuggestions}
+            disabled={isScanning || pendingApplyItems.length === 0}
+            className="inline-flex items-center gap-3 rounded-full border border-fuchsia-300/24 bg-fuchsia-300/10 px-4 py-3 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            一鍵採用全部建議
+            {pendingApplyItems.length > 0 ? ` (${pendingApplyItems.length})` : ""}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleScanAllTracks()}
+            disabled={isScanning}
+            className="inline-flex items-center gap-3 rounded-full border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Waves className="h-4 w-4" />}
+            {isScanning ? "分析中..." : "掃描接歌進點"}
+          </button>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-3">
@@ -147,6 +210,8 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
           <p className="mt-3 text-sm leading-7 text-white/72">
             差距超過 1 秒的進點先人工試聽，再決定是否採用建議值。
           </p>
+          <p className="mt-2 text-xs text-white/46">目前可一鍵採用 {pendingApplyItems.length} 首。</p>
+          <p className="mt-1 text-xs text-white/46">目前可一鍵還原 {pendingRestoreItems.length} 首。</p>
         </div>
       </div>
 

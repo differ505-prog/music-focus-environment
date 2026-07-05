@@ -107,6 +107,37 @@ function writeJsonRecord<T>(storageKey: string, value: Record<string, T>) {
   emitTrackReviewStorageUpdate();
 }
 
+function normalizeTrackReviewOverride(override: TrackReviewOverride) {
+  const nextOverride = { ...override };
+
+  if (nextOverride.bpm == null) {
+    delete nextOverride.bpm;
+  }
+
+  if (nextOverride.themeProgramId == null) {
+    delete nextOverride.themeProgramId;
+  }
+
+  if (nextOverride.ignoreBpmMismatch == null) {
+    delete nextOverride.ignoreBpmMismatch;
+  }
+
+  if (nextOverride.mixInPointSeconds == null) {
+    delete nextOverride.mixInPointSeconds;
+  }
+
+  return nextOverride;
+}
+
+function hasEffectiveTrackReviewOverride(override: TrackReviewOverride) {
+  return (
+    override.bpm != null ||
+    override.themeProgramId != null ||
+    override.ignoreBpmMismatch != null ||
+    override.mixInPointSeconds != null
+  );
+}
+
 export function getTrackReviewStorageEventName() {
   return TRACK_REVIEW_STORAGE_EVENT;
 }
@@ -143,35 +174,13 @@ export function readTrackReviewOverrides() {
 
 export function updateTrackReviewOverride(trackId: string, patch: Partial<TrackReviewOverride>) {
   const currentOverrides = readTrackReviewOverrides();
-  const nextOverride: TrackReviewOverride = {
+  const nextOverride = normalizeTrackReviewOverride({
     ...(currentOverrides[trackId] ?? {}),
     ...patch,
     reviewedAt: new Date().toISOString(),
-  };
+  });
 
-  if (nextOverride.bpm == null) {
-    delete nextOverride.bpm;
-  }
-
-  if (nextOverride.themeProgramId == null) {
-    delete nextOverride.themeProgramId;
-  }
-
-  if (nextOverride.ignoreBpmMismatch == null) {
-    delete nextOverride.ignoreBpmMismatch;
-  }
-
-  if (nextOverride.mixInPointSeconds == null) {
-    delete nextOverride.mixInPointSeconds;
-  }
-
-  const hasEffectiveOverride =
-    nextOverride.bpm != null ||
-    nextOverride.themeProgramId != null ||
-    nextOverride.ignoreBpmMismatch != null ||
-    nextOverride.mixInPointSeconds != null;
-
-  if (!hasEffectiveOverride) {
+  if (!hasEffectiveTrackReviewOverride(nextOverride)) {
     const trimmedOverrides = { ...currentOverrides };
     delete trimmedOverrides[trackId];
     writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, trimmedOverrides);
@@ -187,6 +196,31 @@ export function updateTrackReviewOverride(trackId: string, patch: Partial<TrackR
 export function clearTrackReviewOverride(trackId: string) {
   const currentOverrides = { ...readTrackReviewOverrides() };
   delete currentOverrides[trackId];
+  writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, currentOverrides);
+}
+
+export function updateTrackReviewOverrides(patches: Array<{ trackId: string; patch: Partial<TrackReviewOverride> }>) {
+  if (patches.length === 0) {
+    return;
+  }
+
+  const currentOverrides = { ...readTrackReviewOverrides() };
+
+  for (const { trackId, patch } of patches) {
+    const nextOverride = normalizeTrackReviewOverride({
+      ...(currentOverrides[trackId] ?? {}),
+      ...patch,
+      reviewedAt: new Date().toISOString(),
+    });
+
+    if (hasEffectiveTrackReviewOverride(nextOverride)) {
+      currentOverrides[trackId] = nextOverride;
+      continue;
+    }
+
+    delete currentOverrides[trackId];
+  }
+
   writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, currentOverrides);
 }
 
