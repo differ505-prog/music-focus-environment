@@ -1,5 +1,6 @@
 import { Howl } from "howler";
 
+import { buildCrossfadePlan } from "@/lib/transition-planning";
 import type { PlaybackSnapshot, Track } from "@/types/music";
 
 const PLAYBACK_POLL_MS = 200;
@@ -8,15 +9,6 @@ const EQUAL_POWER_TICK_MS = 40;
 type PlaylistControllerOptions = {
   onStateChange?: (snapshot: PlaybackSnapshot) => void;
   preferBackgroundPlayback?: boolean;
-};
-
-type CrossfadePlan = {
-  fadeDurationSeconds: number;
-  outgoingStartSeconds: number;
-  incomingStartSeconds: number;
-  targetMixInSeconds: number;
-  strategyLabel: string;
-  bpmDelta: number;
 };
 
 function detectBackgroundPlaybackPreference() {
@@ -237,67 +229,6 @@ export class HowlerPlaylistController {
     this.emitState();
   }
 
-  private buildCrossfadePlan(
-    currentTrack: Track,
-    nextTrack: Track,
-    currentDurationSeconds: number,
-  ): CrossfadePlan {
-    const safeCurrentDuration = Number.isFinite(currentDurationSeconds)
-      ? currentDurationSeconds
-      : currentTrack.durationSeconds;
-    const bpmDelta = Math.abs(currentTrack.bpm - nextTrack.bpm);
-    const sharedBeatDurationSeconds = Math.max(
-      currentTrack.transition.beatDurationSeconds,
-      nextTrack.transition.beatDurationSeconds,
-    );
-    const requestedFadeDurationSeconds = Math.min(
-      currentTrack.transition.outroMixWindowSeconds,
-      nextTrack.transition.crossfadeSeconds,
-    );
-    const adaptiveFadeCapSeconds =
-      bpmDelta <= 2
-        ? requestedFadeDurationSeconds
-        : bpmDelta <= 4
-          ? sharedBeatDurationSeconds * 4
-          : sharedBeatDurationSeconds * 2;
-    const fadeDurationPolicyLabel =
-      bpmDelta <= 2
-        ? "綠燈同車道"
-        : bpmDelta <= 4
-          ? "黃燈縮短 1 Bar"
-          : "紅燈縮短 2 Beats";
-    const fallbackOutgoingStartSeconds = Math.max(
-      safeCurrentDuration - Math.min(requestedFadeDurationSeconds, adaptiveFadeCapSeconds),
-      currentTrack.transition.introCueSeconds,
-    );
-    const configuredOutgoingStartSeconds = Number.isFinite(currentTrack.transition.mixOutPointSeconds)
-      ? currentTrack.transition.mixOutPointSeconds
-      : fallbackOutgoingStartSeconds;
-    const outgoingStartSeconds = Math.min(
-      Math.max(configuredOutgoingStartSeconds, currentTrack.transition.introCueSeconds),
-      Math.max(safeCurrentDuration - 0.25, currentTrack.transition.introCueSeconds),
-    );
-    const availableOutgoingFadeSeconds = Math.max(safeCurrentDuration - outgoingStartSeconds, 0.25);
-    const fadeDurationSeconds = Math.max(
-      Math.min(requestedFadeDurationSeconds, adaptiveFadeCapSeconds, availableOutgoingFadeSeconds),
-      0.25,
-    );
-    const configuredIncomingStartSeconds = nextTrack.transition.mixInPointSeconds - fadeDurationSeconds;
-    const incomingStartSeconds = Math.max(
-      nextTrack.transition.introCueSeconds,
-      Number.isFinite(configuredIncomingStartSeconds) ? configuredIncomingStartSeconds : nextTrack.transition.introCueSeconds,
-    );
-
-    return {
-      fadeDurationSeconds,
-      outgoingStartSeconds,
-      incomingStartSeconds,
-      targetMixInSeconds: nextTrack.transition.mixInPointSeconds,
-      strategyLabel: `${fadeDurationPolicyLabel} · Δ${bpmDelta} BPM`,
-      bpmDelta,
-    };
-  }
-
   private createHowl(track: Track, volumeFactor: number, startAtSeconds = 0) {
     const howl = new Howl({
       src: [track.media.audioUrl],
@@ -393,7 +324,7 @@ export class HowlerPlaylistController {
         return;
       }
 
-      const crossfadePlan = this.buildCrossfadePlan(currentTrack, nextTrack, duration);
+      const crossfadePlan = buildCrossfadePlan(currentTrack, nextTrack, duration);
 
       if (!this.isCrossfading && seek >= crossfadePlan.outgoingStartSeconds) {
         this.startCrossfade();
@@ -417,7 +348,7 @@ export class HowlerPlaylistController {
     this.isCrossfading = true;
     this.clearCrossfadeMonitor();
 
-    const crossfadePlan = this.buildCrossfadePlan(
+    const crossfadePlan = buildCrossfadePlan(
       currentTrack,
       nextTrack,
       currentHowl.duration() || currentTrack.durationSeconds,
@@ -631,7 +562,7 @@ export class HowlerPlaylistController {
 
     const currentTrack = this.getCurrentTrack();
     const previewCrossfadePlan = currentTrack
-      ? this.buildCrossfadePlan(currentTrack, nextTrack, currentTrack.durationSeconds)
+      ? buildCrossfadePlan(currentTrack, nextTrack, currentTrack.durationSeconds)
       : null;
 
     this.cleanupPreparedNextHowl();
@@ -663,7 +594,7 @@ export class HowlerPlaylistController {
     const activeNextTrack = crossfadeNextTrack ?? nextTrack;
     const activeCrossfadePlan =
       !this.prefersBackgroundPlayback && currentTrack && activeNextTrack
-        ? this.buildCrossfadePlan(
+        ? buildCrossfadePlan(
             currentTrack,
             activeNextTrack,
             currentHowl?.duration() || currentTrack.durationSeconds,
