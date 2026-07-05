@@ -22,7 +22,9 @@ type CandidateMetrics = {
   beatRegularity: number;
   transientMean: number;
   transientCoverage: number;
-  qualifies: boolean;
+  grooveFloor: number;
+  cueMomentum: number;
+  strategy: "drum" | "groove" | "fallback";
 };
 
 function getAudioContextConstructor() {
@@ -146,19 +148,74 @@ function calculateSustainedRhythmScore(
   return longestRun / blockScores.length;
 }
 
+function buildRhythmBlockScores(
+  onsetSlice: readonly number[],
+  transientSlice: readonly number[],
+  energySlice: readonly number[],
+  frameDurationSeconds: number,
+) {
+  const blockFrameCount = Math.max(2, Math.round(0.25 / frameDurationSeconds));
+  const blockScores: number[] = [];
+
+  for (let index = 0; index < onsetSlice.length; index += blockFrameCount) {
+    const onsetBlock = onsetSlice.slice(index, index + blockFrameCount);
+    const transientBlock = transientSlice.slice(index, index + blockFrameCount);
+    const energyBlock = energySlice.slice(index, index + blockFrameCount);
+
+    if (onsetBlock.length === 0 || transientBlock.length === 0 || energyBlock.length === 0) {
+      continue;
+    }
+
+    blockScores.push(average(onsetBlock) * 0.42 + average(transientBlock) * 0.38 + average(energyBlock) * 0.2);
+  }
+
+  return blockScores;
+}
+
+function calculateGrooveFloorScore(blockScores: readonly number[]) {
+  if (blockScores.length === 0) {
+    return 0;
+  }
+
+  const sortedScores = [...blockScores].sort((left, right) => left - right);
+  const floorSampleCount = Math.max(1, Math.floor(sortedScores.length * 0.4));
+  const floorMean = average(sortedScores.slice(0, floorSampleCount));
+  const referenceLevel = Math.max(average(blockScores), 0.001);
+
+  return clamp(floorMean / referenceLevel, 0, 1);
+}
+
+function calculateCueMomentumScore(blockScores: readonly number[]) {
+  if (blockScores.length === 0) {
+    return 0;
+  }
+
+  const openingScores = blockScores.slice(0, Math.min(4, blockScores.length));
+
+  if (openingScores.length === 0) {
+    return 0;
+  }
+
+  return clamp(average(openingScores) * 0.78 + Math.min(...openingScores) * 0.22, 0, 1);
+}
+
 function qualifiesAsDrumSection(metrics: {
   sustainedRhythm: number;
   beatRegularity: number;
   transientMean: number;
   transientCoverage: number;
   onset: number;
+  grooveFloor: number;
+  cueMomentum: number;
   hasBeatGrid: boolean;
 }) {
   const baseQualified =
     metrics.transientMean >= 0.17 &&
     metrics.transientCoverage >= 0.22 &&
     metrics.onset >= 0.02 &&
-    metrics.sustainedRhythm >= 0.28;
+    metrics.sustainedRhythm >= 0.28 &&
+    metrics.grooveFloor >= 0.54 &&
+    metrics.cueMomentum >= 0.12;
 
   if (!baseQualified) {
     return false;
@@ -169,6 +226,35 @@ function qualifiesAsDrumSection(metrics: {
   }
 
   return metrics.beatRegularity >= 0.52;
+}
+
+function qualifiesAsGrooveSection(metrics: {
+  sustainedRhythm: number;
+  beatRegularity: number;
+  transientMean: number;
+  transientCoverage: number;
+  onset: number;
+  grooveFloor: number;
+  cueMomentum: number;
+  hasBeatGrid: boolean;
+}) {
+  const baseQualified =
+    metrics.sustainedRhythm >= 0.3 &&
+    metrics.grooveFloor >= 0.62 &&
+    metrics.cueMomentum >= 0.15 &&
+    metrics.transientMean >= 0.11 &&
+    metrics.transientCoverage >= 0.14 &&
+    metrics.onset >= 0.01;
+
+  if (!baseQualified) {
+    return false;
+  }
+
+  if (!metrics.hasBeatGrid) {
+    return true;
+  }
+
+  return metrics.beatRegularity >= 0.36;
 }
 
 function buildMonoPcm(audioBuffer: AudioBuffer) {
@@ -259,9 +345,12 @@ export function analyzeAudioBufferForMixInSuggestion(
     beatRegularity: 0,
     transientMean: 0,
     transientCoverage: 0,
-    qualifies: false,
+    grooveFloor: 0,
+    cueMomentum: 0,
+    strategy: "fallback",
   };
-  let bestQualifiedCandidate: CandidateMetrics | null = null;
+  let bestDrumCandidate: CandidateMetrics | null = null;
+  let bestGrooveCandidate: CandidateMetrics | null = null;
 
   for (
     let frameIndex = Math.floor(searchStartSeconds / frameDurationSeconds);
@@ -281,56 +370,110 @@ export function analyzeAudioBufferForMixInSuggestion(
     const avgOnset = average(onsetSlice);
     const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, transientSlice, frameDurationSeconds);
     const beatRegularity = calculateBeatRegularityScore(onsetSlice, beatFrameSpan);
+    const rhythmBlockScores = buildRhythmBlockScores(onsetSlice, transientSlice, energySlice, frameDurationSeconds);
+    const grooveFloor = calculateGrooveFloorScore(rhythmBlockScores);
+    const cueMomentum = calculateCueMomentumScore(rhythmBlockScores);
     const candidateSecond = frameIndex * frameDurationSeconds;
     const earlyBias = 1 - candidateSecond / Math.max(searchEndSeconds, 1);
     const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
-    const qualifies = qualifiesAsDrumSection({
+    const qualifiesDrum = qualifiesAsDrumSection({
       sustainedRhythm,
       beatRegularity,
       transientMean: avgTransient,
       transientCoverage,
       onset: avgOnset,
+      grooveFloor,
+      cueMomentum,
       hasBeatGrid: beatFrameSpan != null,
     });
-    const weakPulsePenalty = qualifies ? 1 : 0.25;
-    const score =
-      (sustainedRhythm * 0.34 +
-        beatRegularity * 0.28 +
-        avgTransient * 0.2 +
-        transientCoverage * 0.1 +
-        avgOnset * 0.04 +
-        avgEnergy * 0.02 +
-        earlyBias * 0.02) *
-      weakPulsePenalty;
+    const qualifiesGroove = qualifiesAsGrooveSection({
+      sustainedRhythm,
+      beatRegularity,
+      transientMean: avgTransient,
+      transientCoverage,
+      onset: avgOnset,
+      grooveFloor,
+      cueMomentum,
+      hasBeatGrid: beatFrameSpan != null,
+    });
+    const drumScore =
+      sustainedRhythm * 0.26 +
+      beatRegularity * 0.24 +
+      avgTransient * 0.18 +
+      transientCoverage * 0.12 +
+      grooveFloor * 0.1 +
+      cueMomentum * 0.06 +
+      avgOnset * 0.02 +
+      avgEnergy * 0.01 +
+      earlyBias * 0.01;
+    const grooveScore =
+      grooveFloor * 0.28 +
+      cueMomentum * 0.24 +
+      sustainedRhythm * 0.18 +
+      beatRegularity * 0.12 +
+      transientCoverage * 0.08 +
+      avgTransient * 0.05 +
+      avgEnergy * 0.03 +
+      earlyBias * 0.02;
+    const fallbackScore =
+      grooveFloor * 0.32 +
+      cueMomentum * 0.26 +
+      sustainedRhythm * 0.18 +
+      beatRegularity * 0.08 +
+      avgTransient * 0.06 +
+      transientCoverage * 0.05 +
+      avgEnergy * 0.03 +
+      earlyBias * 0.02;
 
     const candidate: CandidateMetrics = {
       second: candidateSecond,
-      score,
+      score: fallbackScore,
       energy: avgEnergy,
       onset: avgOnset,
       sustainedRhythm,
       beatRegularity,
       transientMean: avgTransient,
       transientCoverage,
-      qualifies,
+      grooveFloor,
+      cueMomentum,
+      strategy: "fallback",
     };
 
     if (
-      qualifies &&
-      (!bestQualifiedCandidate ||
-        score > bestQualifiedCandidate.score ||
-        (Math.abs(score - bestQualifiedCandidate.score) < 0.025 && candidateSecond < bestQualifiedCandidate.second))
+      qualifiesDrum &&
+      (!bestDrumCandidate ||
+        drumScore > bestDrumCandidate.score ||
+        (Math.abs(drumScore - bestDrumCandidate.score) < 0.025 && candidateSecond < bestDrumCandidate.second))
     ) {
-      bestQualifiedCandidate = candidate;
+      bestDrumCandidate = {
+        ...candidate,
+        score: drumScore,
+        strategy: "drum",
+      };
     }
 
-    if (score > bestCandidate.score) {
+    if (
+      qualifiesGroove &&
+      (!bestGrooveCandidate ||
+        grooveScore > bestGrooveCandidate.score ||
+        (Math.abs(grooveScore - bestGrooveCandidate.score) < 0.025 && candidateSecond < bestGrooveCandidate.second))
+    ) {
+      bestGrooveCandidate = {
+        ...candidate,
+        score: grooveScore,
+        strategy: "groove",
+      };
+    }
+
+    if (fallbackScore > bestCandidate.score) {
       bestCandidate = candidate;
     }
   }
 
-  if (bestQualifiedCandidate) {
-    bestCandidate = bestQualifiedCandidate;
+  if (bestDrumCandidate) {
+    bestCandidate = bestDrumCandidate;
+  } else if (bestGrooveCandidate) {
+    bestCandidate = bestGrooveCandidate;
   }
 
   if (beatFrameSpan && beatFrameSpan >= 2) {
@@ -354,21 +497,39 @@ export function analyzeAudioBufferForMixInSuggestion(
       const beatRegularity = calculateBeatRegularityScore(onsetSlice, beatFrameSpan);
       const avgTransient = average(transientSlice);
       const avgOnset = average(onsetSlice);
+      const rhythmBlockScores = buildRhythmBlockScores(onsetSlice, transientSlice, energySlice, frameDurationSeconds);
+      const grooveFloor = calculateGrooveFloorScore(rhythmBlockScores);
+      const cueMomentum = calculateCueMomentumScore(rhythmBlockScores);
       const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
-      const qualifies = qualifiesAsDrumSection({
-        sustainedRhythm,
-        beatRegularity,
-        transientMean: avgTransient,
-        transientCoverage,
-        onset: avgOnset,
-        hasBeatGrid: true,
-      });
+      const qualifies =
+        bestCandidate.strategy === "drum"
+          ? qualifiesAsDrumSection({
+              sustainedRhythm,
+              beatRegularity,
+              transientMean: avgTransient,
+              transientCoverage,
+              onset: avgOnset,
+              grooveFloor,
+              cueMomentum,
+              hasBeatGrid: true,
+            })
+          : qualifiesAsGrooveSection({
+              sustainedRhythm,
+              beatRegularity,
+              transientMean: avgTransient,
+              transientCoverage,
+              onset: avgOnset,
+              grooveFloor,
+              cueMomentum,
+              hasBeatGrid: true,
+            });
 
       if (
         qualifies &&
         sustainedRhythm >= bestCandidate.sustainedRhythm * 0.9 &&
-        beatRegularity >= Math.max(bestCandidate.beatRegularity * 0.9, 0.45) &&
-        transientCoverage >= 0.16
+        beatRegularity >= Math.max(bestCandidate.beatRegularity * 0.88, 0.32) &&
+        transientCoverage >= Math.max(bestCandidate.transientCoverage * 0.82, 0.12) &&
+        grooveFloor >= Math.max(bestCandidate.grooveFloor * 0.9, 0.5)
       ) {
         bestStartSecond = frameIndex * frameDurationSeconds;
         continue;
@@ -393,16 +554,20 @@ export function analyzeAudioBufferForMixInSuggestion(
   }
 
   const confidence = clamp(
-    bestCandidate.sustainedRhythm * 0.45 + bestCandidate.beatRegularity * 0.35 + bestCandidate.score * 0.2,
+    bestCandidate.grooveFloor * 0.3 +
+      bestCandidate.cueMomentum * 0.28 +
+      bestCandidate.sustainedRhythm * 0.22 +
+      bestCandidate.beatRegularity * 0.12 +
+      bestCandidate.score * 0.08,
     0.2,
     0.98,
   );
   const summary =
-    bestCandidate.qualifies && bestCandidate.sustainedRhythm >= 0.68 && bestCandidate.beatRegularity >= 0.55
-      ? "已優先鎖定連續穩定且有明顯鼓點的區段，可作為建議進點。"
-      : bestCandidate.qualifies && confidence >= 0.5
-        ? "有抓到拍點區段，但鼓點存在感或連續穩定度普通，建議人工試聽確認。"
-        : "前段沒有通過鼓點資格門檻，建議人工確認。";
+    bestCandidate.strategy === "drum"
+      ? "已優先鎖定連續穩定且鼓點明確的區段，可作為建議進點。"
+      : bestCandidate.strategy === "groove"
+        ? "已改用弱鼓 groove fallback，優先維持節奏連續感。"
+        : "前段沒有找到明確鼓點段，已退回最穩定的節奏核心位置。";
 
   return {
     suggestedMixInSeconds,
