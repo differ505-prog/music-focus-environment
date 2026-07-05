@@ -150,35 +150,61 @@ function buildMonoPcm(audioBuffer: AudioBuffer) {
   return mono;
 }
 
-export function analyzeAudioBufferForMixInSuggestion(
-  audioBuffer: AudioBuffer,
-  options: TrackTransitionDetectionOptions = {},
-): MixInSuggestionAnalysis {
-  const mono = buildMonoPcm(audioBuffer);
-  const sampleRate = audioBuffer.sampleRate;
-  const frameDurationSeconds = 0.05;
-  const frameSize = Math.max(1024, Math.floor(sampleRate * frameDurationSeconds));
+function buildFrameEnergies(signal: Float32Array, frameSize: number) {
   const energies: number[] = [];
 
-  for (let frameStart = 0; frameStart < mono.length; frameStart += frameSize) {
-    const frameEnd = Math.min(frameStart + frameSize, mono.length);
+  for (let frameStart = 0; frameStart < signal.length; frameStart += frameSize) {
+    const frameEnd = Math.min(frameStart + frameSize, signal.length);
     let sumSquares = 0;
 
     for (let sampleIndex = frameStart; sampleIndex < frameEnd; sampleIndex += 1) {
-      const value = mono[sampleIndex] ?? 0;
+      const value = signal[sampleIndex] ?? 0;
       sumSquares += value * value;
     }
 
     energies.push(Math.sqrt(sumSquares / Math.max(frameEnd - frameStart, 1)));
   }
 
+  return energies;
+}
+
+function buildTransientSignal(signal: Float32Array) {
+  const transient = new Float32Array(signal.length);
+
+  for (let sampleIndex = 1; sampleIndex < signal.length; sampleIndex += 1) {
+    transient[sampleIndex] = Math.abs((signal[sampleIndex] ?? 0) - (signal[sampleIndex - 1] ?? 0));
+  }
+
+  return transient;
+}
+
+export function analyzeAudioBufferForMixInSuggestion(
+  audioBuffer: AudioBuffer,
+  options: TrackTransitionDetectionOptions = {},
+): MixInSuggestionAnalysis {
+  const mono = buildMonoPcm(audioBuffer);
+  const transientSignal = buildTransientSignal(mono);
+  const sampleRate = audioBuffer.sampleRate;
+  const frameDurationSeconds = 0.05;
+  const frameSize = Math.max(1024, Math.floor(sampleRate * frameDurationSeconds));
+  const energies = buildFrameEnergies(mono, frameSize);
+  const transientEnergies = buildFrameEnergies(transientSignal, frameSize);
+
   const smoothedEnergies = energies.map((_, index) => {
     const slice = energies.slice(Math.max(index - 2, 0), Math.min(index + 3, energies.length));
     return average(slice);
   });
+  const smoothedTransientEnergies = transientEnergies.map((_, index) => {
+    const slice = transientEnergies.slice(Math.max(index - 1, 0), Math.min(index + 2, transientEnergies.length));
+    return average(slice);
+  });
   const maxEnergy = Math.max(...smoothedEnergies, 0.0001);
+  const maxTransientEnergy = Math.max(...smoothedTransientEnergies, 0.0001);
   const normalizedEnergies = smoothedEnergies.map((value) => value / maxEnergy);
-  const onsetStrength = normalizedEnergies.map((value, index) => Math.max(value - (normalizedEnergies[index - 1] ?? value), 0));
+  const normalizedTransientEnergies = smoothedTransientEnergies.map((value) => value / maxTransientEnergy);
+  const onsetStrength = normalizedTransientEnergies.map((value, index) =>
+    Math.max(value - (normalizedTransientEnergies[index - 1] ?? value), 0),
+  );
   const beatDurationSeconds = options.metadataBpm ? 60 / options.metadataBpm : null;
   const beatFrameSpan = beatDurationSeconds ? beatDurationSeconds / frameDurationSeconds : null;
   const introCueSeconds = options.introCueSeconds ?? 0.5;
@@ -202,6 +228,7 @@ export function analyzeAudioBufferForMixInSuggestion(
     frameIndex += 1
   ) {
     const energySlice = normalizedEnergies.slice(frameIndex, frameIndex + windowFrameCount);
+    const transientSlice = normalizedTransientEnergies.slice(frameIndex, frameIndex + windowFrameCount);
     const onsetSlice = onsetStrength.slice(frameIndex, frameIndex + windowFrameCount);
 
     if (energySlice.length < windowFrameCount) {
@@ -209,17 +236,24 @@ export function analyzeAudioBufferForMixInSuggestion(
     }
 
     const avgEnergy = average(energySlice);
+    const avgTransient = average(transientSlice);
     const avgOnset = average(onsetSlice);
-    const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, energySlice, frameDurationSeconds);
+    const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, transientSlice, frameDurationSeconds);
     const beatRegularity = calculateBeatRegularityScore(onsetSlice, beatFrameSpan);
     const candidateSecond = frameIndex * frameDurationSeconds;
     const earlyBias = 1 - candidateSecond / Math.max(searchEndSeconds, 1);
+    const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
+    const weakPulsePenalty =
+      avgTransient < 0.15 || transientCoverage < 0.18 || avgOnset < 0.018 || sustainedRhythm < 0.22 ? 0.45 : 1;
     const score =
-      sustainedRhythm * 0.38 +
-      beatRegularity * 0.32 +
-      avgEnergy * 0.16 +
-      avgOnset * 0.1 +
-      earlyBias * 0.04;
+      (sustainedRhythm * 0.34 +
+        beatRegularity * 0.28 +
+        avgTransient * 0.2 +
+        transientCoverage * 0.1 +
+        avgOnset * 0.04 +
+        avgEnergy * 0.02 +
+        earlyBias * 0.02) *
+      weakPulsePenalty;
 
     if (score > bestCandidate.score) {
       bestCandidate = {
@@ -243,18 +277,21 @@ export function analyzeAudioBufferForMixInSuggestion(
       }
 
       const energySlice = normalizedEnergies.slice(frameIndex, frameIndex + windowFrameCount);
+      const transientSlice = normalizedTransientEnergies.slice(frameIndex, frameIndex + windowFrameCount);
       const onsetSlice = onsetStrength.slice(frameIndex, frameIndex + windowFrameCount);
 
-      if (energySlice.length < windowFrameCount || onsetSlice.length < windowFrameCount) {
+      if (energySlice.length < windowFrameCount || transientSlice.length < windowFrameCount || onsetSlice.length < windowFrameCount) {
         continue;
       }
 
-      const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, energySlice, frameDurationSeconds);
+      const sustainedRhythm = calculateSustainedRhythmScore(onsetSlice, transientSlice, frameDurationSeconds);
       const beatRegularity = calculateBeatRegularityScore(onsetSlice, beatFrameSpan);
+      const transientCoverage = transientSlice.filter((value) => value >= 0.16).length / transientSlice.length;
 
       if (
         sustainedRhythm >= bestCandidate.sustainedRhythm * 0.9 &&
-        beatRegularity >= Math.max(bestCandidate.beatRegularity * 0.9, 0.45)
+        beatRegularity >= Math.max(bestCandidate.beatRegularity * 0.9, 0.45) &&
+        transientCoverage >= 0.16
       ) {
         bestStartSecond = frameIndex * frameDurationSeconds;
         continue;
@@ -285,10 +322,10 @@ export function analyzeAudioBufferForMixInSuggestion(
   );
   const summary =
     bestCandidate.sustainedRhythm >= 0.68 && bestCandidate.beatRegularity >= 0.55
-      ? "已優先鎖定連續穩定拍點區段，可作為建議進點。"
+      ? "已優先鎖定連續穩定且有明顯鼓點的區段，可作為建議進點。"
       : confidence >= 0.5
-        ? "有抓到拍點區段，但連續穩定度普通，建議人工試聽確認。"
-        : "前段缺少連續穩定拍點，建議人工確認。";
+        ? "有抓到拍點區段，但鼓點存在感或連續穩定度普通，建議人工試聽確認。"
+        : "前段缺少連續穩定鼓點，建議人工確認。";
 
   return {
     suggestedMixInSeconds,
