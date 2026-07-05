@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { Waves } from "lucide-react";
 
 import { bpmOptions, themePrograms } from "@/data/music-assets";
@@ -330,6 +331,8 @@ export function GlobalPlayer({
       : isProjectionMode
         ? "封面"
         : "雙擊全螢幕";
+  const playerStateLabel = playback.isCrossfading ? "連續流動" : playback.isPlaying ? "穩定播放" : "待命";
+  const engineLabel = playback.prefersBackgroundPlayback ? "背景模式" : "精準轉場";
 
   const artworkStage = currentTrack && artworkSrc ? (
     <PlayerArtworkStage
@@ -363,28 +366,52 @@ export function GlobalPlayer({
   if (isMinimized) {
     return (
       <>
-        <div className="fixed bottom-4 right-4 z-40 w-[min(92vw,22rem)] rounded-[28px] border border-fuchsia-400/25 bg-[#080510]/88 p-4 shadow-[0_18px_70px_rgba(84,12,112,0.45)] backdrop-blur-3xl">
-          <div className="absolute inset-0 rounded-[28px] bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.2),transparent_35%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.14),transparent_38%)]" />
-          <div className="relative flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
-                <Waves className="h-4 w-4" />
-                播放器
-              </p>
-              <h3 className="mt-2 truncate font-serif text-lg text-white">
-                {currentTrack?.title ?? "尚未播放"}
-              </h3>
-              <p className="mt-1 truncate text-xs text-white/55">
-                {detectedBpmMeta
-                  ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? ` · 原始 ${detectedBpmMeta.rawDetectedBpm}` : detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
-                  : detectedBpmState.status === "loading"
-                    ? "BPM 偵測中..."
-                    : nextTrack
-                      ? `下一首 ${nextTrack.title}`
-                      : "加入曲目即可播放"}
-              </p>
+        <div className="fixed bottom-4 right-4 z-40 w-[min(92vw,23rem)] overflow-hidden rounded-[30px] border border-fuchsia-400/24 bg-[linear-gradient(180deg,rgba(8,5,16,0.94),rgba(6,7,18,0.9))] p-3.5 shadow-[0_24px_90px_rgba(84,12,112,0.38)] backdrop-blur-3xl">
+          <div className="absolute inset-0 rounded-[30px] bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.22),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.15),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_24%,rgba(0,0,0,0.18))]" />
+          <div className="absolute inset-px rounded-[29px] border border-white/8" />
+          <div className="relative space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[20px] border border-white/10 bg-white/8 shadow-[0_14px_42px_rgba(15,23,42,0.4)]">
+                {artworkSrc ? (
+                  <>
+                    <Image src={artworkSrc} alt={currentTrack?.title ?? "播放器封面"} fill className="object-cover" sizes="64px" />
+                    <div className="absolute inset-0 bg-[linear-gradient(180deg,transparent,rgba(2,6,23,0.26))]" />
+                    <div className="absolute inset-0 cinematic-vignette opacity-80" />
+                  </>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle,rgba(192,38,211,0.2),transparent_68%)] text-fuchsia-100/72">
+                    <Waves className="h-6 w-6" />
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="flex items-center gap-2 text-[11px] uppercase tracking-[0.3em] text-fuchsia-100/65">
+                  <Waves className="h-4 w-4" />
+                  Auto DJ Player
+                </p>
+                <h3 className="mt-2 truncate font-serif text-lg text-white">
+                  {currentTrack?.title ?? "尚未播放"}
+                </h3>
+                <p className="mt-1 truncate text-xs text-white/55">
+                  {detectedBpmMeta
+                    ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? ` · 原始 ${detectedBpmMeta.rawDetectedBpm}` : detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
+                    : detectedBpmState.status === "loading"
+                      ? "BPM 偵測中..."
+                      : nextTrack
+                        ? `下一首 ${nextTrack.title}`
+                        : "加入曲目即可播放"}
+                </p>
+                <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+                  <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-2.5 py-1 text-fuchsia-50/88">
+                    {playerStateLabel}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-white/70">
+                    {engineLabel}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex items-center justify-between gap-3">
               <PlayerHeaderBar
                 showAdminDetails={showAdminDetails}
                 hasArtwork={Boolean(currentTrack && artworkSrc)}
@@ -416,8 +443,9 @@ export function GlobalPlayer({
 
   return (
     <>
-      <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-h-[calc(100vh-2rem)] max-w-6xl overflow-y-auto overflow-x-hidden rounded-[32px] border border-fuchsia-400/20 bg-[#050612]/86 p-4 shadow-[0_34px_110px_rgba(15,23,42,0.62)] backdrop-blur-3xl">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_25%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.14),transparent_38%)]" />
+      <div className="fixed inset-x-4 bottom-4 z-40 mx-auto max-h-[calc(100vh-2rem)] max-w-6xl overflow-y-auto overflow-x-hidden rounded-[34px] border border-fuchsia-400/20 bg-[linear-gradient(180deg,rgba(5,6,18,0.94),rgba(5,8,20,0.88))] p-4 shadow-[0_34px_110px_rgba(15,23,42,0.62)] backdrop-blur-3xl">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(168,85,247,0.18),transparent_25%),radial-gradient(circle_at_top_right,rgba(34,211,238,0.14),transparent_28%),radial-gradient(circle_at_bottom,rgba(236,72,153,0.14),transparent_38%),linear-gradient(180deg,rgba(255,255,255,0.04),transparent_22%,rgba(0,0,0,0.12))]" />
+        <div className="absolute inset-px rounded-[33px] border border-white/8" />
         <div className="relative">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0 flex-1">
@@ -430,23 +458,43 @@ export function GlobalPlayer({
                 onToggleMinimize={onToggleMinimize}
                 onClose={onClose}
               />
-              <div className="mt-3 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-                <div className="min-w-0">
-                  <h3 className="truncate font-serif text-2xl text-white">
-                    {currentTrack?.title ?? "尚未播放"}
-                  </h3>
-                  <p className="mt-1 truncate text-sm text-white/62">
-                    {showAdminDetails && sessionPlan
-                      ? sessionPlan.nextTransitionSummary
-                      : nextTrack
-                        ? `下一首 ${nextTrack.title}`
-                        : "加入曲目開始播放"}
-                  </p>
+              <div className="mt-3 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-[22px] border border-white/10 bg-white/8 shadow-[0_16px_48px_rgba(15,23,42,0.42)]">
+                    {artworkSrc ? (
+                      <>
+                        <Image src={artworkSrc} alt={currentTrack?.title ?? "播放器封面"} fill className="object-cover" sizes="64px" />
+                        <div className="absolute inset-0 cinematic-vignette opacity-85" />
+                      </>
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-[radial-gradient(circle,rgba(192,38,211,0.18),transparent_70%)] text-fuchsia-100/72">
+                        <Waves className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="truncate font-serif text-2xl text-white">
+                      {currentTrack?.title ?? "尚未播放"}
+                    </h3>
+                    <p className="mt-1 truncate text-sm text-white/62">
+                      {showAdminDetails && sessionPlan
+                        ? sessionPlan.nextTransitionSummary
+                        : nextTrack
+                          ? `下一首 ${nextTrack.title}`
+                          : "加入曲目開始播放"}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-sm text-white/64">
-                  {playlist.length} 首
-                  {playback.isCrossfading ? ` · 連續播放` : ""}
-                  {playback.repeatEnabled ? " · 循環" : ""}
+                <div className="flex flex-wrap gap-2 text-xs">
+                  <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-fuchsia-50">
+                    {playerStateLabel}
+                  </span>
+                  <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
+                    {playlist.length} 首{playback.repeatEnabled ? " · 循環" : ""}
+                  </span>
+                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
+                    {engineLabel}
+                  </span>
                 </div>
               </div>
               {currentTrack ? (

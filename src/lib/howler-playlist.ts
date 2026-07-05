@@ -6,10 +6,17 @@ import type { PlaybackSnapshot, Track } from "@/types/music";
 
 const PLAYBACK_POLL_MS = 200;
 const EQUAL_POWER_TICK_MS = 40;
+const PRECISE_CROSSFADE_WINDOW_MS = 1200;
+const SESSION_OPENER_FADE_IN_MS = 800;
 
 type PlaylistControllerOptions = {
   onStateChange?: (snapshot: PlaybackSnapshot) => void;
   preferBackgroundPlayback?: boolean;
+};
+
+type StartTrackOptions = {
+  startAtSeconds?: number;
+  fadeInMs?: number;
 };
 
 function detectBackgroundPlaybackPreference() {
@@ -32,9 +39,11 @@ export class HowlerPlaylistController {
   private preparedNextHowl: Howl | null = null;
   private preparedNextTrackId: string | null = null;
   private crossfadeMonitor: ReturnType<typeof setInterval> | null = null;
+  private crossfadeTriggerTimer: ReturnType<typeof setTimeout> | null = null;
   private equalPowerCurveTimer: ReturnType<typeof setInterval> | null = null;
   private crossfadeFinalizeTimer: ReturnType<typeof setTimeout> | null = null;
   private howlStartCueSeconds = new WeakMap<Howl, number>();
+  private scheduledCrossfadeKey: string | null = null;
   private onStateChange?: (snapshot: PlaybackSnapshot) => void;
   private isCrossfading = false;
   private prefersBackgroundPlayback: boolean;
@@ -98,7 +107,10 @@ export class HowlerPlaylistController {
     if (trackId) {
       const trackIndex = this.playlist.findIndex((track) => track.id === trackId);
       if (trackIndex !== -1) {
-        this.startTrack(trackIndex);
+        this.startTrack(trackIndex, {
+          startAtSeconds: 0,
+          fadeInMs: SESSION_OPENER_FADE_IN_MS,
+        });
         return;
       }
     }
@@ -113,7 +125,10 @@ export class HowlerPlaylistController {
     }
 
     const indexToPlay = this.currentIndex >= 0 ? this.currentIndex : 0;
-    this.startTrack(indexToPlay);
+    this.startTrack(indexToPlay, {
+      startAtSeconds: 0,
+      fadeInMs: SESSION_OPENER_FADE_IN_MS,
+    });
   }
 
   pause() {
@@ -124,6 +139,7 @@ export class HowlerPlaylistController {
     if (this.nextHowl) {
       this.cleanupNextHowl();
       this.isCrossfading = false;
+      this.clearCrossfadeTriggerTimer();
       this.clearEqualPowerCurveTimer();
       this.clearCrossfadeFinalizeTimer();
       this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
@@ -180,6 +196,7 @@ export class HowlerPlaylistController {
     if (this.nextHowl) {
       this.cleanupNextHowl();
       this.isCrossfading = false;
+      this.clearCrossfadeTriggerTimer();
       this.clearEqualPowerCurveTimer();
       this.clearCrossfadeFinalizeTimer();
       this.currentHowl.volume(this.getTargetGain(this.getCurrentTrack()));
@@ -215,7 +232,7 @@ export class HowlerPlaylistController {
     this.emitState();
   }
 
-  private startTrack(index: number) {
+  private startTrack(index: number, options: StartTrackOptions = {}) {
     const track = this.playlist[index];
     if (!track) {
       return;
@@ -224,8 +241,16 @@ export class HowlerPlaylistController {
     this.stopAndUnloadAll();
     this.currentIndex = index;
 
-    const howl = this.createHowl(track, 1, track.transition.introCueSeconds);
+    const startAtSeconds = options.startAtSeconds ?? track.transition.introCueSeconds;
+    const fadeInMs = Math.max(options.fadeInMs ?? 0, 0);
+    const startsMuted = fadeInMs > 0;
+    const howl = this.createHowl(track, startsMuted ? 0 : 1, startAtSeconds);
     this.currentHowl = howl;
+    if (startsMuted) {
+      howl.once("play", () => {
+        howl.fade(0, this.getTargetGain(track), fadeInMs);
+      });
+    }
     howl.play();
     this.primeUpcomingTrack();
     this.emitState();
@@ -281,6 +306,7 @@ export class HowlerPlaylistController {
 
   private handleTrackEnd() {
     this.clearCrossfadeMonitor();
+    this.clearCrossfadeTriggerTimer();
     this.clearCrossfadeFinalizeTimer();
 
     if (this.repeatEnabled && this.playlist.length === 1) {
@@ -315,6 +341,7 @@ export class HowlerPlaylistController {
       }
 
       if (!currentHowl.playing()) {
+        this.clearCrossfadeTriggerTimer();
         this.emitState();
         return;
       }
@@ -326,13 +353,31 @@ export class HowlerPlaylistController {
       this.emitState();
 
       if (!nextTrack || !Number.isFinite(duration) || duration <= 0) {
+        this.clearCrossfadeTriggerTimer();
         return;
       }
 
       const crossfadePlan = buildCrossfadePlan(currentTrack, nextTrack, duration);
+      const remainingSecondsUntilCrossfade = crossfadePlan.outgoingStartSeconds - seek;
+      const remainingMsUntilCrossfade = remainingSecondsUntilCrossfade * 1000;
+      const crossfadeKey = `${currentTrack.id}:${nextTrack.id}:${crossfadePlan.outgoingStartSeconds.toFixed(3)}`;
 
       if (!this.isCrossfading && seek >= crossfadePlan.outgoingStartSeconds) {
         this.startCrossfade(crossfadePlan, seek);
+        return;
+      }
+
+      if (
+        !this.isCrossfading &&
+        remainingMsUntilCrossfade > 0 &&
+        remainingMsUntilCrossfade <= PRECISE_CROSSFADE_WINDOW_MS
+      ) {
+        this.schedulePreciseCrossfadeTrigger(crossfadeKey, remainingMsUntilCrossfade);
+        return;
+      }
+
+      if (this.scheduledCrossfadeKey && this.scheduledCrossfadeKey !== crossfadeKey) {
+        this.clearCrossfadeTriggerTimer();
       }
     }, PLAYBACK_POLL_MS);
   }
@@ -352,6 +397,7 @@ export class HowlerPlaylistController {
 
     this.isCrossfading = true;
     this.clearCrossfadeMonitor();
+    this.clearCrossfadeTriggerTimer();
 
     const crossfadePlan =
       crossfadePlanOverride ??
@@ -406,6 +452,7 @@ export class HowlerPlaylistController {
 
   private stopAndUnloadAll() {
     this.clearCrossfadeMonitor();
+    this.clearCrossfadeTriggerTimer();
     this.clearEqualPowerCurveTimer();
     this.clearCrossfadeFinalizeTimer();
     this.isCrossfading = false;
@@ -453,6 +500,17 @@ export class HowlerPlaylistController {
 
     clearInterval(this.crossfadeMonitor);
     this.crossfadeMonitor = null;
+  }
+
+  private clearCrossfadeTriggerTimer() {
+    if (!this.crossfadeTriggerTimer) {
+      this.scheduledCrossfadeKey = null;
+      return;
+    }
+
+    clearTimeout(this.crossfadeTriggerTimer);
+    this.crossfadeTriggerTimer = null;
+    this.scheduledCrossfadeKey = null;
   }
 
   private clearEqualPowerCurveTimer() {
@@ -557,6 +615,40 @@ export class HowlerPlaylistController {
 
   private setHowlStartCue(howl: Howl, startAtSeconds: number) {
     this.howlStartCueSeconds.set(howl, Math.max(startAtSeconds, 0));
+  }
+
+  private schedulePreciseCrossfadeTrigger(crossfadeKey: string, waitMs: number) {
+    if (this.crossfadeTriggerTimer && this.scheduledCrossfadeKey === crossfadeKey) {
+      return;
+    }
+
+    this.clearCrossfadeTriggerTimer();
+    this.scheduledCrossfadeKey = crossfadeKey;
+    this.crossfadeTriggerTimer = setTimeout(() => {
+      this.crossfadeTriggerTimer = null;
+      this.scheduledCrossfadeKey = null;
+
+      if (this.isCrossfading || this.prefersBackgroundPlayback) {
+        return;
+      }
+
+      const currentHowl = this.currentHowl;
+      const currentTrack = this.getCurrentTrack();
+      const nextTrack = this.getNextTrack();
+
+      if (!currentHowl || !currentTrack || !nextTrack || !currentHowl.playing()) {
+        return;
+      }
+
+      const refreshedPlan = buildCrossfadePlan(
+        currentTrack,
+        nextTrack,
+        currentHowl.duration() || currentTrack.durationSeconds,
+      );
+      const seek = Number(currentHowl.seek() || 0);
+
+      this.startCrossfade(refreshedPlan, seek);
+    }, Math.max(waitMs, 0));
   }
 
   private primeUpcomingTrack() {

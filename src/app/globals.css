@@ -121,3 +121,9 @@ img {
   animation: projection-stage-drift 72s ease-in-out infinite;
   will-change: transform;
 }
+
+.cinematic-vignette {
+  background:
+    radial-gradient(circle at center, transparent 38%, rgba(2, 4, 10, 0.18) 62%, rgba(2, 4, 10, 0.62) 100%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.12));
+}

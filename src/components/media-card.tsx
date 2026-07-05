@@ -61,58 +61,72 @@ export function MediaCard({
         : "border-rose-300/25 bg-rose-300/12 text-rose-100";
 
   return (
-    <article className="group relative overflow-hidden rounded-[30px] border border-fuchsia-400/12 bg-white/9 p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
+    <article className="group relative overflow-hidden rounded-[32px] border border-fuchsia-400/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.05))] p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_32%)]" />
+      <div className="pointer-events-none absolute -inset-x-6 -top-10 h-32 bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_62%)] opacity-70 blur-2xl transition duration-700 group-hover:opacity-100" />
       <div className="relative">
-      <div className="relative overflow-hidden rounded-[24px]">
-        <Image
-          src={imageSrc}
-          alt={asset.title}
-          width={1200}
-          height={720}
-          sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-          className="h-56 w-full object-cover transition duration-700 group-hover:scale-[1.03]"
-          onError={() => setImageErrored(true)}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#03070d] via-[#03070d]/18 to-transparent" />
-        <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
-          <div className="flex flex-wrap gap-2">
-            <span className="rounded-full border border-white/12 bg-black/32 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/78 backdrop-blur-xl">
-              {asset.bpm} BPM
-            </span>
-            {asset.featured && showAdminDetails ? (
-              <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
-                精選
+        <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-black/24 shadow-[0_22px_60px_rgba(0,0,0,0.34)]">
+          <div className="pointer-events-none absolute inset-0 scale-110">
+            <Image
+              src={imageSrc}
+              alt=""
+              aria-hidden="true"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+              className="object-cover opacity-24 blur-3xl saturate-[1.1]"
+            />
+          </div>
+          <Image
+            src={imageSrc}
+            alt={asset.title}
+            width={1200}
+            height={720}
+            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+            className="h-56 w-full object-cover transition duration-700 group-hover:scale-[1.04] group-hover:saturate-[1.08]"
+            onError={() => setImageErrored(true)}
+          />
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_20%,transparent_56%,rgba(3,7,13,0.78)_100%)]" />
+          <div className="absolute inset-0 cinematic-vignette" />
+          <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_62%)] opacity-80" />
+          <div className="absolute left-4 right-4 top-4 flex items-start justify-between gap-3">
+            <div className="flex flex-wrap gap-2">
+              <span className="rounded-full border border-white/12 bg-black/34 px-3 py-1 text-xs uppercase tracking-[0.24em] text-cyan-100/82 backdrop-blur-xl">
+                {asset.bpm} BPM
               </span>
+              {asset.featured && showAdminDetails ? (
+                <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/16 px-3 py-1 text-[11px] uppercase tracking-[0.22em] text-fuchsia-50 backdrop-blur-xl">
+                  精選
+                </span>
+              ) : null}
+            </div>
+            {showAdminDetails ? (
+              <label className="flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/32 px-3 py-2 text-xs text-white/75 backdrop-blur-xl">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggle(asset.id)}
+                  className="h-4 w-4 rounded border-white/18 bg-transparent accent-cyan-300"
+                />
+                選取
+              </label>
             ) : null}
           </div>
-          {showAdminDetails ? (
-            <label className="flex cursor-pointer items-center gap-2 rounded-full border border-white/12 bg-black/32 px-3 py-2 text-xs text-white/75 backdrop-blur-xl">
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => onToggle(asset.id)}
-                className="h-4 w-4 rounded border-white/18 bg-transparent accent-cyan-300"
-              />
-              選取
-            </label>
-          ) : null}
-        </div>
-        <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between gap-3">
-          <ContentCardOverview
-            eyebrow={primaryCollectionTitle ?? "獨立單曲"}
-            title={asset.title}
-            wrapperClassName="space-y-0"
-            eyebrowClassName="text-white/45"
-            titleClassName="mt-2"
-          />
-          <button
-            type="button"
-            onClick={() => onPlayTrack(asset.id)}
-            className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/20"
-          >
-            播放
-          </button>
+          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between gap-3">
+            <ContentCardOverview
+              eyebrow={primaryCollectionTitle ?? "獨立單曲"}
+              title={asset.title}
+              wrapperClassName="space-y-0 max-w-[70%]"
+              eyebrowClassName="text-white/52"
+              titleClassName="mt-2 drop-shadow-[0_10px_24px_rgba(0,0,0,0.45)]"
+            />
+            <button
+              type="button"
+              onClick={() => onPlayTrack(asset.id)}
+              className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 shadow-[0_10px_28px_rgba(20,184,166,0.12)] transition hover:bg-cyan-300/20"
+            >
+              播放
+            </button>
+          </div>
         </div>
       </div>
 
@@ -221,46 +235,46 @@ export function MediaCard({
 
       {!showAdminDetails || isAdminExpanded ? (
         <div className="mt-5 grid gap-4 text-sm text-white/72">
-        <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
-          <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-            {showAdminDetails ? "曲目資訊" : "這首歌適合什麼時候播放"}
-          </p>
-          <p className="leading-6">{asset.copy.descriptionZh}</p>
-          {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}
-          <p className="mt-3 text-white/52">
-            {primaryCollectionTitle ? `收錄於 ${primaryCollectionTitle}` : "獨立曲目"}
-            {showAdminDetails && batchLabel ? `，上架批次：${batchLabel}` : ""}
-          </p>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {(showAdminDetails ? asset.moodTags : asset.moodTags.slice(0, 2)).map((tag) => (
-              <span
-                key={tag}
-                className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/58"
-              >
-                {tag}
-              </span>
-            ))}
+          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+              {showAdminDetails ? "曲目資訊" : "這首歌適合什麼時候播放"}
+            </p>
+            <p className="leading-6">{asset.copy.descriptionZh}</p>
+            {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}
+            <p className="mt-3 text-white/52">
+              {primaryCollectionTitle ? `收錄於 ${primaryCollectionTitle}` : "獨立曲目"}
+              {showAdminDetails && batchLabel ? `，上架批次：${batchLabel}` : ""}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(showAdminDetails ? asset.moodTags : asset.moodTags.slice(0, 2)).map((tag) => (
+                <span
+                  key={tag}
+                  className="rounded-full border border-white/10 bg-white/6 px-3 py-1 text-[11px] uppercase tracking-[0.2em] text-white/58"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
           </div>
+          {showAdminDetails ? (
+            <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+                Generation Prompt
+              </p>
+              <p className="line-clamp-4 leading-6">{asset.prompts.generationPrompt}</p>
+            </div>
+          ) : null}
+          {showAdminDetails ? (
+            <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
+              <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
+                Prompt Assets
+              </p>
+              <p className="line-clamp-3 leading-6">{asset.prompts.musicPrompt}</p>
+              <p className="mt-3 line-clamp-3 leading-6 text-white/55">{asset.prompts.imagePrompt}</p>
+              <p className="mt-3 line-clamp-3 leading-6 text-white/45">{asset.prompts.videoPrompt}</p>
+            </div>
+          ) : null}
         </div>
-        {showAdminDetails ? (
-          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
-            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-              Generation Prompt
-            </p>
-            <p className="line-clamp-4 leading-6">{asset.prompts.generationPrompt}</p>
-          </div>
-        ) : null}
-        {showAdminDetails ? (
-          <div className="rounded-[22px] border border-white/10 bg-black/18 p-4">
-            <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
-              Prompt Assets
-            </p>
-            <p className="line-clamp-3 leading-6">{asset.prompts.musicPrompt}</p>
-            <p className="mt-3 line-clamp-3 leading-6 text-white/55">{asset.prompts.imagePrompt}</p>
-            <p className="mt-3 line-clamp-3 leading-6 text-white/45">{asset.prompts.videoPrompt}</p>
-          </div>
-        ) : null}
-      </div>
       ) : null}
       {!showAdminDetails ? (
         <div className="mt-5 flex gap-3">
@@ -280,7 +294,6 @@ export function MediaCard({
           </button>
         </div>
       ) : null}
-      </div>
     </article>
   );
 }
