@@ -48,17 +48,6 @@ type PlaybackContextValue = {
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
-function shuffleIds<T>(items: T[]) {
-  const cloned = [...items];
-
-  for (let index = cloned.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1));
-    [cloned[index], cloned[swapIndex]] = [cloned[swapIndex], cloned[index]];
-  }
-
-  return cloned;
-}
-
 export function PlaybackProvider({ children }: { children: ReactNode }) {
   const tracks = useRuntimeTracks();
   const pathname = usePathname();
@@ -197,18 +186,24 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
   };
 
   const startRandomSession = (assetIds: string[]) => {
-    const uniqueIds = Array.from(new Set(assetIds)).filter((assetId) => tracks.some((track) => track.id === assetId));
+    const nextPlaylist = Array.from(new Set(assetIds))
+      .map((assetId) => tracks.find((track) => track.id === assetId) ?? null)
+      .filter((track): track is Track => Boolean(track));
 
-    if (uniqueIds.length === 0) {
+    if (nextPlaylist.length === 0) {
       return;
     }
 
-    const shuffledIds = shuffleIds(uniqueIds);
+    const randomStartTrack = nextPlaylist[Math.floor(Math.random() * nextPlaylist.length)] ?? null;
+    const initialTrackId = randomStartTrack?.id;
+    const orderedIds = buildAutoDjQueue(nextPlaylist, initialTrackId);
+    const targetInitialTrackId =
+      initialTrackId && orderedIds.includes(initialTrackId) ? initialTrackId : orderedIds[0] ?? null;
 
     setIsPlayerOpen(true);
     setIsPlayerMinimized(true);
-    setSelectedIds(shuffledIds);
-    setPendingPlayId(shuffledIds[0] ?? null);
+    setSelectedIds(orderedIds);
+    setPendingPlayId(targetInitialTrackId);
   };
 
   const playPause = () => {

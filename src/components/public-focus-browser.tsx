@@ -117,7 +117,7 @@ export function PublicFocusBrowser({
               disabled={visibleTracks.length === 0}
               className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
             >
-              隨機播放
+              Auto DJ Random
             </button>
             <button
               type="button"
