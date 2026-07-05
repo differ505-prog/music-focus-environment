@@ -200,13 +200,58 @@ function getTargetEnergyForPhase(minEnergy: number, maxEnergy: number, phase: Au
   return minEnergy + (maxEnergy - minEnergy) * phaseCurve[getPhaseCurveIndex(phase)];
 }
 
-function getCompatibilityScore(previousTrack: Track, candidate: Track, phase: AutoDjPhase, targetEnergy: number) {
+function getRouteGuardrailPenalty(previousTrack: Track, candidate: Track, pool: Track[], phase: AutoDjPhase) {
+  const compatibility = getBpmCompatibility(previousTrack.bpm, candidate.bpm);
+  const hasSameLaneAlternative = pool.some((track) => track.id !== candidate.id && track.bpm === previousTrack.bpm);
+  const hasAdjacentAlternative = pool.some(
+    (track) => track.id !== candidate.id && getBpmCompatibility(previousTrack.bpm, track.bpm).status !== "distant",
+  );
+  const is85Lane = previousTrack.bpm === 85;
+  let penalty = 0;
+
+  if (hasSameLaneAlternative && candidate.bpm !== previousTrack.bpm) {
+    penalty += is85Lane ? 26 : 16;
+  }
+
+  if (phase === "lock" && hasSameLaneAlternative && compatibility.status !== "exact") {
+    penalty += is85Lane ? 16 : 10;
+  }
+
+  if ((phase === "opening" || phase === "lock") && hasAdjacentAlternative && compatibility.status === "distant") {
+    penalty += is85Lane ? 34 : 22;
+  }
+
+  if (phase === "lift" && compatibility.status === "distant") {
+    penalty += 8;
+  }
+
+  return penalty;
+}
+
+function getDominantBpm(tracks: Track[]) {
+  const bpmCounts = new Map<number, number>();
+
+  for (const track of tracks) {
+    bpmCounts.set(track.bpm, (bpmCounts.get(track.bpm) ?? 0) + 1);
+  }
+
+  return [...bpmCounts.entries()].sort((left, right) => {
+    if (right[1] !== left[1]) {
+      return right[1] - left[1];
+    }
+
+    return Math.abs(left[0] - 85) - Math.abs(right[0] - 85);
+  })[0]?.[0] ?? null;
+}
+
+function getCompatibilityScore(previousTrack: Track, candidate: Track, phase: AutoDjPhase, targetEnergy: number, pool: Track[]) {
   const compatibility = getBpmCompatibility(previousTrack.bpm, candidate.bpm);
   const bpmDiff = Math.abs(previousTrack.bpm - candidate.bpm);
   const energyDiffFromPrevious = Math.abs(previousTrack.energyLevel - candidate.energyLevel);
   const energyDiffFromTarget = Math.abs(candidate.energyLevel - targetEnergy);
   const sharedMoodCount = candidate.moodTags.filter((tag) => previousTrack.moodTags.includes(tag)).length;
   const continuityScore = getContinuityScore(previousTrack, candidate, phase);
+  const routeGuardrailPenalty = getRouteGuardrailPenalty(previousTrack, candidate, pool, phase);
 
   let score =
     (compatibility.status === "exact" ? 120 : compatibility.status === "adjacent" ? 82 : 24) -
@@ -214,7 +259,8 @@ function getCompatibilityScore(previousTrack: Track, candidate: Track, phase: Au
     energyDiffFromPrevious * 7 -
     energyDiffFromTarget * 11 +
     sharedMoodCount * 6 +
-    continuityScore;
+    continuityScore -
+    routeGuardrailPenalty;
 
   if (phase === "lock" && compatibility.status === "exact") {
     score += 18;
@@ -248,7 +294,7 @@ function getRouteContinuationScore(
   const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, phase);
   const rankedScores = pool
     .map((candidate) => {
-      const directScore = getCompatibilityScore(previousTrack, candidate, phase, targetEnergy);
+      const directScore = getCompatibilityScore(previousTrack, candidate, phase, targetEnergy, pool);
       const { routeContinuationWeight, riskScore } = getDownshiftRiskMetrics(previousTrack, candidate, phase);
       const remainingPool = pool.filter((track) => track.id !== candidate.id);
       const futureScore = getRouteContinuationScore(
@@ -274,6 +320,7 @@ function getRouteContinuationScore(
 
 function pickOpener(tracks: Track[], minEnergy: number, maxEnergy: number) {
   const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, "opening");
+  const dominantBpm = getDominantBpm(tracks);
 
   return [...tracks].sort((left, right) => {
     const leftEnergyScore = Math.abs(left.energyLevel - targetEnergy);
@@ -296,8 +343,10 @@ function pickOpener(tracks: Track[], minEnergy: number, maxEnergy: number) {
       maxEnergy,
       routeLookaheadDepth,
     );
-    const leftScore = leftRouteScore - leftEnergyScore * 24;
-    const rightScore = rightRouteScore - rightEnergyScore * 24;
+    const leftLaneBonus = left.bpm === dominantBpm ? 18 : 0;
+    const rightLaneBonus = right.bpm === dominantBpm ? 18 : 0;
+    const leftScore = leftRouteScore + leftLaneBonus - leftEnergyScore * 24;
+    const rightScore = rightRouteScore + rightLaneBonus - rightEnergyScore * 24;
 
     if (leftScore !== rightScore) {
       return rightScore - leftScore;
@@ -336,8 +385,8 @@ export function buildAutoDjQueue(playlist: Track[], initialTrackId?: string) {
     const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, phaseMeta.phase);
 
     const bestCandidate = [...pool].sort((left, right) => {
-      const leftDirectScore = getCompatibilityScore(previousTrack, left, phaseMeta.phase, targetEnergy);
-      const rightDirectScore = getCompatibilityScore(previousTrack, right, phaseMeta.phase, targetEnergy);
+      const leftDirectScore = getCompatibilityScore(previousTrack, left, phaseMeta.phase, targetEnergy, pool);
+      const rightDirectScore = getCompatibilityScore(previousTrack, right, phaseMeta.phase, targetEnergy, pool);
       const leftRouteScore = getRouteContinuationScore(
         left,
         pool.filter((track) => track.id !== left.id),
