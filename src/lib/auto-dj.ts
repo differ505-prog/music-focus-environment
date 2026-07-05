@@ -50,18 +50,69 @@ function getPairTransitionMetrics(previousTrack: Track, candidate: Track) {
   };
 }
 
-function getContinuityScore(previousTrack: Track, candidate: Track, phase: AutoDjPhase) {
+function getDownshiftRiskMetrics(previousTrack: Track, candidate: Track, phase: AutoDjPhase) {
   const cueReadiness = getCueReadinessScore(candidate);
   const energyDrop = Math.max(previousTrack.energyLevel - candidate.energyLevel, 0);
-  const energyLift = Math.max(candidate.energyLevel - previousTrack.energyLevel, 0);
   const sameLane = previousTrack.bpm === candidate.bpm;
   const is85Lane = previousTrack.bpm === 85 && candidate.bpm === 85;
+  const bpmDelta = Math.abs(previousTrack.bpm - candidate.bpm);
+  const { fadeCompressionScore, incomingRunwayScore, transitionStability } = getPairTransitionMetrics(
+    previousTrack,
+    candidate,
+  );
+  const phaseEnergyTolerance = phase === "lift" ? 0.45 : phase === "lock" ? 0.68 : phase === "glide" ? 1.05 : 0.82;
+  const energyDropRisk = clamp(energyDrop / phaseEnergyTolerance, 0, 1);
+  const cueRisk = 1 - cueReadiness;
+  const stabilityRisk = 1 - transitionStability;
+  const runwayRisk = 1 - incomingRunwayScore;
+  const compressionRisk = 1 - fadeCompressionScore;
+  const laneBreakRisk = sameLane ? 0 : clamp(bpmDelta / 6, 0, 1);
+  const riskScore = clamp(
+    energyDropRisk * 0.4 +
+      cueRisk * 0.2 +
+      stabilityRisk * 0.18 +
+      runwayRisk * 0.1 +
+      compressionRisk * 0.07 +
+      laneBreakRisk * 0.05,
+    0,
+    1,
+  );
+  const penaltyBase = is85Lane ? 34 : sameLane ? 27 : 21;
+  const hardBlockPenalty = riskScore >= 0.8 ? (is85Lane ? 18 : 13) : riskScore >= 0.66 ? 8 : 0;
+  const routeContinuationWeight = riskScore >= 0.8 ? 0.12 : riskScore >= 0.66 ? 0.22 : riskScore >= 0.5 ? 0.3 : 0.38;
+  const label =
+    riskScore >= 0.8
+      ? "高 downshift 風險"
+      : riskScore >= 0.66
+        ? "中高 downshift 風險"
+        : riskScore >= 0.5
+          ? "可控風險"
+          : "低風險";
+
+  return {
+    cueReadiness,
+    energyDrop,
+    sameLane,
+    is85Lane,
+    riskScore,
+    penalty: riskScore * penaltyBase + hardBlockPenalty,
+    routeContinuationWeight,
+    label,
+  };
+}
+
+function getContinuityScore(previousTrack: Track, candidate: Track, phase: AutoDjPhase) {
+  const { cueReadiness, sameLane, is85Lane, penalty: downshiftPenalty } = getDownshiftRiskMetrics(
+    previousTrack,
+    candidate,
+    phase,
+  );
+  const energyLift = Math.max(candidate.energyLevel - previousTrack.energyLevel, 0);
   const continuityBias = sameLane ? (is85Lane ? 18 : 11) : 4;
   const { fadeCompressionScore, incomingRunwayScore, transitionStability, abruptnessPenalty } = getPairTransitionMetrics(
     previousTrack,
     candidate,
   );
-  const downshiftPenalty = energyDrop * (cueReadiness < 0.55 ? 20 : cueReadiness < 0.68 ? 13 : 7);
   const liftBonus =
     phase === "lift" ? energyLift * (cueReadiness >= 0.62 ? 7 : 3) : phase === "lock" ? energyLift * 1.5 : 0;
 
@@ -78,18 +129,17 @@ function getContinuityScore(previousTrack: Track, candidate: Track, phase: AutoD
 }
 
 function getContinuityLabel(previousTrack: Track, candidate: Track) {
-  const cueReadiness = getCueReadinessScore(candidate);
-  const energyDrop = previousTrack.energyLevel - candidate.energyLevel;
+  const { cueReadiness, energyDrop, riskScore, label: riskLabel } = getDownshiftRiskMetrics(previousTrack, candidate, "lock");
   const { fadeCompressionScore, incomingRunwayScore, transitionStability, crossfadePlan } = getPairTransitionMetrics(
     previousTrack,
     candidate,
   );
 
-  if (cueReadiness >= 0.72 && energyDrop <= 0.3 && transitionStability >= 0.78) {
+  if (riskScore < 0.42 && cueReadiness >= 0.72 && energyDrop <= 0.3 && transitionStability >= 0.78) {
     return `心流延續強 · ${crossfadePlan.strategyLabel}`;
   }
 
-  if (cueReadiness >= 0.58 && energyDrop <= 0.8 && transitionStability >= 0.62) {
+  if (riskScore < 0.58 && cueReadiness >= 0.58 && energyDrop <= 0.8 && transitionStability >= 0.62) {
     return `延續穩定 · ${crossfadePlan.strategyLabel}`;
   }
 
@@ -97,7 +147,7 @@ function getContinuityLabel(previousTrack: Track, candidate: Track) {
     return `轉場偏急 · ${crossfadePlan.strategyLabel}`;
   }
 
-  return `可能 downshift · ${crossfadePlan.strategyLabel}`;
+  return `${riskLabel} · ${crossfadePlan.strategyLabel}`;
 }
 
 function getPhaseMeta(index: number, total: number): Pick<AutoDjTrackPlan, "phase" | "phaseLabel" | "phaseDescription"> {
@@ -199,6 +249,7 @@ function getRouteContinuationScore(
   const rankedScores = pool
     .map((candidate) => {
       const directScore = getCompatibilityScore(previousTrack, candidate, phase, targetEnergy);
+      const { routeContinuationWeight, riskScore } = getDownshiftRiskMetrics(previousTrack, candidate, phase);
       const remainingPool = pool.filter((track) => track.id !== candidate.id);
       const futureScore = getRouteContinuationScore(
         candidate,
@@ -210,7 +261,7 @@ function getRouteContinuationScore(
         depth - 1,
       );
 
-      return directScore + futureScore * 0.34;
+      return directScore + futureScore * routeContinuationWeight - riskScore * 6;
     })
     .sort((left, right) => right - left);
   const bestScore = rankedScores[0] ?? 0;
