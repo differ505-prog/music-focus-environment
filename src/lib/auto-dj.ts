@@ -3,6 +3,7 @@ import { buildCrossfadePlan } from "@/lib/transition-planning";
 import type { AutoDjPhase, AutoDjSessionPlan, AutoDjTrackPlan, Track } from "@/types/music";
 
 const phaseCurve = [0.18, 0.42, 0.68, 0.36] as const;
+const routeLookaheadDepth = 2;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -180,43 +181,72 @@ function getCompatibilityScore(previousTrack: Track, candidate: Track, phase: Au
   return score;
 }
 
-function getLookaheadBonus(previousTrack: Track, pool: Track[], phase: AutoDjPhase, targetEnergy: number) {
-  if (pool.length === 0) {
+function getRouteContinuationScore(
+  previousTrack: Track,
+  pool: Track[],
+  nextIndex: number,
+  total: number,
+  minEnergy: number,
+  maxEnergy: number,
+  depth: number,
+): number {
+  if (pool.length === 0 || depth <= 0 || nextIndex >= total) {
     return 0;
   }
 
+  const phase = getPhaseMeta(nextIndex, total).phase;
+  const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, phase);
   const rankedScores = pool
-    .map((candidate) => getCompatibilityScore(previousTrack, candidate, phase, targetEnergy))
+    .map((candidate) => {
+      const directScore = getCompatibilityScore(previousTrack, candidate, phase, targetEnergy);
+      const remainingPool = pool.filter((track) => track.id !== candidate.id);
+      const futureScore = getRouteContinuationScore(
+        candidate,
+        remainingPool,
+        nextIndex + 1,
+        total,
+        minEnergy,
+        maxEnergy,
+        depth - 1,
+      );
+
+      return directScore + futureScore * 0.34;
+    })
     .sort((left, right) => right - left);
   const bestScore = rankedScores[0] ?? 0;
   const secondScore = rankedScores[1] ?? bestScore;
+  const thirdScore = rankedScores[2] ?? secondScore;
   const stabilityFloor = Math.min(bestScore, secondScore);
 
-  return bestScore * 0.2 + stabilityFloor * 0.12;
+  return bestScore * 0.22 + stabilityFloor * 0.12 + thirdScore * 0.05;
 }
 
 function pickOpener(tracks: Track[], minEnergy: number, maxEnergy: number) {
   const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, "opening");
-  const followUpPhase = getPhaseMeta(1, tracks.length).phase;
-  const followUpTargetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, followUpPhase);
 
   return [...tracks].sort((left, right) => {
     const leftEnergyScore = Math.abs(left.energyLevel - targetEnergy);
     const rightEnergyScore = Math.abs(right.energyLevel - targetEnergy);
-    const leftLookaheadBonus = getLookaheadBonus(
+    const leftRouteScore = getRouteContinuationScore(
       left,
       tracks.filter((track) => track.id !== left.id),
-      followUpPhase,
-      followUpTargetEnergy,
+      1,
+      tracks.length,
+      minEnergy,
+      maxEnergy,
+      routeLookaheadDepth,
     );
-    const rightLookaheadBonus = getLookaheadBonus(
+    const rightRouteScore = getRouteContinuationScore(
       right,
       tracks.filter((track) => track.id !== right.id),
-      followUpPhase,
-      followUpTargetEnergy,
+      1,
+      tracks.length,
+      minEnergy,
+      maxEnergy,
+      routeLookaheadDepth,
     );
-    const leftScore = leftLookaheadBonus - leftEnergyScore * 24;
-    const rightScore = rightLookaheadBonus - rightEnergyScore * 24;
+    const leftScore = leftRouteScore - leftEnergyScore * 24;
+    const rightScore = rightRouteScore - rightEnergyScore * 24;
 
     if (leftScore !== rightScore) {
       return rightScore - leftScore;
@@ -253,30 +283,30 @@ export function buildAutoDjQueue(playlist: Track[], initialTrackId?: string) {
     const nextIndex = ordered.length;
     const phaseMeta = getPhaseMeta(nextIndex, playlist.length);
     const targetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, phaseMeta.phase);
-    const lookaheadPhase = getPhaseMeta(nextIndex + 1, playlist.length).phase;
-    const lookaheadTargetEnergy = getTargetEnergyForPhase(minEnergy, maxEnergy, lookaheadPhase);
 
     const bestCandidate = [...pool].sort((left, right) => {
       const leftDirectScore = getCompatibilityScore(previousTrack, left, phaseMeta.phase, targetEnergy);
       const rightDirectScore = getCompatibilityScore(previousTrack, right, phaseMeta.phase, targetEnergy);
-      const leftLookaheadBonus = getLookaheadBonus(
+      const leftRouteScore = getRouteContinuationScore(
         left,
         pool.filter((track) => track.id !== left.id),
-        lookaheadPhase,
-        lookaheadTargetEnergy,
+        nextIndex + 1,
+        playlist.length,
+        minEnergy,
+        maxEnergy,
+        routeLookaheadDepth,
       );
-      const rightLookaheadBonus = getLookaheadBonus(
+      const rightRouteScore = getRouteContinuationScore(
         right,
         pool.filter((track) => track.id !== right.id),
-        lookaheadPhase,
-        lookaheadTargetEnergy,
+        nextIndex + 1,
+        playlist.length,
+        minEnergy,
+        maxEnergy,
+        routeLookaheadDepth,
       );
 
-      return (
-        rightDirectScore +
-        rightLookaheadBonus -
-        (leftDirectScore + leftLookaheadBonus)
-      );
+      return rightDirectScore + rightRouteScore - (leftDirectScore + leftRouteScore);
     })[0];
 
     ordered.push(bestCandidate);
