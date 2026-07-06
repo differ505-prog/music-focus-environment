@@ -1,7 +1,7 @@
 'use client';
 
 import Link from "next/link";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { ContentCardOverview } from "@/components/content-card-overview";
 import { sessionPresets, trackBatches, trackCollections } from "@/data/music-assets";
@@ -15,6 +15,7 @@ type CollectionDetailPageProps = {
 export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps) {
   const tracks = useRuntimeTracks();
   const { startSession } = usePlayback();
+  const [isStarting, setIsStarting] = useState(false);
 
   const collection = useMemo(() => {
     return trackCollections.find((item) => item.id === collectionId) ?? null;
@@ -51,6 +52,27 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
 
     return Math.round(collectionTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60);
   }, [collectionTracks]);
+
+  const handlePlayAll = useCallback(() => {
+    if (isStarting || !collection?.trackIds.length) {
+      return;
+    }
+
+    setIsStarting(true);
+    startSession(collection.trackIds, collection.trackIds[0]);
+    setTimeout(() => setIsStarting(false), 1000);
+  }, [isStarting, collection, startSession]);
+
+  const handlePlayTrack = useCallback(
+    (trackId: string) => {
+      if (!collection?.trackIds) {
+        return;
+      }
+
+      startSession(collection.trackIds, trackId);
+    },
+    [collection, startSession],
+  );
 
   if (!collection) {
     return null;
@@ -98,10 +120,12 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
               {collectionTracks.length > 0 ? (
                 <button
                   type="button"
-                  onClick={() => startSession(collection.trackIds, collection.trackIds[0])}
-                  className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18"
+                  onClick={handlePlayAll}
+                  disabled={isStarting}
+                  aria-label={`播放全部：${collection.title}`}
+                  className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
                 >
-                  播放全部
+                  {isStarting ? "播放中..." : "播放全部"}
                 </button>
               ) : null}
             </div>
@@ -111,7 +135,8 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                 <button
                   key={`${collection.id}-${track.id}`}
                   type="button"
-                  onClick={() => startSession(collection.trackIds, track.id)}
+                  onClick={() => handlePlayTrack(track.id)}
+                  aria-label={`播放 ${track.title}`}
                   className="rounded-[22px] border border-white/10 bg-white/6 p-5 text-left transition hover:border-white/16 hover:bg-white/10"
                 >
                   <ContentCardOverview
@@ -134,7 +159,8 @@ export function CollectionDetailPage({ collectionId }: CollectionDetailPageProps
                   <button
                     key={preset.id}
                     type="button"
-                    onClick={() => startSession(preset.trackIds, preset.trackIds[0])}
+                    onClick={() => handlePlayTrack(preset.trackIds[0])}
+                    aria-label={`播放 ${preset.title}`}
                     className="rounded-[22px] border border-cyan-300/12 bg-cyan-300/6 p-5 text-left transition hover:border-cyan-300/18 hover:bg-cyan-300/10"
                   >
                     <ContentCardOverview

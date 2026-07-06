@@ -140,6 +140,7 @@ export function MediaCard({
             <button
               type="button"
               onClick={() => onPlayTrack(asset.id)}
+              aria-label={`播放 ${asset.title}`}
               className="rounded-full border border-cyan-300/30 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 shadow-[0_10px_28px_rgba(20,184,166,0.12)] transition hover:bg-cyan-300/20"
             >
               播放
@@ -299,6 +300,8 @@ export function MediaCard({
           <button
             type="button"
             onClick={() => onToggle(asset.id)}
+            aria-pressed={checked}
+            aria-label={checked ? "從播放清單移除" : "加入播放清單"}
             className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
               checked
                 ? "border-white/16 bg-white/12 text-white"
