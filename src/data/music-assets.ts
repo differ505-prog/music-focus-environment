@@ -570,6 +570,123 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     createdAt: "2026-07-04T13:38:42.000Z",
   },
+  // Batch: 07.06 CEO Deep Focus 85 BPM
+  {
+    title: "Obsidian Tides",
+    slug: "obsidian-tides",
+    musicalKey: "D Minor",
+    energyLevel: 4,
+    moodTags: ["Calm", "Profound", "Restrained", "Deep Focus", "Dark Ambient", "Deep Sea Drone"],
+    descriptionZh:
+      "彷彿置身水下百公尺的寂靜深淵。厚重的次低頻脈衝與消光金屬質感的電子音色，在曜石黑的聽覺空間中緩慢推進。剝除一切情緒起伏，回歸純粹理性的深海心流狀態。適合高階決策者進行年度戰略規劃、深度邏輯推演，或連續數小時不被打斷的專注閉關。",
+    descriptionEn:
+      "Like submerging 100 meters underwater into a silent abyss. Heavy sub-bass pulses and matte brushed metal electronic textures advance slowly through an obsidian-black soundscape. Stripping away emotional fluctuations to return to pure rationality. Ideal for C-suite strategic planning, deep logical reasoning, or hours of uninterrupted deep work sessions.",
+    themeScenario:
+      "深夜的頂層辦公室，全景落地窗外是寂寥而規律的都市天際線微光。室內僅保留桌面的高演色性工作燈與螢幕幽光。聽覺空間被無形吸音材質包覆，思緒如深海暗流般穩定推進，進入絕對掌控與極致理性的決策領域。",
+    bpm: 85,
+    durationSeconds: 368,
+    media: {
+      audioUrl: "/audio/obsidian-tides.mp3",
+      coverImageUrl: "/img/obsidian-tides-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental, dark ambient, minimal electronic, exactly 85 BPM. Premium and sophisticated CEO deep focus atmosphere, energy level 4. Profound, calm, and highly restrained stable groove for long-form deep work. Instrumentation features deep drone, continuous sub-bass frequencies, and muffled matte sonic textures. Obsidian black and deep sea glimmer soundscape. Seamless loop-friendly structure: intro features slowly evolving muted synth pads merging with low-frequency white noise; outro fades into extremely long reverb tails and lingering sub-bass vibrations for smooth crossfades. Low distraction, zero sharp transients. Negative Prompts: no vocals, no vocal chops, no festival drop, no flashy lead hook, no busy drum fills, no sharp kick or snare, no bright melodies, no high-frequency spikes.",
+      imagePrompt:
+        "A photorealistic, extremely low-key photograph looking across a vast obsidian black desk in a luxury penthouse office at night. A minimalist linear fireplace is built into a wall of dark, open-grain wood, its flame a controlled, soft, warm glow. The background features massive floor-to-ceiling glass windows showing a distant, blurred city skyline, appearing as faint, muffled pinpricks of light under a deep, profound blue-black sky. The focus is soft and enveloping, conveying the feeling of being submerged 100 meters underwater in a silent, secure cocoon. Matte brushed metal details on the desk. No bright neon. Moody but controlled.",
+      videoPrompt: "",
+      generationPrompt: "dark ambient minimal electronic 85 BPM CEO deep focus deep sea drone sub-bass obsidian black",
+    },
+    createdAt: "2026-07-06T07:35:00.000Z",
+  },
+  {
+    title: "Obsidian Depths",
+    slug: "obsidian-depths",
+    musicalKey: "D Minor",
+    energyLevel: 4.5,
+    moodTags: ["Calm", "Profound", "Muffled", "Static", "Deep Focus", "Dark Ambient"],
+    descriptionZh:
+      "以悶晦的材質音色與靜止的視覺空間，營造深邃而沉悶的專注結界。猶如辦公室深處的微光在玻璃表面折射出的深海輝芒，聽覺感受如同被無形的吸音棉完整包覆，讓思緒在厚重的寂靜中穩定前行。",
+    descriptionEn:
+      "Using muffled textures and a static visual space to create a profound and enclosed focus sanctuary. Like the deep-sea glimmer refracted on glass surfaces in the depths of an office, the auditory experience wraps you in an invisible acoustic cocoon, allowing thoughts to advance steadily through heavy silence.",
+    themeScenario:
+      "近距離聚焦於黑暗、高端的行政辦公室紋理。一隻手無聲地停放在深色木質表面上，與冷冽的玻璃面板邊緣形成對比。遠處的壁爐化為模糊溫暖的抽象光暈，城市的輪廓被陰影幾乎完全遮蔽。",
+    bpm: 85,
+    durationSeconds: 339,
+    media: {
+      audioUrl: "/audio/obsidian-depths.mp3",
+      coverImageUrl: "/img/obsidian-depths-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental, dark ambient, minimal electronic, exactly 85 BPM. Premium and sophisticated CEO deep focus atmosphere, energy level 4. Profound, calm, and highly restrained stable groove for long-form deep work. Instrumentation features deep drone, continuous sub-bass frequencies, and muffled matte sonic textures. Obsidian black and deep sea glimmer soundscape. Seamless loop-friendly structure: intro features slowly evolving muted synth pads merging with low-frequency white noise; outro fades into extremely long reverb tails and lingering sub-bass vibrations for smooth crossfades. Low distraction, zero sharp transients. Negative Prompts: no vocals, no vocal chops, no festival drop, no flashy lead hook, no busy drum fills, no sharp kick or snare, no bright melodies, no high-frequency spikes.",
+      imagePrompt:
+        "A shallow depth of field, photorealistic shot focusing on textures within a dark, premium executive office. Close-up of a hand resting silently on deep, dark wood, contrasting with a cool glass panel edge. The fireplace is in the far background, reduced to an indistinct, hazy warm abstraction. The night skyline through the window is almost completely obscured by shadows, leaving only the deep sea glimmer of reflections within the glass itself. The lighting is extremely soft and diffused, creating a muffled visual space that feels profoundly calm and static. High-end, restrained composition.",
+      videoPrompt: "",
+      generationPrompt: "dark ambient minimal electronic 85 BPM CEO deep focus muffled textures executive office",
+    },
+    createdAt: "2026-07-06T07:36:00.000Z",
+  },
+  {
+    title: "Glass Blueprint",
+    slug: "glass-blueprint",
+    musicalKey: "D Minor",
+    energyLevel: 4,
+    moodTags: ["Determined", "Restrained", "Geometric", "Rational", "Deep Focus", "Minimal Electronic"],
+    descriptionZh:
+      "極簡主義的精準光芒。高演色性工作燈在曜石黑桌面上投射出具幾何精度的銳利陰影，呼應理性辦公室的結構秩序。冷靜而克制的電子脈衝如同精密藍圖般，引領思緒在黑暗中建立絕對掌控的邏輯框架。",
+    descriptionEn:
+      "Precision light of minimalism. A high-CRI work lamp casts sharp geometric shadows on an obsidian black desk, echoing the structured order of a rational executive office. The calm and restrained electronic pulse guides thoughts to build an absolute control logic framework in darkness, like a precision blueprint.",
+    themeScenario:
+      "微距特寫曜石黑奢華桌面。一疊文件和一支精密消光金屬筆被高演色性工作燈的精準光束照亮，創造出極簡的幾何陰影。辦公室其餘部分隱沒在深沉的陰影中，遠處窗戶的垂直線條將夜景分割為有結構的幾何圖案。",
+    bpm: 85,
+    durationSeconds: 353,
+    media: {
+      audioUrl: "/audio/glass-blueprint.mp3",
+      coverImageUrl: "/img/glass-blueprint-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental, dark premium minimal electronic, deep drone, exactly 85 BPM. Late-night executive office deep focus mood, calm and determined, steady energy level 4. Sub-bass driven groove, low-pass filtered synths, soft ambient noise simulating a soundproofed room. Muffled, brushed metal textures with a minimalist geometric sonic progression. Highly loop-friendly and smooth crossfade ready, designed for continuous hours of concentration. The track begins with an immersive aquatic-like pressure and ends by stripping away mid-high frequencies, leaving only a stable sub-bass pulse. Negative Prompts: no vocals, no vocal chops, no festival drop, no flashy lead hook, no busy drum fills, no sudden rhythmic changes, no distracting percussion, no emotional build-ups.",
+      imagePrompt:
+        "A macro detail, photorealistic photograph on a luxury obsidian black desk. A single stack of documents and a precision matte brushed metal pen are highlighted by a precise, focused pool of light from a high-CRI work lamp, creating sharp, minimalist geometric shadows. The rest of the office remains in deep shadow. In the far background, the vertical geometric lines of the window mullions divide the distant night skyline into structured patterns. The composition emphasizes absolute order, extreme rationality, and structured clarity in darkness. Moody but controlled.",
+      videoPrompt: "",
+      generationPrompt: "minimal electronic 85 BPM executive office deep focus geometric precision obsidian blueprint",
+    },
+    createdAt: "2026-07-06T07:37:00.000Z",
+  },
+  {
+    title: "Glass Meridian",
+    slug: "glass-meridian",
+    musicalKey: "D Minor",
+    energyLevel: 4.5,
+    moodTags: ["Determined", "Geometric", "Structured", "Steady", "Deep Focus", "Minimal Electronic"],
+    descriptionZh:
+      "幾何結構的幾何進程。玻璃帷幕上的微光暗示著寂靜而堅定的脈動，如同建築構件在黑暗中精確排列。壁爐框架無縫整合為幾何元素，遠處的城市天際線形成重複的網格圖案，為意志力提供穩固的節奏支撐。",
+    descriptionEn:
+      "Geometric progression of structure. The glimmer on the glass curtain wall hints at a quiet, steady pulse, as architectural elements precisely align in darkness. The fireplace frame integrates seamlessly as a geometric element, and the distant city skyline forms a repeating grid pattern, providing stable rhythmic support for willpower.",
+    themeScenario:
+      "從黑暗奢華行政套房望向全景窗戶的建築透視視角。場景以幾何圖案主導：網格式的窗戶、深色木質吊頂的線條、以及幾何陰影。遠處的夜景透過玻璃形成重複的幾何圖案。玻璃牆上微弱的低強度光帶暗示著寂靜、穩定的節奏。",
+    bpm: 85,
+    durationSeconds: 405,
+    media: {
+      audioUrl: "/audio/glass-meridian.mp3",
+      coverImageUrl: "/img/glass-meridian-cover.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental, dark premium minimal electronic, deep drone, exactly 85 BPM. Late-night executive office deep focus mood, calm and determined, steady energy level 4. Sub-bass driven groove, low-pass filtered synths, soft ambient noise simulating a soundproofed room. Muffled, brushed metal textures with a minimalist geometric sonic progression. Highly loop-friendly and smooth crossfade ready, designed for continuous hours of concentration. The track begins with an immersive aquatic-like pressure and ends by stripping away mid-high frequencies, leaving only a stable sub-bass pulse. Negative Prompts: no vocals, no vocal chops, no festival drop, no flashy lead hook, no busy drum fills, no sudden rhythmic changes, no distracting percussion, no emotional build-ups.",
+      imagePrompt:
+        "An architectural perspective shot looking down the length of a dark, luxurious executive suite toward a panoramic window. The scene is dominated by geometric patterns: the grid-like windows, the lines of a dark wood ceiling, and geometric shadows. The distant night skyline forms a repeating, grid-like pattern through the glass. A subtle, low-intensity light strip along a glass wall suggests a quiet, steady pulse and determined rhythm. The fireplace frame is integrated seamlessly as a geometric element. Precise, structured, and focused. No flashy elements. Photorealistic, dark mode friendly.",
+      videoPrompt: "",
+      generationPrompt: "minimal electronic 85 BPM executive suite geometric progression architectural perspective dark mode",
+    },
+    createdAt: "2026-07-06T07:38:00.000Z",
+  },
 ] as const;
 
 const trackCollectionsSeed = [
@@ -606,6 +723,10 @@ const trackCollectionsSeed = [
       "huangpu-afterhours-bridge",
       "walnut-river-focus",
       "blackglass-skyline-study",
+      "obsidian-tides",
+      "obsidian-depths",
+      "glass-blueprint",
+      "glass-meridian",
     ],
     tone: "cyan",
   },
@@ -626,6 +747,10 @@ const trackCollectionsSeed = [
       "huangpu-afterhours-bridge",
       "walnut-river-focus",
       "blackglass-skyline-study",
+      "obsidian-tides",
+      "obsidian-depths",
+      "glass-blueprint",
+      "glass-meridian",
     ],
     tone: "amber",
   },
@@ -677,6 +802,15 @@ const trackBatchesSeed = [
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-04T13:39:43.000Z",
     trackIds: ["the-initiation", "deep-submersion", "strategic-warmth"],
+  },
+  {
+    id: "batch-2026-07-06-ceo-deep-focus",
+    label: "07.06 上架",
+    title: "CEO Deep Focus 85 BPM 上架",
+    summary: "本輪上架的 4 首深度專注心流曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-06T07:38:00.000Z",
+    trackIds: ["obsidian-tides", "obsidian-depths", "glass-blueprint", "glass-meridian"],
   },
 ] as const;
 
