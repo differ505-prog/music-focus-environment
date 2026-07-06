@@ -20,18 +20,6 @@ import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
 import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
 import { Chip } from "@/components/ui-system";
 
-type TrackBpmReviewPanelProps = {
-  tracks: Track[];
-};
-
-export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
-  const [isScanning, setIsScanning] = useState(false);
-  const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
-  const [scanNotice, setScanNotice] = useState<string | null>(null);
-  const refreshTick = useTrackReviewSync();
-  const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
-  const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
-
   const detections = useMemo(() => readTrackBpmDetections(), [refreshTick]);
   const overrides = useMemo(() => readTrackReviewOverrides(), [refreshTick]);
   const reviewItems = useMemo(
@@ -236,6 +224,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   >
                     採用 {item.detection.detectedBpm} BPM
                   </button>
+                  <CustomBpmInput trackId={item.track.id} currentBpm={item.effectiveBpm} allowedBpms={item.allowedBpms} />
                   <button
                     type="button"
                     onClick={() => updateTrackReviewOverride(item.track.id, { ignoreBpmMismatch: true })}
@@ -255,5 +244,82 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             );
           })}
     </ReviewPanelShell>
+  );
+}
+
+type CustomBpmInputProps = {
+  trackId: string;
+  currentBpm: number;
+  allowedBpms: number[];
+};
+
+function CustomBpmInput({ trackId, currentBpm, allowedBpms }: CustomBpmInputProps) {
+  const [draft, setDraft] = useState<string>(String(currentBpm));
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  const parsedValue = Number.parseFloat(draft);
+  const isValidNumber = Number.isFinite(parsedValue) && parsedValue > 0;
+  const hasChanged = isValidNumber && Math.abs(parsedValue - currentBpm) >= 0.5;
+  const nearestLane = allowedBpms.length > 0
+    ? allowedBpms.reduce((closest, candidate) =>
+        Math.abs(candidate - parsedValue) < Math.abs(closest - parsedValue) ? candidate : closest,
+      allowedBpms[0])
+    : null;
+  const isWithinLane = nearestLane !== null && Math.abs(nearestLane - parsedValue) <= 0.5;
+
+  const handleApply = () => {
+    if (!isValidNumber) {
+      return;
+    }
+    updateTrackReviewOverride(trackId, {
+      bpm: Math.round(parsedValue * 10) / 10,
+      ignoreBpmMismatch: false,
+    });
+    setShowConfirm(false);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === "Enter" && hasChanged) {
+      event.preventDefault();
+      handleApply();
+    }
+  };
+
+  return (
+    <div className="inline-flex flex-wrap items-center gap-2">
+      <input
+        type="number"
+        inputMode="decimal"
+        step="0.1"
+        min="20"
+        max="300"
+        value={draft}
+        onChange={(event) => {
+          setDraft(event.target.value);
+          setShowConfirm(true);
+        }}
+        onKeyDown={handleKeyDown}
+        aria-label="自訂 BPM 數值"
+        className="w-20 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs text-white placeholder:text-white/36 focus:border-white/30 focus:outline-none"
+        placeholder="BPM"
+      />
+      {showConfirm && hasChanged && isValidNumber ? (
+        <button
+          type="button"
+          onClick={handleApply}
+          className={`rounded-full border px-3 py-2 text-xs transition ${
+            isWithinLane
+              ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100/84 hover:bg-emerald-300/16"
+              : "border-amber-300/20 bg-amber-300/10 text-amber-100/84 hover:bg-amber-300/16"
+          }`}
+        >
+          {isWithinLane
+            ? `套用 ${parsedValue.toFixed(1)}（符合路線）`
+            : nearestLane !== null
+              ? `套用 ${parsedValue.toFixed(1)}（會超出路線，最近 ${nearestLane}）`
+              : `套用 ${parsedValue.toFixed(1)}`}
+        </button>
+      ) : null}
+    </div>
   );
 }
