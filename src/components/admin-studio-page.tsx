@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useMemo, useState } from "react";
 
 import { AppSceneShell } from "@/components/app-scene-shell";
+import { Breadcrumb } from "@/components/breadcrumb";
 import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
 import { FilterBar } from "@/components/filter-bar";
 import { MediaCard } from "@/components/media-card";
@@ -130,6 +131,7 @@ export function AdminStudioPage() {
           visibleCount={filteredAssets.length}
           selectedCount={selectedAssets.length}
           activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
+          filteredAssets={filteredAssets}
           onToggleBpm={(bpm) =>
             setActiveBpms((current) => (current.includes(bpm) ? current.filter((item) => item !== bpm) : [...current, bpm]))
           }
@@ -140,6 +142,15 @@ export function AdminStudioPage() {
             })
           }
           onClearSelection={() => setSelectedIds([])}
+        />
+      </div>
+
+      <div className="mt-4">
+        <Breadcrumb
+          items={[
+            { label: "前台首頁", href: "/" },
+            { label: "管理工作台" },
+          ]}
         />
       </div>
 

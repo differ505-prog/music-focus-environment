@@ -1,15 +1,56 @@
 'use client';
 
+import { Download } from "lucide-react";
+
+import type { Track } from "@/types/music";
+
 type FilterBarProps = {
   bpmOptions: readonly number[];
   activeBpms: number[];
   visibleCount: number;
   selectedCount: number;
   activeCollectionLabel: string;
+  filteredAssets: Track[];
   onToggleBpm: (bpm: number) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
 };
+
+function exportTracksToCsv(tracks: Track[], filename: string) {
+  const headers = ["ID", "標題", "BPM", "調性", "時長(秒)", "Energy", "情緒標籤", "描述(ZH)", "描述(EN)"];
+  const rows = tracks.map((t) => [
+    t.id,
+    t.title,
+    t.bpm,
+    t.musicalKey,
+    t.durationSeconds,
+    t.energyLevel,
+    t.moodTags.join(";"),
+    t.copy.descriptionZh,
+    t.copy.descriptionEn,
+  ]);
+
+  const csvContent =
+    "data:text/csv;charset=utf-8," +
+    [headers, ...rows]
+      .map((row) =>
+        row
+          .map((cell) => {
+            const str = String(cell);
+            if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+              return `"${str.replace(/"/g, '""')}"`;
+            }
+            return str;
+          })
+          .join(","),
+      )
+      .join("\n");
+
+  const link = document.createElement("a");
+  link.href = encodeURI(csvContent);
+  link.download = filename;
+  link.click();
+}
 
 export function FilterBar({
   bpmOptions,
@@ -17,10 +58,15 @@ export function FilterBar({
   visibleCount,
   selectedCount,
   activeCollectionLabel,
+  filteredAssets,
   onToggleBpm,
   onSelectAll,
   onClearSelection,
 }: FilterBarProps) {
+  const handleExportCsv = () => {
+    const filename = `omnisonic-tracks-${activeCollectionLabel.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.csv`;
+    exportTracksToCsv(filteredAssets, filename);
+  };
   return (
     <section className="relative rounded-[28px] border border-fuchsia-400/14 bg-white/8 p-5 shadow-[0_32px_90px_rgba(6,8,20,0.44)] backdrop-blur-2xl md:p-6">
       <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-fuchsia-300/35 to-transparent" />
@@ -70,6 +116,16 @@ export function FilterBar({
               className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
             >
               清空清單
+            </button>
+            <button
+              type="button"
+              onClick={handleExportCsv}
+              className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm font-medium text-amber-50 transition hover:bg-amber-300/18"
+            >
+              <span className="inline-flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                匯出 CSV
+              </span>
             </button>
           </div>
           <p className="text-sm text-white/64">

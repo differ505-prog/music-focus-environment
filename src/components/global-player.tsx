@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { Waves } from "lucide-react";
+import { Volume2, VolumeX, Waves } from "lucide-react";
 
 import { bpmOptions, themePrograms } from "@/data/music-assets";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
@@ -34,6 +34,8 @@ type GlobalPlayerProps = {
   onPlayTrack: (assetId: string) => void;
   onToggleMinimize: () => void;
   onClose: () => void;
+  onVolumeChange: (volume: number) => void;
+  onPlaybackRateChange: (rate: number) => void;
 };
 
 function formatTime(value: number) {
@@ -75,9 +77,17 @@ export function GlobalPlayer({
   onPlayTrack,
   onToggleMinimize,
   onClose,
+  onVolumeChange,
+  onPlaybackRateChange,
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const [volume, setVolume] = useState(1);
+  const [showVolumeSlider, setShowVolumeSlider] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+
+  const playbackRateOptions = [0.75, 1, 1.25, 1.5] as const;
   const themeProgramMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
   const {
@@ -433,6 +443,50 @@ export function GlobalPlayer({
                 onNext={onNext}
                 onSeekBy={onSeekBy}
               />
+              <button
+                type="button"
+                onClick={() => onVolumeChange(volume === 0 ? 1 : 0)}
+                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12"
+                aria-label={volume === 0 ? "取消靜音" : "靜音"}
+              >
+                {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowSpeedMenu((current) => !current)}
+                  className={`rounded-full border p-3 text-xs font-medium transition ${
+                    playbackRate !== 1
+                      ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
+                      : "border-white/10 bg-white/8 text-white/72 hover:bg-white/12"
+                  }`}
+                  aria-label={`播放速度 ${playbackRate}x`}
+                >
+                  {playbackRate}x
+                </button>
+                {showSpeedMenu ? (
+                  <div className="absolute bottom-full right-0 mb-3 flex flex-col items-center gap-1 rounded-[20px] border border-white/10 bg-black/90 p-2 shadow-xl backdrop-blur-xl">
+                    {playbackRateOptions.map((rate) => (
+                      <button
+                        key={rate}
+                        type="button"
+                        onClick={() => {
+                          setPlaybackRate(rate);
+                          setShowSpeedMenu(false);
+                          onPlaybackRateChange(rate);
+                        }}
+                        className={`w-full rounded-[16px] border px-4 py-2 text-xs font-medium transition ${
+                          rate === playbackRate
+                            ? "border-fuchsia-400/35 bg-fuchsia-400/16 text-fuchsia-50"
+                            : "border-transparent bg-transparent text-white/72 hover:border-white/10 hover:bg-white/8 hover:text-white"
+                        }`}
+                      >
+                        {rate}x
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>
@@ -498,7 +552,7 @@ export function GlobalPlayer({
                 </div>
               </div>
               {currentTrack ? (
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
                   {showAdminDetails && sessionPlan ? (
                     <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
                       {sessionPlan.currentPhaseLabel}
@@ -599,6 +653,76 @@ export function GlobalPlayer({
               onNext={onNext}
               onSeekBy={onSeekBy}
             />
+
+            {/* Volume Control */}
+            <div className="relative ml-2">
+              <button
+                type="button"
+                onClick={() => setShowVolumeSlider((current) => !current)}
+                className="rounded-full border border-white/10 bg-white/8 p-3 text-white transition hover:bg-white/12"
+                aria-label={volume === 0 ? "取消靜音" : "靜音"}
+              >
+                {volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+              </button>
+              {showVolumeSlider ? (
+                <div className="absolute bottom-full right-0 mb-3 flex flex-col items-center gap-2 rounded-[20px] border border-white/10 bg-black/90 p-4 shadow-xl backdrop-blur-xl">
+                  <input
+                    type="range"
+                    min={0}
+                    max={1}
+                    step={0.01}
+                    value={volume}
+                    onChange={(e) => {
+                      const v = parseFloat(e.target.value);
+                      setVolume(v);
+                      onVolumeChange(v);
+                    }}
+                    className="h-28 w-6 appearance-none rounded-full border border-white/10 bg-white/8 accent-fuchsia-400"
+                    style={{ writingMode: "vertical-lr", direction: "rtl" }}
+                    aria-label="音量"
+                  />
+                  <span className="text-[11px] text-white/52">{Math.round(volume * 100)}%</span>
+                </div>
+              ) : null}
+            </div>
+
+            {/* Speed Control */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowSpeedMenu((current) => !current)}
+                className={`rounded-full border p-3 text-xs font-medium transition ${
+                  playbackRate !== 1
+                    ? "border-fuchsia-300/35 bg-fuchsia-400/16 text-fuchsia-50"
+                    : "border-white/10 bg-white/8 text-white/72 hover:bg-white/12 hover:text-white"
+                }`}
+                aria-label={`播放速度 ${playbackRate}x`}
+              >
+                {playbackRate}x
+              </button>
+              {showSpeedMenu ? (
+                <div className="absolute bottom-full right-0 mb-3 flex flex-col items-center gap-1 rounded-[20px] border border-white/10 bg-black/90 p-2 shadow-xl backdrop-blur-xl">
+                  {playbackRateOptions.map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => {
+                        setPlaybackRate(rate);
+                        setShowSpeedMenu(false);
+                        onPlaybackRateChange(rate);
+                      }}
+                      className={`w-full rounded-[16px] border px-4 py-2 text-xs font-medium transition ${
+                        rate === playbackRate
+                          ? "border-fuchsia-400/35 bg-fuchsia-400/16 text-fuchsia-50"
+                          : "border-transparent bg-transparent text-white/72 hover:border-white/10 hover:bg-white/8 hover:text-white"
+                      }`}
+                    >
+                      {rate}x
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </div>
 
           {showAdminDetails && sessionPlan ? (

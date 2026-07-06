@@ -44,6 +44,8 @@ type PlaybackContextValue = {
   startRandomSession: (assetIds: string[]) => void;
   playPause: () => void;
   toggleRepeat: () => void;
+  setVolume: (volume: number) => void;
+  setPlaybackRate: (rate: number) => void;
 };
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
@@ -147,6 +149,64 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     setPendingPlayId(null);
   }, [pendingPlayId, selectedAssets]);
 
+  // Global keyboard shortcuts for player control
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") {
+        return;
+      }
+
+      switch (e.code) {
+        case "Space": {
+          e.preventDefault();
+          if (playback.isPlaying) {
+            controllerRef.current?.pause();
+          } else {
+            controllerRef.current?.play();
+          }
+          break;
+        }
+        case "ArrowRight": {
+          e.preventDefault();
+          controllerRef.current?.seekBy(10);
+          break;
+        }
+        case "ArrowLeft": {
+          e.preventDefault();
+          controllerRef.current?.seekBy(-10);
+          break;
+        }
+        case "ArrowUp": {
+          e.preventDefault();
+          controllerRef.current?.previous();
+          break;
+        }
+        case "ArrowDown": {
+          e.preventDefault();
+          controllerRef.current?.next();
+          break;
+        }
+        case "KeyM": {
+          e.preventDefault();
+          controllerRef.current?.toggleMute();
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [playback.isPlaying]);
+
   const toggleAsset = (assetId: string) => {
     setSelectedIds((current) => {
       return current.includes(assetId) ? current.filter((item) => item !== assetId) : [...current, assetId];
@@ -223,6 +283,14 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
     controllerRef.current?.setRepeatEnabled(!playback.repeatEnabled);
   };
 
+  const setVolume = (volume: number) => {
+    controllerRef.current?.setVolume(volume);
+  };
+
+  const setPlaybackRate = (rate: number) => {
+    controllerRef.current?.setPlaybackRate(rate);
+  };
+
   const value = useMemo<PlaybackContextValue>(
     () => ({
       selectedIds,
@@ -238,6 +306,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
       startRandomSession,
       playPause,
       toggleRepeat,
+      setVolume,
+      setPlaybackRate,
     }),
     [selectedIds, selectedAssets, currentTrack, nextTrack, autoDjPlan, playback],
   );
@@ -266,6 +336,8 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
             setIsPlayerOpen(false);
             setIsPlayerMinimized(true);
           }}
+          onVolumeChange={setVolume}
+          onPlaybackRateChange={setPlaybackRate}
         />
       ) : (
         <button

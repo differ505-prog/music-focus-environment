@@ -49,6 +49,7 @@ export class HowlerPlaylistController {
   private prefersBackgroundPlayback: boolean;
   private playbackEngine: PlaybackSnapshot["engine"];
   private repeatEnabled = true;
+  private mutedVolume: number | null = null;
 
   constructor(options: PlaylistControllerOptions = {}) {
     this.onStateChange = options.onStateChange;
@@ -177,6 +178,44 @@ export class HowlerPlaylistController {
     this.resetPreparedNextHowlIfMismatch();
     this.primeUpcomingTrack();
     this.emitState();
+  }
+
+  setVolume(volume: number) {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    this.currentHowl?.volume(clampedVolume);
+    this.nextHowl?.volume(clampedVolume);
+    this.preparedNextHowl?.volume(clampedVolume);
+  }
+
+  getVolume() {
+    return this.currentHowl?.volume() ?? 1;
+  }
+
+  setPlaybackRate(rate: number) {
+    const clampedRate = Math.max(0.5, Math.min(2, rate));
+    this.currentHowl?.rate(clampedRate);
+    this.nextHowl?.rate(clampedRate);
+    this.preparedNextHowl?.rate(clampedRate);
+  }
+
+  getPlaybackRate() {
+    return this.currentHowl?.rate() ?? 1;
+  }
+
+  toggleMute() {
+    const currentVolume = this.currentHowl?.volume() ?? 1;
+
+    if (currentVolume > 0) {
+      this.mutedVolume = currentVolume;
+      this.currentHowl?.volume(0);
+      this.nextHowl?.volume(0);
+      this.preparedNextHowl?.volume(0);
+    } else {
+      const restoredVolume = this.mutedVolume ?? 1;
+      this.currentHowl?.volume(restoredVolume);
+      this.nextHowl?.volume(restoredVolume);
+      this.preparedNextHowl?.volume(restoredVolume);
+    }
   }
 
   seekTo(seconds: number) {

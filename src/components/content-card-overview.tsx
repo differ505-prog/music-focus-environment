@@ -1,3 +1,7 @@
+'use client';
+
+import { Chip } from '@/components/ui-system';
+
 type ContentCardOverviewProps = {
   eyebrow: string;
   title: string;
@@ -31,14 +35,11 @@ export function ContentCardOverview({
         <p className={`mt-3 text-sm leading-6 text-white/66 ${descriptionClassName}`.trim()}>{description}</p>
       ) : null}
       {metaItems.length > 0 ? (
-        <div className={`mt-4 flex flex-wrap gap-2 text-xs text-white/60 ${metaListClassName}`.trim()}>
+        <div className={`mt-4 flex flex-wrap gap-2 ${metaListClassName}`.trim()}>
           {metaItems.map((item) => (
-            <span
-              key={`${title}-${item}`}
-              className={`rounded-full border border-white/10 bg-black/20 px-3 py-1.5 ${metaItemClassName}`.trim()}
-            >
+            <Chip key={`${title}-${item}`} className={metaItemClassName}>
               {item}
-            </span>
+            </Chip>
           ))}
         </div>
       ) : null}
