@@ -468,8 +468,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     const currentModuleOutput = combineModuleOutputs(programId, targetPromptModule, nextOutputs);
 
     if (!currentModuleOutput.trim()) {
-      setFeedback(moduleKey, '目前沒有可儲存內容，請先把 AI 回傳結果貼到下方輸出框');
-      focusModuleFirstOutput(programId, moduleId);
+      setFeedback(moduleKey, '內容為空');
       return;
     }
 
@@ -490,25 +489,25 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     setFeedback(
       moduleKey,
       targetPromptModule.autoAdvanceToNext && nextModule
-        ? '已儲存，並自動預填到下一步工作框'
+        ? '已預填至下一步'
         : getModuleOutputSlotCount(targetPromptModule) > 1
-          ? '已儲存此步驟全部候選結果'
-          : '已儲存，可供後續步驟取用',
+          ? '已儲存'
+          : '已儲存',
     );
 
     if (targetPromptModule.autoAdvanceToNext && nextModule) {
       setFeedback(
         buildModuleKey(programId, nextModule.id),
         nextModule.inputMode === 'low_input_auto_context'
-          ? '已接收上一步結果，並自動組裝低輸入內容'
-          : '已接收上一步結果，工作框已自動預填',
+          ? '已自動組裝'
+          : '已預填',
       );
     }
   };
 
   const handleCopyText = async (feedbackKey: string, value: string, successMessage: string) => {
     if (!value.trim()) {
-      setFeedback(feedbackKey, '目前沒有可複製內容');
+      setFeedback(feedbackKey, '無內容');
       return;
     }
 
@@ -517,7 +516,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     if (copied) {
       setFeedback(feedbackKey, successMessage);
     } else {
-      setFeedback(feedbackKey, '複製失敗，請改用手動複製');
+      setFeedback(feedbackKey, '複製失敗');
     }
   };
 
@@ -528,7 +527,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     if (missingUpstreamModules.length > 0) {
       setFeedback(
         buildModuleKey(program.id, targetModule.id),
-        `請先完成並儲存 ${missingUpstreamModules.map((module) => module.title).join(' / ')}`,
+        `待補 ${missingUpstreamModules.map((module) => module.title).join(' / ')}`,
       );
       return;
     }
@@ -548,14 +547,12 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     if (copied) {
       setFeedback(
         buildModuleKey(program.id, targetModule.id),
-        hasUpstreamPayload
-          ? '已帶入工作框，並直接複製到剪貼簿'
-          : '已帶入模板並複製；待上一步內容補齊後會自動更新',
+        hasUpstreamPayload ? '已複製' : '已複製，模板待填充',
       );
     } else {
       setFeedback(
         buildModuleKey(program.id, targetModule.id),
-        hasUpstreamPayload ? '已帶入工作框，可直接取用或再編輯' : '已帶入模板；待上一步內容補齊後會自動更新',
+        hasUpstreamPayload ? '已預填' : '已預填，待填充',
       );
     }
   };
@@ -574,9 +571,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     const copied = await copyTextToClipboard(assembledPrompt);
 
     if (copied) {
-      setFeedback(buildModuleKey(program.id, targetModule.id), '已自動帶入工作框，並直接複製到剪貼簿');
+      setFeedback(buildModuleKey(program.id, targetModule.id), '已複製');
     } else {
-      setFeedback(buildModuleKey(program.id, targetModule.id), '已自動帶入工作框');
+      setFeedback(buildModuleKey(program.id, targetModule.id), '已預填');
     }
   };
 
@@ -662,8 +659,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       <div className="mb-5">
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">主題手冊</p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">主題管理</h2>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-white/66">
-          常用步驟已集中在前面，其餘說明可展開查看。每一步都可貼上、儲存並接續使用。
+        <p className="mt-3 text-sm leading-7 text-white/66">
+          每個程式包含四個步驟式 Prompt 模組，已儲存的內容將自動帶入後續環節。
         </p>
       </div>
 
@@ -711,9 +708,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-cyan-100/60">製作步驟</p>
-                  <p className="mt-2 text-xs leading-6 text-cyan-50/72">
-                    常用步驟集中在這裡。先生成、貼上並儲存，後續可直接接著做。
-                  </p>
+                  <p className="mt-2 text-xs leading-6 text-cyan-50/72">按序完成，儲存的內容將自動帶入下一步</p>
                 </div>
                 <div className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.24em] text-cyan-50/74">
                   常用
@@ -741,7 +736,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                     >
                       <span className="font-mono tabular-nums">{String(moduleIndex + 1).padStart(2, '0')}</span>
                       <span className="max-w-[8rem] truncate">{module.title}</span>
-                      {isDone && <span className="opacity-60">✓</span>}
+                      {isDone && <span className="opacity-50" aria-hidden>✓</span>}
                     </button>
                   );
                 })}
@@ -750,14 +745,14 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
               {/* All-done celebration */}
               {isAllStepsComplete(program) && (
                 <div className="mt-4 rounded-[16px] border border-emerald-300/28 bg-emerald-300/10 p-4">
-                  <p className="text-xs font-medium uppercase tracking-widest text-emerald-100/85">全部步驟完成</p>
+                  <p className="text-xs font-medium uppercase tracking-widest text-emerald-100/85">全部完成</p>
                   <p className="mt-2 text-sm leading-6 text-emerald-50/78">
-                    所有 Prompt 已完成，可隨時回到任意步驟重新編輯。已儲存的內容會自動帶入。
+                    已完成全部四個步驟，可回到任意步驟重新編輯，已儲存的內容將自動帶入
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={() => handleCopyText(`${program.id}::all-outputs`, program.promptModules.map((m) => combineModuleOutputs(program.id, m, moduleOutputs)).join('\n\n---\n\n'), '全部步驟結果已複製')}
+                      onClick={() => handleCopyText(`${program.id}::all-outputs`, program.promptModules.map((m) => combineModuleOutputs(program.id, m, moduleOutputs)).join('\n\n---\n\n'), '已複製')}
                       className="rounded-full border border-emerald-300/28 bg-emerald-300/10 px-4 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/16"
                     >
                       一次複製全部結果
@@ -770,7 +765,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                       }}
                       className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-white/72 transition hover:bg-white/12"
                     >
-                      回到第一步重做
+                      回到第一步
                     </button>
                   </div>
                 </div>
@@ -809,11 +804,11 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         </span>
                         <span className="min-w-0 flex-1 truncate text-sm text-white/58">{module.title}</span>
                         {hasSavedCurrentModuleOutput ? (
-                          <span className="shrink-0 text-[11px] text-emerald-400/80">已完成 ✓</span>
+                          <span className="shrink-0 text-[11px] text-emerald-400/80">已完成</span>
                         ) : hasMissingUpstreamModules ? (
                           <span className="shrink-0 text-[11px] text-amber-400/80">待補</span>
                         ) : (
-                          <span className="shrink-0 text-[11px] text-white/36">未開始</span>
+                          <span className="shrink-0 text-[11px] text-white/36">待開始</span>
                         )}
                       </button>
                     );
@@ -853,12 +848,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
 
                       {moduleIndex === 0 ? (
                         <div className="mb-4 rounded-[14px] border border-amber-300/14 bg-[#181208]/84 p-4">
-                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">下一步說明</p>
+                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">操作說明</p>
                           <p className="mt-2 text-xs leading-6 text-amber-50/78">
-                            Module 02 讀取的是下方「此步驟輸出」已儲存內容，不是上面的模板。請把 AI 回傳的 brief 貼到下方，再按「儲存此步驟結果」。
-                          </p>
-                          <p className="mt-2 text-xs leading-6 text-amber-50/68">
-                            {hasSavedCurrentModuleOutput ? '目前狀態：已儲存，可供下一步帶入。' : '目前狀態：尚未儲存，下一步會顯示待補提示。'}
+                            將 AI 回傳內容貼至下方輸出區，再儲存以供後續步驟取用
                           </p>
                         </div>
                       ) : null}
@@ -867,34 +859,36 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <div className="mb-4 rounded-[14px] border border-fuchsia-400/12 bg-[#120d21]/70 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">自動組裝工作指令</p>
-                              <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
-                                {hasMissingUpstreamModules
-                                  ? `尚未取得 ${missingUpstreamModules.map((item) => item.title).join(' / ')} 的已儲存結果。`
-                                  : '這一框會把前一步已儲存內容自動帶入模板，直接複製給 AI 使用。'}
-                              </p>
+                              <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">工作指令</p>
+                              {hasMissingUpstreamModules && (
+                                <p className="mt-2 text-xs leading-6 text-amber-50/74">
+                                  待補：{missingUpstreamModules.map((item) => item.title).join(' / ')}
+                                </p>
+                              )}
                             </div>
                             <div className="flex flex-wrap gap-2">
                               <button
                                 type="button"
                                 onClick={() => toggleWorking(program.id, module.id)}
+                                title={isWorkingCollapsed(program.id, module.id) ? '展開工作指令區' : '收合工作指令區'}
                                 className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/60 transition hover:bg-white/12"
                               >
                                 {isWorkingCollapsed(program.id, module.id) ? '展開' : '收合'}
                               </button>
                               <button
                                 type="button"
+                                title={hasMissingUpstreamModules ? `需先完成 ${missingUpstreamModules[0].title}` : '複製工作指令至剪貼簿'}
                                 onClick={() =>
                                   hasMissingUpstreamModules
                                     ? (() => {
-                                        setFeedback(moduleKey, `請先完成並儲存 ${missingUpstreamModules[0].title}`);
+                                        setFeedback(moduleKey, `待補 ${missingUpstreamModules[0].title}`);
                                         focusModuleFirstOutput(program.id, missingUpstreamModules[0].id);
                                       })()
-                                    : handleCopyText(`${moduleKey}::working-prompt`, workingPromptValue, '自動組裝工作指令已複製')
+                                    : handleCopyText(`${moduleKey}::working-prompt`, workingPromptValue, '已複製')
                                 }
                                 className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] text-fuchsia-50/82 transition hover:bg-fuchsia-400/14"
                               >
-                                {hasMissingUpstreamModules ? `前往 ${missingUpstreamModules[0].title}` : '複製此框'}
+                                {hasMissingUpstreamModules ? `前往 ${missingUpstreamModules[0].title}` : '複製指令'}
                               </button>
                             </div>
                           </div>
@@ -911,16 +905,16 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
 
                       {isLowInputModule ? (
                         <div className="mb-4 rounded-[14px] border border-amber-300/12 bg-[#151108]/80 p-4">
-                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">少量補充</p>
+                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">補充資料</p>
                           <p className="mt-2 text-xs leading-6 text-amber-50/76">
-                            {module.autoAssembleNote ?? '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
+                            {module.autoAssembleNote ?? '前步已自動整理，只需補充外部連結與特殊覆寫欄位'}
                           </p>
                           <div className="mt-4">
-                            <p className="text-xs uppercase tracking-widest text-white/48">{module.supplementalLabel ?? '少量補充資料'}</p>
+                            <p className="text-xs uppercase tracking-widest text-white/48">{module.supplementalLabel ?? '補充欄位'}</p>
                             <textarea
                               value={supplementalInput}
                               onChange={(event) => handleSupplementalInputChange(program.id, module.id, event.target.value)}
-                              placeholder={module.supplementalPlaceholder ?? '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'}
+                              placeholder={module.supplementalPlaceholder ?? 'audioUrl / coverImageUrl / backgroundVideoUrl / durationSeconds'}
                               className="mt-3 min-h-24 w-full rounded-[14px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
                             />
                           </div>
@@ -942,12 +936,14 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <button
                           type="button"
                           onClick={() => handleCopyText(`${moduleKey}::template`, module.template, '模板已複製')}
+                          title="複製 Prompt 模板至剪貼簿"
                           className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/72 transition hover:bg-white/12"
                         >
                           複製模板
                         </button>
                         <button
                           type="button"
+                          title={canInsertUpstream ? '帶入前一步已儲存內容並複製' : '尚無上游內容'}
                           onClick={() =>
                             isLowInputModule ? handleAssembleLowInput(program, moduleIndex) : handleInsertUpstream(program, moduleIndex)
                           }
@@ -960,25 +956,26 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                           {hasMissingUpstreamModules
                             ? '先完成上一步'
                             : isLowInputModule
-                              ? '帶入並複製前面內容'
-                              : '帶入並複製上一步內容'}
+                              ? '帶入並複製'
+                              : '帶入並複製'}
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleCopyText(`${moduleKey}::output`, combinedOutput, '此步驟結果已複製')}
+                          onClick={() => handleCopyText(`${moduleKey}::output`, combinedOutput, '已複製')}
+                          title="複製此步驟已儲存結果至剪貼簿"
                           className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/14"
                         >
-                          複製此步驟全部結果
+                          複製結果
                         </button>
                       </div>
 
                       {upstreamPayload ? (
                         <div className="mb-4 rounded-[14px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
-                          <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">已帶入前一步內容</p>
+                          <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">上游內容</p>
                           <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
                             {isLowInputModule
-                              ? '前面步驟的結果已可直接帶進這一步，減少手動整理。'
-                              : '前面步驟的結果已可直接帶進這一步，避免重複貼資料。'}
+                              ? '前步已整理，可直接取用'
+                              : '前步已整合，無需重複操作'}
                           </p>
                         </div>
                       ) : null}
@@ -988,26 +985,23 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                           <p className="text-[11px] uppercase tracking-widest text-white/48">
                             {isLowInputModule
-                              ? '帶入後編輯區'
+                              ? '帶入後編輯'
                               : slotCount > 1
-                                ? `此步驟輸出（${slotCount} 組候選）`
-                                : '此步驟輸出'}
+                                ? `候選 ${slotCount}`
+                                : '輸出'}
                           </p>
                           <div className="flex flex-wrap gap-2">
                             <button
                               type="button"
+                              title={isOutputCollapsed(program.id, module.id) ? '展開輸出區' : '收合輸出區'}
                               onClick={() => toggleOutput(program.id, module.id)}
                               className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/60 transition hover:bg-white/12"
                             >
                               {isOutputCollapsed(program.id, module.id) ? '展開' : '收合'}
                             </button>
-                            <span className="text-xs text-cyan-50/64">
-                              {feedback ??
-                                feedbackMap[`${moduleKey}::working-prompt`] ??
-                                feedbackMap[`${moduleKey}::template`] ??
-                                feedbackMap[`${moduleKey}::output`] ??
-                                (isOutputCollapsed(program.id, module.id) ? '已折疊' : '可貼上 AI 生成結果')}
-                            </span>
+                            {feedback && (
+                              <span title={feedback} className="max-w-32 truncate text-[11px] text-cyan-50/60">{feedback}</span>
+                            )}
                           </div>
                         </div>
                         <div className="grid gap-3">
@@ -1019,21 +1013,22 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                               <div key={slotKey} className="min-w-0 overflow-hidden rounded-[14px] border border-white/8 bg-[#04070c]/70 p-3">
                                 <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                                   <p className="text-xs uppercase tracking-widest text-white/48">{slotLabel}</p>
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      handleCopyText(`${slotKey}::output`, moduleOutputs[slotKey] ?? '', `${slotLabel} 已複製`)
-                                    }
-                                    className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
-                                  >
-                                    複製此框
-                                  </button>
+                          <button
+                            type="button"
+                            title="複製此輸出框至剪貼簿"
+                            onClick={() =>
+                              handleCopyText(`${slotKey}::output`, moduleOutputs[slotKey] ?? '', `${slotLabel} 已複製`)
+                            }
+                            className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
+                          >
+                            複製
+                          </button>
                                 </div>
                                 <textarea
                                   id={buildModuleTextareaId(program.id, module.id, slotIndex)}
                                   value={moduleOutputs[slotKey] ?? ''}
                                   onChange={(event) => handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)}
-                                  placeholder={`把 ${slotLabel} 貼在這裡，儲存後可供後面步驟直接插入或複製。`}
+                                  placeholder={`AI 回傳結果 ${slotIndex + 1}`}
                                   className="min-h-36 w-full rounded-[14px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
                                 />
                               </div>
@@ -1042,20 +1037,21 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         </div>
                         {isOutputCollapsed(program.id, module.id) ? (
                           <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-cyan-50/48">
-                            <span>{slotCount > 1 ? `${slotCount} 個候選輸出框` : '1 個輸出框'}</span>
+                            <span>{slotCount > 1 ? `${slotCount} 個候選` : '1 個輸出'}</span>
                             {hasSavedCurrentModuleOutput && (
                               <span className="rounded-full border border-emerald-300/22 bg-emerald-300/8 px-2 py-0.5 text-emerald-400/80">
-                                已儲存 ✓
+                                已儲存
                               </span>
                             )}
                             {moduleOutputs[buildModuleSlotKey(program.id, module.id, 0)]?.trim() && (
-                              <span className="text-white/32">有草稿內容</span>
+                              <span className="text-white/32">草稿</span>
                             )}
                           </div>
                         ) : (
                           <div className="mt-3 flex flex-wrap items-center gap-2">
                             <button
                               type="button"
+                              title={hasSavedCurrentModuleOutput ? '已儲存，點擊可重新儲存' : '儲存此步驟已貼入的 AI 回傳內容'}
                               onClick={() => handleSaveModuleOutput(program.id, module.id)}
                               className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
                                 hasSavedCurrentModuleOutput
@@ -1063,17 +1059,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                   : 'border-white/10 bg-white/8 text-white/82 hover:bg-white/12'
                               }`}
                             >
-                              {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
+                              儲存
                             </button>
-                            <span className="text-xs text-white/45">
-                              {hasSavedCurrentModuleOutput
-                                ? slotCount > 1
-                                  ? '已可重新儲存；後續模組會讀取這兩組候選內容。'
-                                  : '已可重新儲存；後續模組會讀取這份內容。'
-                                : slotCount > 1
-                                  ? '請先把 AI 回傳的候選內容貼到下方輸出框，再儲存。'
-                                  : '請先把 AI 回傳內容貼到下方輸出框，再儲存。'}
-                            </span>
                           </div>
                         )}
                       </div>
