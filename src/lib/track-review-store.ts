@@ -58,8 +58,80 @@ export type TrackTransitionReviewItem = {
   diffSeconds: number;
 };
 
+export type TrackOverrideHistoryItem = {
+  track: Track;
+  baseTrack: Track;
+  override: TrackReviewOverride;
+  effectiveBpm: number;
+  baseBpm: number;
+  effectiveThemeProgramId: string;
+  baseThemeProgramId: string | null;
+  effectiveProgramTitle: string;
+  baseProgramTitle: string;
+  mixInChanged: boolean;
+  baseMixInPointSeconds: number;
+  effectiveMixInPointSeconds: number;
+  reviewedAt: string | null;
+};
+
 function isPresent<T>(value: T | null | undefined): value is T {
   return value != null;
+}
+
+export function hasTrackReviewOverride(trackId: string): boolean {
+  const overrides = readTrackReviewOverrides();
+  return Boolean(overrides[trackId]);
+}
+
+export function buildTrackOverrideHistoryItems(
+  trackList: readonly Track[] = baseTracks,
+  programs: readonly ThemeProgram[] = themePrograms,
+  overrides: Record<string, TrackReviewOverride> = readTrackReviewOverrides(),
+) {
+  const programMap = new Map(programs.map((program) => [program.id, program] as const));
+  const baseTrackMap = new Map(baseTracks.map((track) => [track.id, track] as const));
+
+  return trackList
+    .map((track): TrackOverrideHistoryItem | null => {
+      const override = overrides[track.id];
+
+      if (!override) {
+        return null;
+      }
+
+      const baseTrack = baseTrackMap.get(track.id) ?? track;
+      const baseThemeProgramId = baseTrack.themeProgramId ?? null;
+      const effectiveThemeProgramId = override.themeProgramId ?? baseThemeProgramId ?? "";
+      const effectiveProgram = programMap.get(effectiveThemeProgramId) ?? null;
+      const baseProgram = baseThemeProgramId ? programMap.get(baseThemeProgramId) ?? null : null;
+
+      return {
+        track,
+        baseTrack,
+        override,
+        effectiveBpm: override.bpm ?? track.bpm,
+        baseBpm: baseTrack.bpm,
+        effectiveThemeProgramId,
+        baseThemeProgramId,
+        effectiveProgramTitle: effectiveProgram?.title ?? "未指定路線",
+        baseProgramTitle: baseProgram?.title ?? "未指定路線",
+        mixInChanged: override.mixInPointSeconds != null && override.mixInPointSeconds !== baseTrack.transition.mixInPointSeconds,
+        baseMixInPointSeconds: baseTrack.transition.mixInPointSeconds,
+        effectiveMixInPointSeconds: override.mixInPointSeconds ?? track.transition.mixInPointSeconds,
+        reviewedAt: override.reviewedAt ?? null,
+      };
+    })
+    .filter(isPresent)
+    .sort((left, right) => {
+      const leftTime = left.reviewedAt ? Date.parse(left.reviewedAt) : 0;
+      const rightTime = right.reviewedAt ? Date.parse(right.reviewedAt) : 0;
+
+      if (rightTime !== leftTime) {
+        return rightTime - leftTime;
+      }
+
+      return left.track.title.localeCompare(right.track.title);
+    });
 }
 
 const TRACK_BPM_DETECTIONS_STORAGE_KEY = "track-bpm-detections-v1";
