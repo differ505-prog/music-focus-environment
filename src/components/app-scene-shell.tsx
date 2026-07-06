@@ -38,7 +38,10 @@ export function AppSceneShell({
               backgroundAttachment: 'scroll',
               backgroundRepeat: 'no-repeat',
             }
-          : {}
+          : {
+              backgroundImage:
+                'radial-gradient(ellipse at 20% 10%, rgba(160, 30, 200, 0.3) 0%, transparent 55%), radial-gradient(ellipse at 75% 60%, rgba(30, 140, 200, 0.25) 0%, transparent 50%), linear-gradient(180deg, #0a0414 0%, #080310 60%, #050208 100%)',
+            }
       }
     >
       {/* Background image loader with fallback */}
