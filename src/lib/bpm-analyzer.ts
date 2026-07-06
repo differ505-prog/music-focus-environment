@@ -211,14 +211,25 @@ function resolveReferenceBpm(
   }
 
   // Strategy A: metadataBpm match. We use a wider tolerance (REFERENCE_MATCH_TOLERANCE_BPM = 5)
-  // to absorb half/double BPM quantization errors. This rescues low-confidence detections such as
-  // rawDetectedBpm=82 for a track whose metadataBpm=85.
+  // to absorb half/double BPM quantization errors.
   if (typeof metadataBpm === "number") {
     const candidatesNearMetadata = Array.from(allCandidateBpms).filter(
       (bpm) => Math.abs(bpm - metadataBpm) <= REFERENCE_MATCH_TOLERANCE_BPM,
     );
 
     if (candidatesNearMetadata.length > 0) {
+      return metadataBpm;
+    }
+
+    // Low-confidence fallback: when the detector is unsure (< 0.4) AND a metadataBpm is provided
+    // AND that metadataBpm is one of the allowed lanes, trust the metadata over the noisy raw
+    // candidate. This handles tracks where the detector picks up ghost tempo multiples (e.g. 105
+    // for an 85 BPM track whose detected envelope happens to peak at 4/5 the true tempo).
+    if (
+      confidence < 0.4 &&
+      allowedBpms.length > 0 &&
+      allowedBpms.includes(metadataBpm)
+    ) {
       return metadataBpm;
     }
   }
