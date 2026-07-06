@@ -1,7 +1,11 @@
-import type { ReactNode } from "react";
+'use client';
 
-import { generatedSceneImageUrl } from "@/data/music-assets";
-import { StudioNav } from "@/components/studio-nav";
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+
+import { generatedSceneImageUrl } from '@/data/music-assets';
+import { StudioNav } from '@/components/studio-nav';
+import { SmartPlaceholder } from '@/components/ui-system';
 
 type AppSceneShellProps = {
   eyebrow: string;
@@ -20,15 +24,45 @@ export function AppSceneShell({
   badges = [],
   children,
 }: AppSceneShellProps) {
+  const [imageErrored, setImageErrored] = useState(false);
+
   return (
     <main
       className="relative min-h-screen overflow-hidden bg-[#02060b] text-white"
-      style={{
-        backgroundImage: `linear-gradient(180deg, rgba(5,3,11,0.66), rgba(2,5,15,0.94)), url("${generatedSceneImageUrl}")`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-      }}
+      style={
+        !imageErrored
+          ? {
+              backgroundImage: `linear-gradient(180deg, rgba(5,3,11,0.66), rgba(2,5,15,0.94)), url("${generatedSceneImageUrl}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : {}
+      }
     >
+      {/* Background image loader with fallback */}
+      {!imageErrored && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={generatedSceneImageUrl}
+          alt=""
+          aria-hidden="true"
+          className="hidden"
+          onError={() => setImageErrored(true)}
+        />
+      )}
+
+      {/* Fallback: Smart Placeholder Background */}
+      {imageErrored && (
+        <div className="absolute inset-0 z-0">
+          <SmartPlaceholder
+            width={1920}
+            height={1080}
+            label="Background Scene"
+            aiPrompt="Cinematic music studio atmosphere, dark ambient lighting with purple and cyan neon glow, minimalist furniture, professional audio equipment, moody atmospheric photography"
+            className="h-full w-full"
+          />
+        </div>
+      )}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(192,38,211,0.22),transparent_28%),radial-gradient(circle_at_right,rgba(34,211,238,0.18),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(236,72,153,0.12),transparent_28%)]" />
       <div className="absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.04)_0%,transparent_22%,transparent_80%,rgba(255,255,255,0.03)_100%)]" />
 

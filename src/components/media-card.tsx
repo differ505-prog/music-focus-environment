@@ -1,13 +1,14 @@
 'use client';
 
-import Image from "next/image";
-import { useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Headphones, Plus, Sparkles } from "lucide-react";
+import Image from 'next/image';
+import { useMemo, useState } from 'react';
+import { ChevronDown, ChevronUp, Headphones, Plus, Sparkles } from 'lucide-react';
 
-import { ContentCardOverview } from "@/components/content-card-overview";
-import { generatedSceneImageUrl, trackBatches, trackCollections } from "@/data/music-assets";
-import type { BpmCompatibility } from "@/lib/bpm-lanes";
-import type { Track } from "@/types/music";
+import { ContentCardOverview } from '@/components/content-card-overview';
+import { SmartPlaceholder } from '@/components/ui-system';
+import { trackBatches, trackCollections } from '@/data/music-assets';
+import type { BpmCompatibility } from '@/lib/bpm-lanes';
+import type { Track } from '@/types/music';
 
 type MediaCardProps = {
   asset: Track;
@@ -35,8 +36,12 @@ export function MediaCard({
   const [isAdminExpanded, setIsAdminExpanded] = useState(false);
 
   const imageSrc = useMemo(() => {
-    return imageErrored ? generatedSceneImageUrl : asset.media.coverImageUrl;
+    return imageErrored ? null : asset.media.coverImageUrl;
   }, [asset.media.coverImageUrl, imageErrored]);
+
+  const fallbackPrompt = useMemo(() => {
+    return `${asset.title} ${asset.moodTags.slice(0, 2).join(' ')} music scene`;
+  }, [asset]);
 
   const collectionLabels = useMemo(() => {
     return (asset.collectionIds ?? [])
@@ -66,25 +71,37 @@ export function MediaCard({
       <div className="pointer-events-none absolute -inset-x-6 -top-10 h-32 bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_62%)] opacity-70 blur-2xl transition duration-700 group-hover:opacity-100" />
       <div className="relative">
         <div className="relative overflow-hidden rounded-[26px] border border-white/10 bg-black/24 shadow-[0_22px_60px_rgba(0,0,0,0.34)]">
-          <div className="pointer-events-none absolute inset-0 scale-110">
+          {imageSrc ? (
+            <div className="pointer-events-none absolute inset-0 scale-110">
+              <Image
+                src={imageSrc}
+                alt=""
+                aria-hidden="true"
+                fill
+                sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
+                className="object-cover opacity-24 blur-3xl saturate-[1.1]"
+              />
+            </div>
+          ) : null}
+          {imageSrc ? (
             <Image
               src={imageSrc}
-              alt=""
-              aria-hidden="true"
-              fill
+              alt={asset.title}
+              width={1200}
+              height={720}
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-              className="object-cover opacity-24 blur-3xl saturate-[1.1]"
+              className="h-56 w-full object-cover transition duration-700 group-hover:scale-[1.04] group-hover:saturate-[1.08]"
+              onError={() => setImageErrored(true)}
             />
-          </div>
-          <Image
-            src={imageSrc}
-            alt={asset.title}
-            width={1200}
-            height={720}
-            sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 33vw"
-            className="h-56 w-full object-cover transition duration-700 group-hover:scale-[1.04] group-hover:saturate-[1.08]"
-            onError={() => setImageErrored(true)}
-          />
+          ) : (
+            <SmartPlaceholder
+              width={1200}
+              height={720}
+              label={`${asset.title}`}
+              aiPrompt={fallbackPrompt}
+              className="h-56 w-full"
+            />
+          )}
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_20%,transparent_56%,rgba(3,7,13,0.78)_100%)]" />
           <div className="absolute inset-0 cinematic-vignette" />
           <div className="absolute inset-x-0 top-0 h-24 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.12),transparent_62%)] opacity-80" />
