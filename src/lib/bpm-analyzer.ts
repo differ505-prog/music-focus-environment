@@ -198,66 +198,76 @@ function resolveReferenceBpm(
   const topScore = candidates[0]?.score ?? 1;
   const metadataBpm = options.metadataBpm;
   const allowedBpms = Array.from(new Set(options.allowedBpms ?? [])).sort((left, right) => left - right);
+
+  // Calculate normalized score of the top candidate to weight reference matching
+  const topNormalized = (candidates[0]?.score ?? 0) / topScore;
+  const scoreTotal = candidates.reduce((sum, candidate) => sum + candidate.score, 0);
+  const confidence = scoreTotal > 0 ? (candidates[0]?.score ?? 0) / scoreTotal : 0;
+  // When confidence is low, lean on metadataBpm; when high, trust candidates.
+  const confidenceWeight = Math.min(1, confidence * 2);
+
   let bestMatch: { bpm: number; score: number } | null = null;
 
-  // Pre-compute metadata-related targets for scoring
-  const metadataTargets = metadataBpm != null
-    ? [
-        { value: metadataBpm, reward: 50 },
-        { value: metadataBpm / 2, reward: 35 }, // half-beat
-        { value: metadataBpm * 2, reward: 30 }, // double
-        { value: metadataBpm / 4, reward: 20 }, // quarter-beat
-        { value: metadataBpm * 4, reward: 15 }, // double-double
-      ]
-    : [];
-
+  // Build candidate bpm pool (raw + half/double).
+  const allCandidateBpms = new Set<number>();
   for (const candidate of candidates) {
-    const normalizedScore = candidate.score / topScore;
-    const equivalents = buildEquivalentTempoCandidates(candidate.bpm);
-
-    // Check against metadata BPM and its related tempi
-    if (typeof metadataBpm === "number") {
-      for (const target of metadataTargets) {
-        const roundedTarget = Math.round(target.value);
-
-        for (const equivalent of equivalents) {
-          const diff = Math.abs(equivalent - roundedTarget);
-
-          if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
-            continue;
-          }
-
-          const baseScore = target.reward - diff * 10;
-          const halfBeatPenalty = equivalent === candidate.bpm ? 0 : 4;
-          const nextScore = normalizedScore * 100 + baseScore - halfBeatPenalty;
-
-          if (!bestMatch || nextScore > bestMatch.score) {
-            bestMatch = { bpm: metadataBpm, score: nextScore };
-          }
-        }
-      }
+    for (const equivalent of buildEquivalentTempoCandidates(candidate.bpm)) {
+      allCandidateBpms.add(equivalent);
     }
+  }
 
-    for (const allowedBpm of allowedBpms) {
-      for (const equivalent of equivalents) {
-        const diff = Math.abs(equivalent - allowedBpm);
+  // Score metadataBpm match: heavy reward, scales with confidence (i.e. it overrides low-confidence
+  // misdetections such as 85 BPM tracks detected as 105 BPM with confidence ~0.2).
+  if (typeof metadataBpm === "number" && allCandidateBpms.size > 0) {
+    const metadataTargets = [
+      { value: metadataBpm, reward: 120 },
+      { value: metadataBpm / 2, reward: 60 },
+      { value: metadataBpm * 2, reward: 40 },
+      { value: metadataBpm / 4, reward: 25 },
+      { value: metadataBpm * 4, reward: 15 },
+    ];
+
+    for (const target of metadataTargets) {
+      const roundedTarget = Math.round(target.value);
+
+      for (const candidateBpm of allCandidateBpms) {
+        const diff = Math.abs(candidateBpm - roundedTarget);
 
         if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
           continue;
         }
 
-        const baseScore = diff === 0 ? 40 : 25;
-        const halfBeatPenalty = equivalent === candidate.bpm ? 0 : 4;
-        const nextScore = normalizedScore * 100 + baseScore - diff * 10 - halfBeatPenalty;
+        const baseScore = target.reward - diff * 10;
+        const nextScore = baseScore * confidenceWeight + topNormalized * 30;
 
         if (!bestMatch || nextScore > bestMatch.score) {
-          bestMatch = { bpm: allowedBpm, score: nextScore };
+          bestMatch = { bpm: metadataBpm, score: nextScore };
         }
       }
     }
   }
 
-  return bestMatch && bestMatch.score >= 40 ? bestMatch.bpm : null;
+  // Score allowedBpms match: lower priority than metadataBpm so metadata wins ties.
+  for (const allowedBpm of allowedBpms) {
+    for (const candidateBpm of allCandidateBpms) {
+      const diff = Math.abs(candidateBpm - allowedBpm);
+
+      if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
+        continue;
+      }
+
+      const baseScore = diff === 0 ? 20 : 10;
+      const nextScore = baseScore + topNormalized * 30;
+
+      if (!bestMatch || nextScore > bestMatch.score) {
+        bestMatch = { bpm: allowedBpm, score: nextScore };
+      }
+    }
+  }
+
+  // Require a minimum confidence-scaled score to override the raw candidate.
+  const threshold = 25 * confidenceWeight + topNormalized * 30;
+  return bestMatch && bestMatch.score >= threshold ? bestMatch.bpm : null;
 }
 
 function getNearestLane(bpm: number, laneOptions: readonly number[]) {
