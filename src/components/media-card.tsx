@@ -98,9 +98,9 @@ export function MediaCard({
             <SmartPlaceholder
               width={1200}
               height={720}
-              label={`${asset.title}`}
+              label={asset.title}
               aiPrompt={fallbackPrompt}
-              className="h-56 w-full"
+              className="h-56"
             />
           )}
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_20%,transparent_56%,rgba(3,7,13,0.78)_100%)]" />

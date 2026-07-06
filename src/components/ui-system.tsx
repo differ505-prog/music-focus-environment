@@ -58,18 +58,21 @@ export function SmartPlaceholder({
     }
   };
 
+  // 如果有固定高度或全屏 className，則不添加 aspect-ratio
+  const hasFixedSize = /^(h-|w-)/.test(className.trim().split(/\s+/)[0] || '');
+  const aspectRatioStyle = hasFixedSize ? {} : { aspectRatio: `${width}/${height}` };
+
   return (
     <div
       className={`relative overflow-hidden rounded-[--radius-lg] cursor-pointer ${className}`}
       onClick={handleCopy}
+      style={aspectRatioStyle}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={placeholderUrl}
         alt={`Placeholder: ${label}`}
-        width={width}
-        height={height}
-        className="h-full w-full object-cover"
+        className="absolute inset-0 h-full w-full object-cover"
         loading="lazy"
       />
       {/* 底部：簡短 AI 提示詞 */}
