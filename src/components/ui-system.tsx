@@ -47,11 +47,20 @@ export function SmartPlaceholder({
         className="h-full w-full object-cover"
         loading="lazy"
       />
-      {/* AI 生圖提示詞直接顯示在圖片底部 */}
+      {/* 底部：簡短 AI 提示詞（隨時可見） */}
       {aiPrompt && (
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3 pt-8">
-          <p className="mb-1 text-[10px] uppercase tracking-[0.2em] text-white/40">AI Image Prompt</p>
-          <p className="line-clamp-2 font-mono text-xs leading-snug text-white/80">{aiPrompt}</p>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 pt-8">
+          <p className="line-clamp-1 font-mono text-xs text-white/70">{aiPrompt}</p>
+        </div>
+      )}
+      {/* 懸停：完整 AI 提示詞浮層 */}
+      {aiPrompt && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 transition-opacity duration-300 hover:opacity-100">
+          <div className="max-w-[90%] rounded-[--radius-md] border border-white/20 bg-black/90 p-4 text-center backdrop-blur-xl">
+            <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">AI Image Prompt</p>
+            <p className="font-mono text-sm leading-relaxed text-white/90">{aiPrompt}</p>
+            <p className="mt-3 text-xs text-white/40">Hover to see prompt · Copy for Midjourney</p>
+          </div>
         </div>
       )}
     </div>
