@@ -18,10 +18,13 @@ import { mixEvents, mixSessions, themePrograms, trackCollections } from "@/data/
 import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { buildBpmCompatibilityMap, buildMixInsights } from "@/lib/studio-view-model";
 
+export type AdminZone = 'theme' | 'playback' | 'analytics';
+
 export function AdminStudioPage() {
   const tracks = useRuntimeTracks();
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
+  const [activeZone, setActiveZone] = useState<AdminZone>("theme");
   const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack } = usePlayback();
 
   const activeCollection = useMemo(
@@ -52,6 +55,7 @@ export function AdminStudioPage() {
       bottomPaddingClassName="pb-[18rem] md:pb-[22rem]"
       badges={["主題手冊", "上架素材", "流程管理"]}
     >
+      {/* Always-visible: collection scope + filter */}
       <section className="mt-6 rounded-[32px] border border-white/10 bg-black/20 p-5 shadow-[0_32px_90px_rgba(3,7,18,0.42)] backdrop-blur-2xl md:p-6">
         <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
@@ -155,30 +159,54 @@ export function AdminStudioPage() {
         />
       </div>
 
-      <div id="theme-routes-detail" className="mt-6">
-        <ThemeProgramPanel programs={themePrograms} />
+      {/* Zone navigation */}
+      <div className="mt-6 flex flex-wrap gap-2">
+        {(
+          [
+            { id: 'theme', label: '主題製作', icon: '✦' },
+            { id: 'playback', label: '播放覆核', icon: '▶' },
+            { id: 'analytics', label: '數據分析', icon: '◈' },
+          ] as const
+        ).map((zone) => (
+          <button
+            key={zone.id}
+            type="button"
+            onClick={() => setActiveZone(zone.id)}
+            className={`rounded-full border px-5 py-2.5 text-sm font-medium transition ${
+              activeZone === zone.id
+                ? 'border-fuchsia-400/50 bg-fuchsia-400/20 text-fuchsia-100 shadow-[0_0_20px_rgba(217,70,239,0.18)]'
+                : 'border-white/10 bg-white/6 text-white/60 hover:border-white/22 hover:bg-white/10 hover:text-white/90'
+            }`}
+          >
+            <span className="mr-2 opacity-70">{zone.icon}</span>
+            {zone.label}
+          </button>
+        ))}
       </div>
 
-      <div className="mt-6">
-        <AdminPlaybackWorkbench programs={themePrograms} />
-      </div>
+      {/* Zone content */}
+      {activeZone === 'theme' && (
+        <div className="mt-6">
+          <ThemeProgramPanel programs={themePrograms} />
+        </div>
+      )}
 
-      <div className="mt-6">
-        <TrackBpmReviewPanel tracks={tracks} />
-      </div>
+      {activeZone === 'playback' && (
+        <div className="mt-6 space-y-6">
+          <AdminPlaybackWorkbench programs={themePrograms} />
+          <TrackBpmReviewPanel tracks={tracks} />
+          <TrackTransitionReviewPanel tracks={tracks} />
+        </div>
+      )}
 
-      <div className="mt-6">
-        <TrackTransitionReviewPanel tracks={tracks} />
-      </div>
+      {activeZone === 'analytics' && (
+        <div className="mt-6 space-y-6">
+          <BpmAnalysisPanel />
+          <MixInsightsPanel {...mixInsights} />
+        </div>
+      )}
 
-      <div className="mt-6">
-        <BpmAnalysisPanel />
-      </div>
-
-      <div className="mt-6">
-        <MixInsightsPanel {...mixInsights} />
-      </div>
-
+      {/* Track grid: always visible below zones */}
       <section className="mt-8 grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
         {filteredAssets.length > 0 ? (
           filteredAssets.map((asset) => (
@@ -200,7 +228,6 @@ export function AdminStudioPage() {
           </div>
         )}
       </section>
-
     </AppSceneShell>
   );
 }
