@@ -146,10 +146,24 @@ function buildTempoHistogram(peaks: Array<{ timeSeconds: number; strength: numbe
       }
 
       const rawTempo = 60 / intervalSeconds;
-      const normalizedTempo = Math.round(normalizeTempo(rawTempo));
       const weight = peaks[index].strength + peaks[index + offset].strength;
 
+      // Track both the raw tempo and its relationship to common BPM lanes
+      const normalizedTempo = Math.round(normalizeTempo(rawTempo));
+
       histogram.set(normalizedTempo, (histogram.get(normalizedTempo) ?? 0) + weight);
+
+      // Also track half-beat and double-beat versions for better precision
+      const halfBeat = Math.round(normalizeTempo(rawTempo / 2));
+      const doubleBeat = Math.round(normalizeTempo(rawTempo * 2));
+
+      // Only add if they represent distinct BPM values
+      if (halfBeat !== normalizedTempo) {
+        histogram.set(halfBeat, (histogram.get(halfBeat) ?? 0) + weight * 0.7);
+      }
+      if (doubleBeat !== normalizedTempo && doubleBeat !== halfBeat) {
+        histogram.set(doubleBeat, (histogram.get(doubleBeat) ?? 0) + weight * 0.6);
+      }
     }
   }
 
@@ -186,22 +200,40 @@ function resolveReferenceBpm(
   const allowedBpms = Array.from(new Set(options.allowedBpms ?? [])).sort((left, right) => left - right);
   let bestMatch: { bpm: number; score: number } | null = null;
 
+  // Pre-compute metadata-related targets for scoring
+  const metadataTargets = metadataBpm != null
+    ? [
+        { value: metadataBpm, reward: 50 },
+        { value: metadataBpm / 2, reward: 35 }, // half-beat
+        { value: metadataBpm * 2, reward: 30 }, // double
+        { value: metadataBpm / 4, reward: 20 }, // quarter-beat
+        { value: metadataBpm * 4, reward: 15 }, // double-double
+      ]
+    : [];
+
   for (const candidate of candidates) {
     const normalizedScore = candidate.score / topScore;
     const equivalents = buildEquivalentTempoCandidates(candidate.bpm);
 
+    // Check against metadata BPM and its related tempi
     if (typeof metadataBpm === "number") {
-      for (const equivalent of equivalents) {
-        const diff = Math.abs(equivalent - metadataBpm);
+      for (const target of metadataTargets) {
+        const roundedTarget = Math.round(target.value);
 
-        if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
-          continue;
-        }
+        for (const equivalent of equivalents) {
+          const diff = Math.abs(equivalent - roundedTarget);
 
-        const nextScore = normalizedScore * 100 + 28 - diff * 10 - (equivalent === candidate.bpm ? 0 : 6);
+          if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
+            continue;
+          }
 
-        if (!bestMatch || nextScore > bestMatch.score) {
-          bestMatch = { bpm: metadataBpm, score: nextScore };
+          const baseScore = target.reward - diff * 10;
+          const halfBeatPenalty = equivalent === candidate.bpm ? 0 : 4;
+          const nextScore = normalizedScore * 100 + baseScore - halfBeatPenalty;
+
+          if (!bestMatch || nextScore > bestMatch.score) {
+            bestMatch = { bpm: metadataBpm, score: nextScore };
+          }
         }
       }
     }
@@ -214,7 +246,9 @@ function resolveReferenceBpm(
           continue;
         }
 
-        const nextScore = normalizedScore * 100 + 20 - diff * 10 - (equivalent === candidate.bpm ? 0 : 6);
+        const baseScore = diff === 0 ? 40 : 25;
+        const halfBeatPenalty = equivalent === candidate.bpm ? 0 : 4;
+        const nextScore = normalizedScore * 100 + baseScore - diff * 10 - halfBeatPenalty;
 
         if (!bestMatch || nextScore > bestMatch.score) {
           bestMatch = { bpm: allowedBpm, score: nextScore };
