@@ -28,11 +28,11 @@ const MODULE_OUTPUTS_STORAGE_KEY = 'theme-manual-module-outputs-v2';
 const MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY = 'theme-manual-module-supplemental-inputs-v1';
 
 const defaultSectionState = (): SectionState => ({
-  strategy: true,
-  notes: true,
-  workflow: true,
-  seed: true,
-  checklist: true,
+  strategy: false,
+  notes: false,
+  workflow: false,
+  seed: false,
+  checklist: false,
 });
 
 function buildModuleKey(programId: string, moduleId: string) {
@@ -229,6 +229,7 @@ function buildLowInputAssembly(
 }
 
 export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
+  const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
@@ -246,6 +247,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
 
       return nextState;
     });
+
+    if (programs.length > 0) {
+      setActiveProgramId((current) => current ?? programs[0].id);
+    }
   }, [programs]);
 
   useEffect(() => {
@@ -587,8 +592,28 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
+      {/* Program tab navigation */}
+      <div className="mb-6 flex flex-wrap gap-2">
         {programs.map((program) => (
+          <button
+            key={program.id}
+            type="button"
+            onClick={() => setActiveProgramId(program.id)}
+            className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
+              activeProgramId === program.id
+                ? 'border-fuchsia-400/50 bg-fuchsia-400/20 text-fuchsia-100'
+                : 'border-white/10 bg-white/6 text-white/58 hover:border-white/20 hover:bg-white/10 hover:text-white/80'
+            }`}
+          >
+            {program.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Only render the active program */}
+      {programs
+        .filter((program) => program.id === activeProgramId)
+        .map((program) => (
           <article
             key={program.id}
             className="min-w-0 overflow-hidden rounded-[24px] border border-white/10 bg-black/18 p-4 text-sm text-white/72"
@@ -989,7 +1014,6 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
             </div>
           </article>
         ))}
-      </div>
     </section>
   );
 }
