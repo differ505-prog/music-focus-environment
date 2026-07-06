@@ -63,9 +63,12 @@ export function SmartPlaceholder({
 
   return (
     <div
-      className={`relative overflow-hidden rounded-[--radius-lg] cursor-pointer ${className}`}
+      className={`relative overflow-hidden cursor-pointer ${className}`}
       onClick={handleCopy}
-      style={fill ? {} : { aspectRatio: `${width}/${height}` }}
+      style={{
+        borderRadius: 'var(--radius-lg, 28px)',
+        ...(fill ? {} : { aspectRatio: `${width}/${height}` }),
+      }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -83,20 +86,29 @@ export function SmartPlaceholder({
       {/* 複製成功提示 */}
       {copied && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/70">
-          <div className="rounded-[--radius-md] border border-emerald-400/40 bg-black/90 px-4 py-2 backdrop-blur-xl">
+          <div
+            className="border border-emerald-400/40 bg-black/90 px-4 py-2 backdrop-blur-xl"
+            style={{ borderRadius: 'var(--radius-md, 20px)' }}
+          >
             <p className="text-sm font-medium text-emerald-400">✓ Copied!</p>
           </div>
         </div>
       )}
-      {/* 懸停：完整 AI 提示詞浮層 */}
+      {/* 懸停：完整 AI 提示詞浮層（行動裝置始終顯示底部提示） */}
       {!copied && aiPrompt && (
-        <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 transition-opacity duration-300 hover:opacity-100">
-          <div className="max-w-[90%] rounded-[--radius-md] border border-white/20 bg-black/90 p-4 text-center backdrop-blur-xl">
-            <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">AI Image Prompt</p>
-            <p className="font-mono text-sm leading-relaxed text-white/90">{aiPrompt}</p>
-            <p className="mt-3 text-xs text-white/40">Click to copy · Use in Midjourney</p>
+        <>
+          {/* 桌面裝置：hover 才顯示完整浮層 */}
+          <div className="absolute inset-0 hidden items-center justify-center bg-black/80 opacity-0 transition-opacity duration-300 hover:opacity-100 md:flex">
+            <div
+              className="max-w-[90%] border border-white/20 bg-black/90 p-4 text-center backdrop-blur-xl"
+              style={{ borderRadius: 'var(--radius-md, 20px)' }}
+            >
+              <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">AI Image Prompt</p>
+              <p className="font-mono text-sm leading-relaxed text-white/90">{aiPrompt}</p>
+              <p className="mt-3 text-xs text-white/40">Click to copy · Use in Midjourney</p>
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );
