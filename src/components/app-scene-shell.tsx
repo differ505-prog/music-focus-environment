@@ -58,7 +58,7 @@ export function AppSceneShell({
             width={1920}
             height={1080}
             label="Background Scene"
-            aiPrompt="Cinematic music studio atmosphere, dark ambient lighting with purple and cyan neon glow, minimalist furniture, professional audio equipment, moody atmospheric photography"
+            aiPrompt="Dark ambient studio with purple cyan neon glow"
             className="h-full w-full"
           />
         </div>

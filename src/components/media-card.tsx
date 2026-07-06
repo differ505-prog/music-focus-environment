@@ -40,7 +40,8 @@ export function MediaCard({
   }, [asset.media.coverImageUrl, imageErrored]);
 
   const fallbackPrompt = useMemo(() => {
-    return `${asset.title} ${asset.moodTags.slice(0, 2).join(' ')} music scene`;
+    const moodText = asset.moodTags.slice(0, 2).join(' ');
+    return `Cinematic ${moodText} music atmosphere`;
   }, [asset]);
 
   const collectionLabels = useMemo(() => {

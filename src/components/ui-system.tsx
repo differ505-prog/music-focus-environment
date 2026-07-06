@@ -22,7 +22,7 @@ type SmartPlaceholderProps = {
 /**
  * Smart Placeholder Component
  * 遵循 CONSTITUTION Rule #5：智慧佔位圖
- * 使用 placehold.co 格式，附帶 AI 生圖提示詞供後續 Midjourney 算圖
+ * 使用 placehold.co 格式，AI 生圖提示詞直接顯示在圖片底部
  */
 export function SmartPlaceholder({
   width = 800,
@@ -47,14 +47,11 @@ export function SmartPlaceholder({
         className="h-full w-full object-cover"
         loading="lazy"
       />
-      {/* AI Prompt 浮層（滑鼠懸停顯示） */}
+      {/* AI 生圖提示詞直接顯示在圖片底部 */}
       {aiPrompt && (
-        <div className="group absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 transition-opacity duration-300 hover:opacity-100">
-          <div className="max-w-[90%] rounded-[--radius-md] border border-white/20 bg-black/80 p-4 text-center backdrop-blur-xl">
-            <p className="mb-2 text-xs uppercase tracking-[0.28em] text-white/50">AI 生圖提示詞</p>
-            <p className="font-mono text-sm leading-relaxed text-white/90">{aiPrompt}</p>
-            <p className="mt-3 text-xs text-white/40">提示：可複製此提示詞至 Midjourney 生成圖片</p>
-          </div>
+        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-3 pt-8">
+          <p className="mb-1 text-[10px] uppercase tracking-[0.2em] text-white/40">AI Image Prompt</p>
+          <p className="line-clamp-2 font-mono text-xs leading-snug text-white/80">{aiPrompt}</p>
         </div>
       )}
     </div>
