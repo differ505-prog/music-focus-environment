@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useMemo } from "react";
-import { ArrowRight, History, RotateCcw } from "lucide-react";
+import { ArrowRight, History } from "lucide-react";
 
 import {
   buildTrackOverrideHistoryItems,
   clearTrackReviewOverride,
 } from "@/lib/track-review-store";
+
+import { MoreMenu } from "@/components/more-menu";
 
 import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
 import {
@@ -241,7 +243,7 @@ export function OverrideHistoryList({ tracks }: OverrideHistoryListProps) {
               </StatCard>
             </StatGrid>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() => handleScrollToTrack(item.track.id)}
@@ -249,14 +251,15 @@ export function OverrideHistoryList({ tracks }: OverrideHistoryListProps) {
               >
                 跳到歌曲卡片
               </button>
-              <button
-                type="button"
-                onClick={() => handleClearOverride(item.track.id, item.track.title)}
-                className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
-              >
-                <RotateCcw className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-                取消覆核紀錄
-              </button>
+              <MoreMenu
+                items={[
+                  {
+                    label: "取消覆核紀錄",
+                    onClick: () => handleClearOverride(item.track.id, item.track.title),
+                    variant: "danger",
+                  },
+                ]}
+              />
             </div>
           </ReviewItemShell>
         );

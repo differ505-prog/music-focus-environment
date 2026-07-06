@@ -1,8 +1,7 @@
 'use client';
 
-import { Download } from "lucide-react";
-
 import type { Track } from "@/types/music";
+import { MoreMenu } from "@/components/more-menu";
 
 type FilterBarProps = {
   bpmOptions: readonly number[];
@@ -102,7 +101,7 @@ export function FilterBar({
         </div>
 
         <div className="flex flex-col gap-3 md:items-end">
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={onSelectAll}
@@ -110,23 +109,19 @@ export function FilterBar({
             >
               加入全部
             </button>
-            <button
-              type="button"
-              onClick={onClearSelection}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
-            >
-              清空清單
-            </button>
-            <button
-              type="button"
-              onClick={handleExportCsv}
-              className="rounded-full border border-amber-300/20 bg-amber-300/10 px-4 py-2 text-sm font-medium text-amber-50 transition hover:bg-amber-300/18"
-            >
-              <span className="inline-flex items-center gap-2">
-                <Download className="h-4 w-4" />
-                匯出 CSV
-              </span>
-            </button>
+            <MoreMenu
+              items={[
+                {
+                  label: "清空清單",
+                  onClick: onClearSelection,
+                },
+                {
+                  label: "匯出 CSV",
+                  onClick: handleExportCsv,
+                  variant: "amber",
+                },
+              ]}
+            />
           </div>
           <p className="text-sm text-white/64">
             顯示 {visibleCount} 首 · 清單 {selectedCount} 首

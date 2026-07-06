@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Loader2, Radar, ShieldAlert } from "lucide-react";
 
 import { bpmOptions, themePrograms, tracks as baseTracks } from "@/data/music-assets";
@@ -20,15 +20,23 @@ import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
 import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
 import { Chip } from "@/components/ui-system";
 import { TapBpmButton } from "@/components/tap-bpm-button";
+import { MoreMenu } from "@/components/more-menu";
 
 type TrackBpmReviewPanelProps = {
   tracks: Track[];
+};
+
+type CustomBpmInputState = {
+  trackId: string;
+  draft: string;
+  showConfirm: boolean;
 };
 
 export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
+  const [customBpmState, setCustomBpmState] = useState<CustomBpmInputState | null>(null);
   const refreshTick = useTrackReviewSync();
   const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
   const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
@@ -40,7 +48,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
     [detections, overrides, refreshTick, tracks],
   );
 
-  const handleScanAllTracks = async () => {
+  const handleScanAllTracks = useCallback(async () => {
     if (isScanning) {
       return;
     }
@@ -126,7 +134,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
     } finally {
       setIsScanning(false);
     }
-  };
+  }, [isScanning, overrides, programMap, baseTrackMap, tracks]);
 
   return (
     <ReviewPanelShell
@@ -147,20 +155,17 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
       }
       summaryCards={
         <>
-          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">待處理</p>
-            <p className="mt-3 text-3xl font-semibold text-white">{reviewItems.length}</p>
-          </div>
-          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描或已掃描完成。"}</p>
-          </div>
-          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">建議</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">
+          <StatCard label="待處理">
+            <p className="text-3xl font-semibold text-white">{reviewItems.length}</p>
+          </StatCard>
+          <StatCard label="最近進度">
+            <p className="text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描或已掃描完成。"}</p>
+          </StatCard>
+          <StatCard label="建議">
+            <p className="text-sm leading-7 text-white/72">
               差距明顯且不在原路線允許 BPM 內的歌，先移到未分類，再決定是否採用偵測值。
             </p>
-          </div>
+          </StatCard>
         </>
       }
       notice={scanNotice}
@@ -172,6 +177,35 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             const confidencePercent = Math.round(item.detection.confidence * 100);
             const rawDetectedBpm = item.detection.rawDetectedBpm ?? item.detection.detectedBpm;
             const detectionWasResolved = rawDetectedBpm !== item.detection.detectedBpm;
+
+            const isCustomEditing = customBpmState?.trackId === item.track.id;
+
+            const handleOpenCustom = () => {
+              setCustomBpmState({ trackId: item.track.id, draft: String(item.effectiveBpm), showConfirm: false });
+            };
+
+            const handleCloseCustom = () => {
+              if (customBpmState?.trackId === item.track.id) {
+                setCustomBpmState(null);
+              }
+            };
+
+            const handleApplyCustom = () => {
+              const parsed = Number.parseFloat(customBpmState?.draft ?? String(item.effectiveBpm));
+              if (Number.isFinite(parsed) && parsed > 0) {
+                updateTrackReviewOverride(item.track.id, {
+                  bpm: Math.round(parsed * 10) / 10,
+                  ignoreBpmMismatch: false,
+                });
+              }
+              handleCloseCustom();
+            };
+
+            const handleCustomDraftChange = (value: string) => {
+              setCustomBpmState((current) =>
+                current ? { ...current, draft: value, showConfirm: true } : null,
+              );
+            };
 
             return (
               <ReviewItemShell key={`${item.track.id}-${item.detection.detectedAt}`} accentColor="rose">
@@ -215,7 +249,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   </StatCard>
                 </StatGrid>
 
-                <div className="mt-4 flex flex-wrap gap-2">
+                <div className="mt-4 flex flex-wrap items-center gap-2">
                   {item.canReturnToSuggestedRoute && item.suggestedThemeProgramId ? (
                     <button
                       type="button"
@@ -249,7 +283,6 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                   >
                     採用 {item.detection.detectedBpm} BPM
                   </button>
-                  <CustomBpmInput trackId={item.track.id} currentBpm={item.effectiveBpm} allowedBpms={item.allowedBpms} />
                   <TapBpmButton
                     onResult={(bpm) =>
                       updateTrackReviewOverride(item.track.id, {
@@ -260,101 +293,76 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                     currentBpm={item.effectiveBpm}
                     allowedBpms={item.allowedBpms}
                   />
-                  <button
-                    type="button"
-                    onClick={() => updateTrackReviewOverride(item.track.id, { ignoreBpmMismatch: true })}
-                    className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
-                  >
-                    忽略警告
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => clearTrackReviewOverride(item.track.id)}
-                    className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/62 transition hover:border-white/18 hover:text-white"
-                  >
-                    清除覆核
-                  </button>
+
+                  <MoreMenu
+                    items={[
+                      ...(item.canReturnToSuggestedRoute && item.suggestedThemeProgramId
+                        ? []
+                        : [
+                            {
+                              label: "自訂 BPM",
+                              onClick: handleOpenCustom,
+                            },
+                          ]),
+                      {
+                        label: "忽略警告",
+                        onClick: () => updateTrackReviewOverride(item.track.id, { ignoreBpmMismatch: true }),
+                      },
+                      {
+                        label: "清除覆核",
+                        onClick: () => clearTrackReviewOverride(item.track.id),
+                        variant: "danger",
+                      },
+                    ]}
+                  />
                 </div>
+
+                {isCustomEditing && (
+                  <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[18px] border border-white/10 bg-black/24 p-3">
+                    <label className="text-xs uppercase tracking-[0.24em] text-white/42" htmlFor={`custom-bpm-${item.track.id}`}>
+                      自訂 BPM
+                    </label>
+                    <input
+                      id={`custom-bpm-${item.track.id}`}
+                      type="number"
+                      inputMode="decimal"
+                      step="0.1"
+                      min="20"
+                      max="300"
+                      value={customBpmState?.draft ?? String(item.effectiveBpm)}
+                      onChange={(event) => handleCustomDraftChange(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          handleApplyCustom();
+                        }
+
+                        if (event.key === "Escape") {
+                          handleCloseCustom();
+                        }
+                      }}
+                      className="w-20 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs text-white focus:border-white/30 focus:outline-none"
+                      placeholder="BPM"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyCustom}
+                      className="rounded-full border border-cyan-300/30 bg-cyan-300/14 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/20"
+                    >
+                      寫入覆寫
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleCloseCustom}
+                      className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/62 transition hover:border-white/18 hover:text-white"
+                    >
+                      取消
+                    </button>
+                  </div>
+                )}
               </ReviewItemShell>
             );
           })}
     </ReviewPanelShell>
-  );
-}
-
-type CustomBpmInputProps = {
-  trackId: string;
-  currentBpm: number;
-  allowedBpms: number[];
-};
-
-function CustomBpmInput({ trackId, currentBpm, allowedBpms }: CustomBpmInputProps) {
-  const [draft, setDraft] = useState<string>(String(currentBpm));
-  const [showConfirm, setShowConfirm] = useState(false);
-
-  const parsedValue = Number.parseFloat(draft);
-  const isValidNumber = Number.isFinite(parsedValue) && parsedValue > 0;
-  const hasChanged = isValidNumber && Math.abs(parsedValue - currentBpm) >= 0.5;
-  const nearestLane = allowedBpms.length > 0
-    ? allowedBpms.reduce((closest, candidate) =>
-        Math.abs(candidate - parsedValue) < Math.abs(closest - parsedValue) ? candidate : closest,
-      allowedBpms[0])
-    : null;
-  const isWithinLane = nearestLane !== null && Math.abs(nearestLane - parsedValue) <= 0.5;
-
-  const handleApply = () => {
-    if (!isValidNumber) {
-      return;
-    }
-    updateTrackReviewOverride(trackId, {
-      bpm: Math.round(parsedValue * 10) / 10,
-      ignoreBpmMismatch: false,
-    });
-    setShowConfirm(false);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter" && hasChanged) {
-      event.preventDefault();
-      handleApply();
-    }
-  };
-
-  return (
-    <div className="inline-flex flex-wrap items-center gap-2">
-      <input
-        type="number"
-        inputMode="decimal"
-        step="0.1"
-        min="20"
-        max="300"
-        value={draft}
-        onChange={(event) => {
-          setDraft(event.target.value);
-          setShowConfirm(true);
-        }}
-        onKeyDown={handleKeyDown}
-        aria-label="自訂 BPM 數值"
-        className="w-20 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs text-white placeholder:text-white/36 focus:border-white/30 focus:outline-none"
-        placeholder="BPM"
-      />
-      {showConfirm && hasChanged && isValidNumber ? (
-        <button
-          type="button"
-          onClick={handleApply}
-          className={`rounded-full border px-3 py-2 text-xs transition ${
-            isWithinLane
-              ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100/84 hover:bg-emerald-300/16"
-              : "border-amber-300/20 bg-amber-300/10 text-amber-100/84 hover:bg-amber-300/16"
-          }`}
-        >
-          {isWithinLane
-            ? `套用 ${parsedValue.toFixed(1)}（符合路線）`
-            : nearestLane !== null
-              ? `套用 ${parsedValue.toFixed(1)}（會超出路線，最近 ${nearestLane}）`
-              : `套用 ${parsedValue.toFixed(1)}`}
-        </button>
-      ) : null}
-    </div>
   );
 }

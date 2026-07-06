@@ -1,18 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Crosshair, HandMetal, Megaphone, MoreHorizontal, RotateCcw, Timer } from "lucide-react";
+import { Check, Crosshair, HandMetal, Megaphone, RotateCcw, Timer } from "lucide-react";
 
-import { ThemeProgram } from "@/types/music";
+import type { ThemeProgram } from "@/types/music";
 import type { Track } from "@/types/music";
 
 import { Chip } from "@/components/ui-system";
-import {
-  ReviewItemShell,
-  StatCard,
-  StatGrid,
-  ActionButtonGroup,
-} from "@/components/review-panel-shell";
+import { ReviewItemShell, StatCard, StatGrid } from "@/components/review-panel-shell";
+import { MoreMenu } from "@/components/more-menu";
 import {
   readTrackBpmDetections,
   readTrackReviewOverrides,
@@ -121,8 +117,6 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
         pulseRef.current = current + 1;
         return pulseRef.current;
       });
-      pulseRef.current = (pulseRef.current + 1) % 1_000_000;
-      setPulse(pulseRef.current);
       return;
     }
 
@@ -250,6 +244,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
   const runnableLanes = programs.filter((program) => program.id !== "uncategorized-lane");
   const showTapToolbar = currentTrack != null && tapBpm != null;
   const showAdopt = detectedBpm != null && detectedBpm !== effectiveBpm;
+  const hasOverride = override?.bpm != null || override?.ignoreBpmMismatch;
 
   if (!currentTrack) {
     return (
@@ -279,7 +274,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
               <Megaphone className="h-3.5 w-3.5" />
               已忽略警告
             </Chip>
-          ) : bpmDelta > 0 || (override?.bpm != null && override.bpm !== baseBpm) ? (
+          ) : hasOverride ? (
             <Chip variant="cyan">
               <Check className="h-3.5 w-3.5" />
               已覆核
@@ -332,7 +327,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
         </StatCard>
       </StatGrid>
 
-      <ActionButtonGroup>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <button
           type="button"
           onClick={registerTap}
@@ -345,6 +340,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
           <HandMetal className="mr-1.5 inline h-4 w-4 align-middle" />
           {tapState.taps.length === 0 ? "點按打拍" : `再點一下 (${tapState.taps.length} 拍)`}
         </button>
+
         {showTapToolbar ? (
           <button
             type="button"
@@ -354,89 +350,62 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
             採用 {tapBpm} BPM
           </button>
         ) : null}
-        {tapState.taps.length > 0 ? (
-          <button
-            type="button"
-            onClick={resetTaps}
-            className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
-          >
-            重置 Tap
-          </button>
-        ) : null}
-        {showAdopt ? (
-          <button
-            type="button"
-            onClick={handleAdoptDetected}
-            className="rounded-full border border-cyan-300/30 bg-cyan-300/14 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/20"
-          >
-            <Crosshair className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-            採用偵測 {detectedBpm}
-          </button>
-        ) : null}
-        {override?.bpm != null || override?.ignoreBpmMismatch ? (
-          <button
-            type="button"
-            onClick={handleClear}
-            className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
-          >
-            <RotateCcw className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-            取消本次覆寫
-          </button>
-        ) : null}
-        <button
-          type="button"
-          onClick={handleIgnore}
-          className={`rounded-full border px-3 py-2 text-xs transition ${
-            override?.ignoreBpmMismatch
-              ? "border-rose-300/40 bg-rose-300/16 text-rose-50"
-              : "border-white/10 bg-white/8 text-white/74 hover:bg-white/12"
-          }`}
-        >
-          <Megaphone className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-          {override?.ignoreBpmMismatch ? "已忽略警告" : "忽略此次差異"}
-        </button>
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setShowLaneMenu((current) => !current)}
-            className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
-          >
-            <MoreHorizontal className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-            移到別條路線
-          </button>
-          {showLaneMenu ? (
-            <div className="absolute bottom-full left-0 mb-3 flex w-[18rem] flex-col items-stretch gap-1 rounded-[20px] border border-white/10 bg-black/90 p-2 shadow-xl backdrop-blur-xl">
-              <p className="px-2 py-1 text-[10px] uppercase tracking-[0.24em] text-white/45">選擇路線</p>
-              {runnableLanes.map((program) => (
-                <button
-                  key={program.id}
-                  type="button"
-                  onClick={() => handleMoveLane(program.id)}
-                  className={`w-full rounded-[16px] border px-3 py-2 text-left text-xs transition ${
-                    activeProgram?.id === program.id
-                      ? "border-cyan-400/35 bg-cyan-400/16 text-cyan-50"
-                      : "border-transparent bg-transparent text-white/74 hover:border-white/10 hover:bg-white/8 hover:text-white"
-                  }`}
-                >
-                  {program.title}
-                  <span className="ml-2 text-white/42">{program.bpmDisplay}</span>
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => handleMoveLane("uncategorized-lane")}
-                className={`w-full rounded-[16px] border px-3 py-2 text-left text-xs transition ${
-                  activeProgram?.id === "uncategorized-lane"
-                    ? "border-amber-300/35 bg-amber-300/16 text-amber-50"
-                    : "border-transparent bg-transparent text-white/74 hover:border-white/10 hover:bg-white/8 hover:text-white"
-                }`}
-              >
-                未分類路線
-              </button>
-            </div>
-          ) : null}
-        </div>
-      </ActionButtonGroup>
+
+        <MoreMenu
+          items={[
+            ...(showAdopt && detectedBpm != null
+              ? [
+                  {
+                    label: `採用偵測 ${detectedBpm} BPM`,
+                    onClick: handleAdoptDetected,
+                    variant: "cyan" as const,
+                  },
+                ]
+              : []),
+            ...(tapState.taps.length > 0
+              ? [
+                  {
+                    label: "重置 Tap",
+                    onClick: resetTaps,
+                  },
+                ]
+              : []),
+            ...(hasOverride
+              ? [
+                  {
+                    label: "取消本次覆寫",
+                    onClick: handleClear,
+                  },
+                ]
+              : []),
+            {
+              label: override?.ignoreBpmMismatch ? "已忽略警告" : "忽略此次差異",
+              onClick: handleIgnore,
+              variant: override?.ignoreBpmMismatch ? "amber" : "default",
+            },
+            {
+              label: "移到別條路線",
+              onClick: () => setShowLaneMenu((current) => !current),
+            },
+            ...(showLaneMenu
+              ? runnableLanes.map((program) => ({
+                  label: `  ${program.title}`,
+                  onClick: () => handleMoveLane(program.id),
+                  variant: (activeProgram?.id === program.id ? "cyan" : "default") as "cyan" | "default",
+                }))
+              : []),
+            ...(showLaneMenu
+              ? [
+                  {
+                    label: "  未分類路線",
+                    onClick: () => handleMoveLane("uncategorized-lane"),
+                    variant: (activeProgram?.id === "uncategorized-lane" ? "amber" : "default") as "amber" | "default",
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2 rounded-[18px] border border-white/10 bg-black/24 p-3">
         <label className="text-xs uppercase tracking-[0.24em] text-white/42" htmlFor="custom-bpm-input">

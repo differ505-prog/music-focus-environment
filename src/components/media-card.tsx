@@ -151,7 +151,7 @@ export function MediaCard({
 
       <div className="mt-4 flex flex-wrap gap-2">
         {showAdminDetails
-          ? collectionLabels.map((label) => (
+          ? collectionLabels.slice(0, 2).map((label) => (
               <span
                 key={`${asset.id}-${label}`}
                 className="inline-flex items-center gap-2 rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-xs text-fuchsia-100/85"
@@ -160,63 +160,12 @@ export function MediaCard({
               </span>
             ))
           : null}
-        {batchLabel && showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
-            {batchLabel}
-          </span>
-        ) : null}
         <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
           約 {Math.round(asset.durationSeconds / 60)} 分鐘
         </span>
         {showAdminDetails ? (
           <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
             {asset.musicalKey}
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-            Energy {asset.energyLevel.toFixed(1)}
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
-            {asset.transition.tempoLockBars} Bars Lock
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-            Cue {asset.transition.introCueSeconds.toFixed(2)}s
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-            Fade {asset.transition.crossfadeSeconds.toFixed(2)}s
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-            Mix {asset.transition.mixInPointSeconds}s / {asset.transition.mixOutPointSeconds}s
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-xs text-cyan-100/85">
-            目前 Mix In {asset.transition.mixInPointSeconds.toFixed(2)}s
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/72">
-            {asset.transition.sourceLufs.toFixed(1)} LUFS
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-xs text-emerald-100/85">
-            Norm {asset.transition.normalizationGainDb > 0 ? "+" : ""}
-            {asset.transition.normalizationGainDb.toFixed(2)} dB
-          </span>
-        ) : null}
-        {showAdminDetails ? (
-          <span className="inline-flex items-center gap-2 rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-xs text-amber-100/85">
-            Equal-Power
           </span>
         ) : null}
         {isCurrent ? (
@@ -235,6 +184,30 @@ export function MediaCard({
           <span className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${compatibilityTone}`}>
             {compatibility.label}
           </span>
+        ) : null}
+        {showAdminDetails ? (
+          <div className="group/tech relative">
+            <span className="inline-flex cursor-help items-center gap-2 rounded-full border border-white/10 bg-white/8 px-3 py-1 text-xs text-white/48 transition hover:border-white/18 hover:text-white/72">
+              +{batchLabel ?? "技術詳情"}
+            </span>
+            <div className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-2.5 -translate-x-1/2 whitespace-nowrap rounded-[18px] border border-white/12 bg-black/95 px-4 py-3 text-xs shadow-xl backdrop-blur-xl opacity-0 shadow-xl transition-opacity group-hover/tech:opacity-100">
+              <div className="grid grid-cols-2 gap-x-6 gap-y-2">
+                <p className="text-white/42">Energy <span className="ml-1 text-white/82">{asset.energyLevel.toFixed(1)}</span></p>
+                <p className="text-white/42">Duration <span className="ml-1 text-white/82">{Math.round(asset.durationSeconds / 60)} 分</span></p>
+                <p className="text-white/42">Bars Lock <span className="ml-1 text-white/82">{asset.transition.tempoLockBars}</span></p>
+                <p className="text-white/42">Cue <span className="ml-1 text-white/82">{asset.transition.introCueSeconds.toFixed(2)}s</span></p>
+                <p className="text-white/42">Fade <span className="ml-1 text-white/82">{asset.transition.crossfadeSeconds.toFixed(2)}s</span></p>
+                <p className="text-white/42">Mix <span className="ml-1 text-white/82">{asset.transition.mixInPointSeconds}s / {asset.transition.mixOutPointSeconds}s</span></p>
+                <p className="text-white/42">LUFS <span className="ml-1 text-white/82">{asset.transition.sourceLufs.toFixed(1)}</span></p>
+                <p className="text-white/42">Norm <span className="ml-1 text-white/82">{asset.transition.normalizationGainDb > 0 ? "+" : ""}{asset.transition.normalizationGainDb.toFixed(2)} dB</span></p>
+                <p className="text-white/42">Crossfade <span className="ml-1 text-white/82">{asset.transition.crossfadeSeconds.toFixed(2)}s EqPwr</span></p>
+                {batchLabel ? (
+                  <p className="col-span-2 text-white/42">批次 <span className="ml-1 text-white/82">{batchLabel}</span></p>
+                ) : null}
+              </div>
+              <div className="absolute -bottom-1.5 left-1/2 h-3 w-3 -translate-x-1/2 rotate-45 border-b border-r border-white/12 bg-black/95" />
+            </div>
+          </div>
         ) : null}
       </div>
 
