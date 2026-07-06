@@ -6,6 +6,7 @@ import { ArrowRight, History } from "lucide-react";
 import {
   buildTrackOverrideHistoryItems,
   clearTrackReviewOverride,
+  type TrackOverrideHistoryItem,
 } from "@/lib/track-review-store";
 
 import { MoreMenu } from "@/components/more-menu";
@@ -19,14 +20,12 @@ import {
 } from "@/components/review-panel-shell";
 import { Chip } from "@/components/ui-system";
 
-type OverrideHistoryListProps = {
-  tracks: Parameters<typeof buildTrackOverrideHistoryItems>[0];
-};
+type OverrideHistoryListProps = Record<string, never>;
 
 type OverrideKind = "bpm-detected" | "bpm-custom" | "bpm-tap" | "ignored" | "uncategorized" | "lane-restored";
 
 function classifyOverrideKind(
-  override: Parameters<typeof buildTrackOverrideHistoryItems>[0] extends readonly (infer T)[] ? T : never,
+  override: TrackOverrideHistoryItem,
 ): OverrideKind {
   if (override.override.ignoreBpmMismatch) {
     return "ignored";
@@ -113,11 +112,11 @@ function formatSeconds(seconds: number): string {
   return `${seconds.toFixed(1)} 秒`;
 }
 
-export function OverrideHistoryList({ tracks }: OverrideHistoryListProps) {
+export function OverrideHistoryList(_props: OverrideHistoryListProps) {
   const refreshTick = useTrackReviewSync();
   const historyItems = useMemo(
-    () => buildTrackOverrideHistoryItems(tracks, undefined, undefined),
-    [refreshTick, tracks],
+    () => buildTrackOverrideHistoryItems(),
+    [refreshTick],
   );
 
   const handleScrollToTrack = useCallback((trackId: string) => {

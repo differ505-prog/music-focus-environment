@@ -160,7 +160,7 @@ export function AdminStudioPage() {
       </div>
 
       <div className="mt-6">
-        <AdminPlaybackWorkbench programs={themePrograms} tracks={tracks} />
+        <AdminPlaybackWorkbench programs={themePrograms} />
       </div>
 
       <div className="mt-6">

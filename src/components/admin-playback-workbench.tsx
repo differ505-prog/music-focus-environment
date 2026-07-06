@@ -16,7 +16,6 @@ import { readTrackReviewOverrides } from "@/lib/track-review-store";
 
 type AdminPlaybackWorkbenchProps = {
   programs: ThemeProgram[];
-  tracks: Parameters<typeof OverrideHistoryList>[0];
 };
 
 type TabId = "summary" | "calibrate" | "history";
@@ -36,7 +35,7 @@ function summarizeOverrideCount(trackId: string | null): number {
   return overrides[trackId] ? 1 : 0;
 }
 
-export function AdminPlaybackWorkbench({ programs, tracks }: AdminPlaybackWorkbenchProps) {
+export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps) {
   const { currentTrack, playback } = usePlayback();
   const refreshTick = useTrackReviewSync();
   const [activeTab, setActiveTab] = useState<TabId>("summary");
@@ -122,7 +121,7 @@ export function AdminPlaybackWorkbench({ programs, tracks }: AdminPlaybackWorkbe
           ) : null}
 
           {activeTab === "history" ? (
-            <OverrideHistoryList tracks={tracks} />
+            <OverrideHistoryList />
           ) : null}
         </div>
       </div>
