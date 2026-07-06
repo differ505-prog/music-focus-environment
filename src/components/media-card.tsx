@@ -100,7 +100,7 @@ export function MediaCard({
               height={720}
               label={asset.title}
               aiPrompt={fallbackPrompt}
-              className="h-56"
+              className="h-56 w-full"
             />
           )}
           <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.06),transparent_20%,transparent_56%,rgba(3,7,13,0.78)_100%)]" />

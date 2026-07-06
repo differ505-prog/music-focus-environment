@@ -18,6 +18,8 @@ type SmartPlaceholderProps = {
   aiPrompt?: string;
   /** 額外 className */
   className?: string;
+  /** 填滿父容器（用於全屏/全高背景場景） */
+  fill?: boolean;
 };
 
 /**
@@ -33,6 +35,7 @@ export function SmartPlaceholder({
   label,
   aiPrompt,
   className = '',
+  fill = false,
 }: SmartPlaceholderProps) {
   const [copied, setCopied] = useState(false);
 
@@ -58,15 +61,11 @@ export function SmartPlaceholder({
     }
   };
 
-  // 如果有固定高度或全屏 className，則不添加 aspect-ratio
-  const hasFixedSize = /^(h-|w-)/.test(className.trim().split(/\s+/)[0] || '');
-  const aspectRatioStyle = hasFixedSize ? {} : { aspectRatio: `${width}/${height}` };
-
   return (
     <div
       className={`relative overflow-hidden rounded-[--radius-lg] cursor-pointer ${className}`}
       onClick={handleCopy}
-      style={aspectRatioStyle}
+      style={fill ? {} : { aspectRatio: `${width}/${height}` }}
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img

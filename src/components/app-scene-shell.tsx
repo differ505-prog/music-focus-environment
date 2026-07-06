@@ -60,6 +60,7 @@ export function AppSceneShell({
             label="Background Scene"
             aiPrompt="Dark ambient studio with purple cyan neon glow"
             className="h-full w-full"
+            fill
           />
         </div>
       )}
