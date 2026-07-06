@@ -92,7 +92,7 @@ export function StudioNav() {
             }`}
           >
             <span className="font-medium">{item.label}</span>
-            <span className="ml-2 text-white/50">{item.description}</span>
+            <span className="ml-2 truncate text-white/50">{item.description}</span>
           </Link>
         );
       })}

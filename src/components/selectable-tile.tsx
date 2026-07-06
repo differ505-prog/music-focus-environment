@@ -23,9 +23,9 @@ export function SelectableTile({
           : "border-white/10 bg-black/18"
       }`}
     >
-      <p className="text-[11px] uppercase tracking-[0.3em] text-white/48">{eyebrow}</p>
-      <h3 className="mt-3 font-serif text-2xl text-white xl:text-xl">{title}</h3>
-      <p className="mt-3 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{description}</p>
+      <p className="text-[11px] uppercase tracking-[0.3em] text-white/55">{eyebrow}</p>
+      <h3 className="mt-3 line-clamp-2 break-words font-serif text-2xl text-white xl:text-xl">{title}</h3>
+      <p className="mt-3 line-clamp-2 text-sm leading-6 text-white/68 xl:text-[13px] xl:leading-5">{description}</p>
     </button>
   );
 }

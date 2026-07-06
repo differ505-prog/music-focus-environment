@@ -26,7 +26,7 @@ export function ContentCardOverview({
   return (
     <div className={wrapperClassName}>
       <p className={`text-[11px] uppercase tracking-[0.28em] text-white/42 ${eyebrowClassName}`.trim()}>{eyebrow}</p>
-      <h3 className={`mt-3 font-serif text-2xl text-white ${titleClassName}`.trim()}>{title}</h3>
+      <h3 className={`mt-3 line-clamp-2 break-words font-serif text-2xl text-white ${titleClassName}`.trim()}>{title}</h3>
       {description ? (
         <p className={`mt-3 text-sm leading-6 text-white/66 ${descriptionClassName}`.trim()}>{description}</p>
       ) : null}

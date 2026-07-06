@@ -257,7 +257,7 @@ export function MediaCard({
             <p className="mb-2 text-[11px] uppercase tracking-[0.28em] text-white/40">
               {showAdminDetails ? "曲目資訊" : "這首歌適合什麼時候播放"}
             </p>
-            <p className="leading-6">{asset.copy.descriptionZh}</p>
+            <p className="line-clamp-3 leading-6">{asset.copy.descriptionZh}</p>
             {showAdminDetails ? <p className="mt-3 text-white/55">{asset.copy.descriptionEn}</p> : null}
             <p className="mt-3 text-white/52">
               {primaryCollectionTitle ? `收錄於 ${primaryCollectionTitle}` : "獨立曲目"}
