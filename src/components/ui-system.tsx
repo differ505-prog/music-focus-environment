@@ -1,5 +1,6 @@
 'use client';
 
+import React, { useState } from 'react';
 import type { ReactNode } from 'react';
 
 type SmartPlaceholderProps = {
@@ -33,11 +34,35 @@ export function SmartPlaceholder({
   aiPrompt,
   className = '',
 }: SmartPlaceholderProps) {
+  const [copied, setCopied] = useState(false);
+
   const encodedLabel = encodeURIComponent(label);
   const placeholderUrl = `https://placehold.co/${width}x${height}/${bgColor}/${textColor}?text=${encodedLabel}`;
 
+  const handleCopy = async () => {
+    if (!aiPrompt) return;
+    try {
+      await navigator.clipboard.writeText(aiPrompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = aiPrompt;
+      document.body.appendChild(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textarea);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   return (
-    <div className={`relative overflow-hidden rounded-[--radius-lg] ${className}`}>
+    <div
+      className={`relative overflow-hidden rounded-[--radius-lg] cursor-pointer ${className}`}
+      onClick={handleCopy}
+    >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={placeholderUrl}
@@ -47,19 +72,27 @@ export function SmartPlaceholder({
         className="h-full w-full object-cover"
         loading="lazy"
       />
-      {/* 底部：簡短 AI 提示詞（隨時可見） */}
+      {/* 底部：簡短 AI 提示詞 */}
       {aiPrompt && (
         <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent p-3 pt-8">
           <p className="line-clamp-1 font-mono text-xs text-white/70">{aiPrompt}</p>
         </div>
       )}
+      {/* 複製成功提示 */}
+      {copied && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/70">
+          <div className="rounded-[--radius-md] border border-emerald-400/40 bg-black/90 px-4 py-2 backdrop-blur-xl">
+            <p className="text-sm font-medium text-emerald-400">✓ Copied!</p>
+          </div>
+        </div>
+      )}
       {/* 懸停：完整 AI 提示詞浮層 */}
-      {aiPrompt && (
+      {!copied && aiPrompt && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/80 opacity-0 transition-opacity duration-300 hover:opacity-100">
           <div className="max-w-[90%] rounded-[--radius-md] border border-white/20 bg-black/90 p-4 text-center backdrop-blur-xl">
             <p className="mb-2 text-[10px] uppercase tracking-[0.24em] text-white/50">AI Image Prompt</p>
             <p className="font-mono text-sm leading-relaxed text-white/90">{aiPrompt}</p>
-            <p className="mt-3 text-xs text-white/40">Hover to see prompt · Copy for Midjourney</p>
+            <p className="mt-3 text-xs text-white/40">Click to copy · Use in Midjourney</p>
           </div>
         </div>
       )}
@@ -217,6 +250,3 @@ export function ImageWithFallback({
     />
   );
 }
-
-// Need React for useState
-import React from 'react';
