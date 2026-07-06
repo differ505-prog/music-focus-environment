@@ -5,7 +5,7 @@ const MAX_ANALYSIS_SECONDS = 120;
 const MIN_PEAK_SPACING_SECONDS = 0.18;
 const ANALYSIS_SEGMENT_SECONDS = 32;
 const ANALYSIS_SEGMENT_COUNT = 3;
-const REFERENCE_MATCH_TOLERANCE_BPM = 2;
+const REFERENCE_MATCH_TOLERANCE_BPM = 5;
 
 export type BpmCandidate = {
   bpm: number;
@@ -195,20 +195,14 @@ function resolveReferenceBpm(
   candidates: BpmCandidate[],
   options: BpmAnalysisOptions,
 ) {
-  const topScore = candidates[0]?.score ?? 1;
   const metadataBpm = options.metadataBpm;
   const allowedBpms = Array.from(new Set(options.allowedBpms ?? [])).sort((left, right) => left - right);
-
-  // Calculate normalized score of the top candidate to weight reference matching
-  const topNormalized = (candidates[0]?.score ?? 0) / topScore;
   const scoreTotal = candidates.reduce((sum, candidate) => sum + candidate.score, 0);
-  const confidence = scoreTotal > 0 ? (candidates[0]?.score ?? 0) / scoreTotal : 0;
-  // When confidence is low, lean on metadataBpm; when high, trust candidates.
-  const confidenceWeight = Math.min(1, confidence * 2);
+  const topScore = candidates[0]?.score ?? 0;
+  const topBpm = candidates[0]?.bpm ?? 0;
+  const confidence = scoreTotal > 0 ? topScore / scoreTotal : 0;
 
-  let bestMatch: { bpm: number; score: number } | null = null;
-
-  // Build candidate bpm pool (raw + half/double).
+  // Build candidate bpm pool (raw + half/double for every candidate).
   const allCandidateBpms = new Set<number>();
   for (const candidate of candidates) {
     for (const equivalent of buildEquivalentTempoCandidates(candidate.bpm)) {
@@ -216,58 +210,41 @@ function resolveReferenceBpm(
     }
   }
 
-  // Score metadataBpm match: heavy reward, scales with confidence (i.e. it overrides low-confidence
-  // misdetections such as 85 BPM tracks detected as 105 BPM with confidence ~0.2).
-  if (typeof metadataBpm === "number" && allCandidateBpms.size > 0) {
-    const metadataTargets = [
-      { value: metadataBpm, reward: 120 },
-      { value: metadataBpm / 2, reward: 60 },
-      { value: metadataBpm * 2, reward: 40 },
-      { value: metadataBpm / 4, reward: 25 },
-      { value: metadataBpm * 4, reward: 15 },
-    ];
+  // Strategy A: metadataBpm match. We use a wider tolerance (REFERENCE_MATCH_TOLERANCE_BPM = 5)
+  // to absorb half/double BPM quantization errors. This rescues low-confidence detections such as
+  // rawDetectedBpm=82 for a track whose metadataBpm=85.
+  if (typeof metadataBpm === "number") {
+    const candidatesNearMetadata = Array.from(allCandidateBpms).filter(
+      (bpm) => Math.abs(bpm - metadataBpm) <= REFERENCE_MATCH_TOLERANCE_BPM,
+    );
 
-    for (const target of metadataTargets) {
-      const roundedTarget = Math.round(target.value);
-
-      for (const candidateBpm of allCandidateBpms) {
-        const diff = Math.abs(candidateBpm - roundedTarget);
-
-        if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
-          continue;
-        }
-
-        const baseScore = target.reward - diff * 10;
-        const nextScore = baseScore * confidenceWeight + topNormalized * 30;
-
-        if (!bestMatch || nextScore > bestMatch.score) {
-          bestMatch = { bpm: metadataBpm, score: nextScore };
-        }
-      }
+    if (candidatesNearMetadata.length > 0) {
+      return metadataBpm;
     }
   }
 
-  // Score allowedBpms match: lower priority than metadataBpm so metadata wins ties.
-  for (const allowedBpm of allowedBpms) {
-    for (const candidateBpm of allCandidateBpms) {
-      const diff = Math.abs(candidateBpm - allowedBpm);
+  // Strategy B: allowedBpms match. Only override the raw candidate if it is actually near a lane.
+  if (allowedBpms.length > 0) {
+    for (const allowedBpm of allowedBpms) {
+      const nearAllowed = Array.from(allCandidateBpms).filter(
+        (bpm) => Math.abs(bpm - allowedBpm) <= REFERENCE_MATCH_TOLERANCE_BPM,
+      );
 
-      if (diff > REFERENCE_MATCH_TOLERANCE_BPM) {
+      if (nearAllowed.length === 0) {
         continue;
       }
 
-      const baseScore = diff === 0 ? 20 : 10;
-      const nextScore = baseScore + topNormalized * 30;
-
-      if (!bestMatch || nextScore > bestMatch.score) {
-        bestMatch = { bpm: allowedBpm, score: nextScore };
+      // If the raw top candidate itself is already near the allowed lane, return it (no need to
+      // distort); otherwise pick the nearest allowed lane as the resolved value.
+      if (Math.abs(topBpm - allowedBpm) <= REFERENCE_MATCH_TOLERANCE_BPM) {
+        return topBpm;
       }
+
+      return allowedBpm;
     }
   }
 
-  // Require a minimum confidence-scaled score to override the raw candidate.
-  const threshold = 25 * confidenceWeight + topNormalized * 30;
-  return bestMatch && bestMatch.score >= threshold ? bestMatch.bpm : null;
+  return null;
 }
 
 function getNearestLane(bpm: number, laneOptions: readonly number[]) {
