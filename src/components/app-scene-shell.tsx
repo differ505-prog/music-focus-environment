@@ -44,14 +44,14 @@ export function AppSceneShell({
             }
       }
     >
-      {/* Background image loader with fallback */}
+      {/* Background image preloader - hidden visually but loads into browser cache */}
       {!imageErrored && (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={generatedSceneImageUrl}
           alt=""
           aria-hidden="true"
-          className="hidden"
+          className="pointer-events-none absolute h-0 w-0 overflow-hidden"
           onError={() => setImageErrored(true)}
         />
       )}
