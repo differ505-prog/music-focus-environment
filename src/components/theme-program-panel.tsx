@@ -230,7 +230,9 @@ function buildLowInputAssembly(
 
 export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
+  const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
+  const [collapsedTemplates, setCollapsedTemplates] = useState<Set<string>>(new Set()); // which module templates are collapsed
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
   const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
@@ -250,6 +252,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
 
     if (programs.length > 0) {
       setActiveProgramId((current) => current ?? programs[0].id);
+      setActiveStepIndex(0);
     }
   }, [programs]);
 
@@ -319,6 +322,14 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       window.localStorage.removeItem(MODULE_SUPPLEMENTAL_INPUTS_STORAGE_KEY);
     }
   }, []);
+
+  // When moduleOutputs change (e.g. after save), advance to the next incomplete step
+  useEffect(() => {
+    if (!activeProgramId) return;
+    const program = programs.find((p) => p.id === activeProgramId);
+    if (!program) return;
+    setActiveStepIndex(findFirstIncompleteStep(program));
+  }, [moduleOutputs, activeProgramId]);
 
   useEffect(() => {
     const nextGeneratedPrompts: WorkingPromptDraftMap = {};
@@ -567,6 +578,35 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     }
   };
 
+  /** Find the first module index that has no saved output — the natural next step */
+  function findFirstIncompleteStep(program: ThemeProgram): number {
+    for (let i = 0; i < program.promptModules.length; i++) {
+      const module = program.promptModules[i];
+      const combined = combineModuleOutputs(program.id, module, moduleOutputs);
+      if (!combined.trim()) {
+        return i;
+      }
+    }
+    return program.promptModules.length - 1;
+  }
+
+  function toggleTemplate(programId: string, moduleId: string) {
+    const key = `${programId}::${moduleId}`;
+    setCollapsedTemplates((current) => {
+      const next = new Set(current);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  }
+
+  function isTemplateCollapsed(programId: string, moduleId: string) {
+    return collapsedTemplates.has(`${programId}::${moduleId}`);
+  }
+
   const renderSectionToggle = (programId: string, section: SectionKey, label: string) => {
     const isCollapsed = (collapsedSections[programId] ?? defaultSectionState())[section];
 
@@ -644,8 +684,38 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                   常用
                 </div>
               </div>
+              {/* Step progress indicator */}
+              <div className="mt-4 flex flex-wrap items-center gap-2">
+                {program.promptModules.map((module, moduleIndex) => {
+                  const combined = combineModuleOutputs(program.id, module, moduleOutputs);
+                  const isDone = Boolean(combined.trim());
+                  const isActive = moduleIndex === activeStepIndex;
+
+                  return (
+                    <button
+                      key={module.id}
+                      type="button"
+                      onClick={() => setActiveStepIndex(moduleIndex)}
+                      className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
+                        isActive
+                          ? 'border-cyan-300/50 bg-cyan-300/18 text-cyan-50'
+                          : isDone
+                            ? 'border-emerald-300/28 bg-emerald-300/10 text-emerald-50/80 hover:border-emerald-300/40'
+                            : 'border-white/10 bg-white/6 text-white/50 hover:border-white/18 hover:text-white/70'
+                      }`}
+                    >
+                      <span className="font-mono tabular-nums">{String(moduleIndex + 1).padStart(2, '0')}</span>
+                      <span className="max-w-[8rem] truncate">{module.title}</span>
+                      {isDone && <span className="opacity-60">✓</span>}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Step content: only the active step is fully rendered */}
               <div className="mt-4 grid gap-3">
                 {program.promptModules.map((module, moduleIndex) => {
+                  const isActive = moduleIndex === activeStepIndex;
                   const moduleKey = buildModuleKey(program.id, module.id);
                   const upstreamPayload = buildUpstreamPayload(program, moduleIndex, module, moduleOutputs);
                   const feedback = feedbackMap[moduleKey];
@@ -657,53 +727,83 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                   const missingUpstreamModules = getMissingUpstreamModules(program, moduleIndex, module, moduleOutputs);
                   const hasMissingUpstreamModules = missingUpstreamModules.length > 0;
                   const canInsertUpstream = moduleIndex > 0;
-                  const workingPrompt = buildWorkingPrompt(
-                    program,
-                    moduleIndex,
-                    module,
-                    moduleOutputs,
-                    supplementalInputs,
-                  );
+                  const workingPrompt = buildWorkingPrompt(program, moduleIndex, module, moduleOutputs, supplementalInputs);
                   const workingPromptValue = workingPromptDrafts[moduleKey] ?? workingPrompt;
+                  const templateCollapsed = isTemplateCollapsed(program.id, module.id);
 
+                  // Non-active steps: collapsed single-line summary
+                  if (!isActive) {
+                    return (
+                      <button
+                        key={module.id}
+                        type="button"
+                        onClick={() => setActiveStepIndex(moduleIndex)}
+                        className="flex min-w-0 items-center gap-3 rounded-[18px] border border-cyan-300/10 bg-black/18 px-4 py-3 text-left transition hover:border-cyan-300/22 hover:bg-black/28"
+                      >
+                        <span className="shrink-0 rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-0.5 text-[11px] font-mono tabular-nums text-cyan-50/70">
+                          {String(moduleIndex + 1).padStart(2, '0')}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate text-sm text-white/58">{module.title}</span>
+                        {hasSavedCurrentModuleOutput ? (
+                          <span className="shrink-0 text-[11px] text-emerald-400/80">已完成 ✓</span>
+                        ) : hasMissingUpstreamModules ? (
+                          <span className="shrink-0 text-[11px] text-amber-400/80">待補</span>
+                        ) : (
+                          <span className="shrink-0 text-[11px] text-white/36">未開始</span>
+                        )}
+                      </button>
+                    );
+                  }
+
+                  // Active step: full content
                   return (
                     <div
                       key={module.id}
                       id={buildModuleSectionId(program.id, module.id)}
-                      className="min-w-0 overflow-hidden rounded-[18px] border border-cyan-300/12 bg-black/18 p-4"
+                      className="min-w-0 overflow-hidden rounded-[18px] border border-cyan-300/18 bg-black/18 p-4"
                     >
-                      <div className="flex flex-wrap items-center gap-3">
-                        <span className="rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-1 text-[11px] uppercase tracking-[0.2em] text-cyan-50/72">
+                      <div className="mb-3 flex flex-wrap items-center gap-3">
+                        <span className="rounded-full border border-cyan-300/22 bg-cyan-300/12 px-2 py-1 text-[11px] font-mono tabular-nums uppercase tracking-widest text-cyan-50/78">
                           {module.id}
                         </span>
                         <h4 className="text-sm font-medium text-white">{module.title}</h4>
                       </div>
-                      <p className="mt-2 text-xs leading-6 text-cyan-50/70">{module.purpose}</p>
-                      <pre className="mt-3 overflow-hidden whitespace-pre-wrap break-words rounded-[16px] border border-white/8 bg-[#07101a]/90 p-4 text-xs leading-6 text-cyan-50/82">
-                        <code>{module.template}</code>
-                      </pre>
+                      <p className="mb-3 text-xs leading-6 text-cyan-50/65">{module.purpose}</p>
+
+                      {/* Template: collapsible */}
+                      <div className="mb-4 rounded-[14px] border border-white/8 bg-[#07101a]/88">
+                        <button
+                          type="button"
+                          onClick={() => toggleTemplate(program.id, module.id)}
+                          className="flex w-full items-center justify-between px-4 py-2.5 text-left"
+                        >
+                          <span className="text-[11px] uppercase tracking-widest text-white/42">Prompt 模板</span>
+                          <span className="text-[11px] text-white/36">{templateCollapsed ? '展開 ▸' : '收合 ▾'}</span>
+                        </button>
+                        {!templateCollapsed && (
+                          <pre className="overflow-hidden whitespace-pre-wrap break-words border-t border-white/6 px-4 py-3 text-xs leading-6 text-cyan-50/80">
+                            <code>{module.template}</code>
+                          </pre>
+                        )}
+                      </div>
 
                       {moduleIndex === 0 ? (
-                        <div className="mt-4 rounded-[16px] border border-amber-300/14 bg-[#181208]/84 p-4">
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
-                            下一步來源說明
-                          </p>
+                        <div className="mb-4 rounded-[14px] border border-amber-300/14 bg-[#181208]/84 p-4">
+                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">下一步說明</p>
                           <p className="mt-2 text-xs leading-6 text-amber-50/78">
                             Module 02 讀取的是下方「此步驟輸出」已儲存內容，不是上面的模板。請把 AI 回傳的 brief 貼到下方，再按「儲存此步驟結果」。
                           </p>
-                          <p className="mt-2 text-xs leading-6 text-amber-50/70">
+                          <p className="mt-2 text-xs leading-6 text-amber-50/68">
                             {hasSavedCurrentModuleOutput ? '目前狀態：已儲存，可供下一步帶入。' : '目前狀態：尚未儲存，下一步會顯示待補提示。'}
                           </p>
                         </div>
                       ) : null}
 
                       {moduleIndex > 0 ? (
-                        <div className="mt-4 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-4">
+                        <div className="mb-4 rounded-[14px] border border-fuchsia-400/12 bg-[#120d21]/70 p-4">
                           <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="min-w-0">
-                              <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
-                                自動組裝工作指令
-                              </p>
+                              <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">自動組裝工作指令</p>
                               <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
                                 {hasMissingUpstreamModules
                                   ? `尚未取得 ${missingUpstreamModules.map((item) => item.title).join(' / ')} 的已儲存結果。`
@@ -715,17 +815,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                               onClick={() =>
                                 hasMissingUpstreamModules
                                   ? (() => {
-                                      setFeedback(
-                                        moduleKey,
-                                        `請先完成並儲存 ${missingUpstreamModules[0].title}`,
-                                      );
+                                      setFeedback(moduleKey, `請先完成並儲存 ${missingUpstreamModules[0].title}`);
                                       focusModuleFirstOutput(program.id, missingUpstreamModules[0].id);
                                     })()
-                                  : handleCopyText(
-                                      `${moduleKey}::working-prompt`,
-                                      workingPromptValue,
-                                      '自動組裝工作指令已複製',
-                                    )
+                                  : handleCopyText(`${moduleKey}::working-prompt`, workingPromptValue, '自動組裝工作指令已複製')
                               }
                               className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] text-fuchsia-50/82 transition hover:bg-fuchsia-400/14"
                             >
@@ -734,44 +827,32 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                           </div>
                           <textarea
                             value={workingPromptValue}
-                            onChange={(event) =>
-                              handleWorkingPromptDraftChange(program.id, module.id, event.target.value)
-                            }
-                            className="mt-3 min-h-48 w-full rounded-[16px] border border-white/8 bg-[#090512]/90 p-4 text-xs leading-6 text-fuchsia-50/82 outline-none transition placeholder:text-fuchsia-50/28 focus:border-fuchsia-300/28"
+                            onChange={(event) => handleWorkingPromptDraftChange(program.id, module.id, event.target.value)}
+                            className="mt-3 min-h-36 w-full rounded-[14px] border border-white/8 bg-[#090512]/90 p-4 text-xs leading-6 text-fuchsia-50/82 outline-none transition placeholder:text-fuchsia-50/28 focus:border-fuchsia-300/28"
                             placeholder="這裡會顯示可直接送進 AI 的完整工作指令。"
                           />
                         </div>
                       ) : null}
 
                       {isLowInputModule ? (
-                        <div className="mt-4 rounded-[16px] border border-amber-300/12 bg-[#151108]/80 p-4">
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">
-                            少量補充
-                          </p>
+                        <div className="mb-4 rounded-[14px] border border-amber-300/12 bg-[#151108]/80 p-4">
+                          <p className="text-[11px] uppercase tracking-widest text-amber-100/60">少量補充</p>
                           <p className="mt-2 text-xs leading-6 text-amber-50/76">
-                            {module.autoAssembleNote ??
-                              '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
+                            {module.autoAssembleNote ?? '這一步會自動承接前面已儲存的結果，你只需要補少量外部資源或特別指定欄位。'}
                           </p>
                           <div className="mt-4">
-                            <p className="text-xs uppercase tracking-[0.2em] text-white/48">
-                              {module.supplementalLabel ?? '少量補充資料'}
-                            </p>
+                            <p className="text-xs uppercase tracking-widest text-white/48">{module.supplementalLabel ?? '少量補充資料'}</p>
                             <textarea
                               value={supplementalInput}
-                              onChange={(event) =>
-                                handleSupplementalInputChange(program.id, module.id, event.target.value)
-                              }
-                              placeholder={
-                                module.supplementalPlaceholder ??
-                                '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'
-                              }
-                              className="mt-3 min-h-28 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
+                              onChange={(event) => handleSupplementalInputChange(program.id, module.id, event.target.value)}
+                              placeholder={module.supplementalPlaceholder ?? '只補 audioUrl、coverImageUrl、backgroundVideoUrl、durationSeconds 或你指定要覆寫的欄位。'}
+                              className="mt-3 min-h-24 w-full rounded-[14px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-amber-300/28"
                             />
                           </div>
                         </div>
                       ) : null}
 
-                      <div className="mt-4 flex flex-wrap gap-2">
+                      <div className="mb-4 flex flex-wrap gap-2">
                         {module.quickLinks?.map((link) => (
                           <a
                             key={`${module.id}-${link.url}`}
@@ -785,9 +866,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         ))}
                         <button
                           type="button"
-                          onClick={() =>
-                            handleCopyText(`${moduleKey}::template`, module.template, '模板已複製')
-                          }
+                          onClick={() => handleCopyText(`${moduleKey}::template`, module.template, '模板已複製')}
                           className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/72 transition hover:bg-white/12"
                         >
                           複製模板
@@ -795,9 +874,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <button
                           type="button"
                           onClick={() =>
-                            isLowInputModule
-                              ? handleAssembleLowInput(program, moduleIndex)
-                              : handleInsertUpstream(program, moduleIndex)
+                            isLowInputModule ? handleAssembleLowInput(program, moduleIndex) : handleInsertUpstream(program, moduleIndex)
                           }
                           className={`rounded-full border px-3 py-2 text-xs transition ${
                             canInsertUpstream
@@ -813,13 +890,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         </button>
                         <button
                           type="button"
-                          onClick={() =>
-                            handleCopyText(
-                              `${moduleKey}::output`,
-                              combinedOutput,
-                              '此步驟結果已複製',
-                            )
-                          }
+                          onClick={() => handleCopyText(`${moduleKey}::output`, combinedOutput, '此步驟結果已複製')}
                           className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/14"
                         >
                           複製此步驟全部結果
@@ -827,10 +898,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                       </div>
 
                       {upstreamPayload ? (
-                        <div className="mt-3 rounded-[16px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-fuchsia-100/55">
-                            已帶入前一步內容
-                          </p>
+                        <div className="mb-4 rounded-[14px] border border-fuchsia-400/12 bg-[#120d21]/70 p-3">
+                          <p className="text-[11px] uppercase tracking-widest text-fuchsia-100/55">已帶入前一步內容</p>
                           <p className="mt-2 text-xs leading-6 text-fuchsia-50/74">
                             {isLowInputModule
                               ? '前面步驟的結果已可直接帶進這一步，減少手動整理。'
@@ -839,9 +908,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         </div>
                       ) : null}
 
-                      <div className="mt-4">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <p className="text-[11px] uppercase tracking-[0.2em] text-white/48">
+                      {/* Output slots */}
+                      <div>
+                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                          <p className="text-[11px] uppercase tracking-widest text-white/48">
                             {isLowInputModule
                               ? '帶入後編輯區'
                               : slotCount > 1
@@ -856,26 +926,19 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                               '可貼上 AI 生成結果'}
                           </span>
                         </div>
-                        <div className="mt-3 grid gap-3">
+                        <div className="grid gap-3">
                           {Array.from({ length: slotCount }, (_, slotIndex) => {
                             const slotKey = buildModuleSlotKey(program.id, module.id, slotIndex);
                             const slotLabel = getModuleOutputSlotLabel(module, slotIndex);
 
                             return (
-                              <div
-                                key={slotKey}
-                                className="min-w-0 overflow-hidden rounded-[16px] border border-white/8 bg-[#04070c]/70 p-3"
-                              >
-                                <div className="flex flex-wrap items-center justify-between gap-3">
-                                  <p className="text-xs uppercase tracking-[0.2em] text-white/48">{slotLabel}</p>
+                              <div key={slotKey} className="min-w-0 overflow-hidden rounded-[14px] border border-white/8 bg-[#04070c]/70 p-3">
+                                <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+                                  <p className="text-xs uppercase tracking-widest text-white/48">{slotLabel}</p>
                                   <button
                                     type="button"
                                     onClick={() =>
-                                      handleCopyText(
-                                        `${slotKey}::output`,
-                                        moduleOutputs[slotKey] ?? '',
-                                        `${slotLabel} 已複製`,
-                                      )
+                                      handleCopyText(`${slotKey}::output`, moduleOutputs[slotKey] ?? '', `${slotLabel} 已複製`)
                                     }
                                     className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/72 transition hover:bg-white/12"
                                   >
@@ -885,11 +948,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                 <textarea
                                   id={buildModuleTextareaId(program.id, module.id, slotIndex)}
                                   value={moduleOutputs[slotKey] ?? ''}
-                                  onChange={(event) =>
-                                    handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)
-                                  }
+                                  onChange={(event) => handleModuleOutputChange(program.id, module.id, slotIndex, event.target.value)}
                                   placeholder={`把 ${slotLabel} 貼在這裡，儲存後可供後面步驟直接插入或複製。`}
-                                  className="mt-3 min-h-40 w-full rounded-[16px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
+                                  className="min-h-36 w-full rounded-[14px] border border-white/10 bg-[#04070c] px-4 py-3 text-sm leading-7 text-white outline-none transition placeholder:text-white/28 focus:border-cyan-300/28"
                                 />
                               </div>
                             );
