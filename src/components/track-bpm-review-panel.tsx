@@ -19,6 +19,19 @@ import type { Track } from "@/types/music";
 import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
 import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
 import { Chip } from "@/components/ui-system";
+import { TapBpmButton } from "@/components/tap-bpm-button";
+
+type TrackBpmReviewPanelProps = {
+  tracks: Track[];
+};
+
+export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
+  const [scanNotice, setScanNotice] = useState<string | null>(null);
+  const refreshTick = useTrackReviewSync();
+  const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
+  const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
 
   const detections = useMemo(() => readTrackBpmDetections(), [refreshTick]);
   const overrides = useMemo(() => readTrackReviewOverrides(), [refreshTick]);
@@ -43,11 +56,17 @@ import { Chip } from "@/components/ui-system";
 
       let successCount = 0;
       let skippedCount = 0;
+      let skippedOverrideCount = 0;
       let failedCount = 0;
 
       for (const [index, track] of tracks.entries()) {
         if (!track.media.audioUrl) {
           skippedCount += 1;
+          continue;
+        }
+
+        if (overrides[track.id]?.bpm != null) {
+          skippedOverrideCount += 1;
           continue;
         }
 
@@ -92,10 +111,16 @@ import { Chip } from "@/components/ui-system";
         summary.push(`跳過 ${skippedCount} 首`);
       }
 
+      if (skippedOverrideCount > 0) {
+        summary.push(`已校正略過 ${skippedOverrideCount} 首`);
+      }
+
       const summaryLabel = `掃描完成 · ${summary.join(" / ")}`;
       setScanProgressLabel(summaryLabel);
 
-      if (failedCount === 0) {
+      if (failedCount === 0 && skippedOverrideCount > 0) {
+        setScanNotice(`略過 ${skippedOverrideCount} 首已手動校正的曲目（清除覆核後會再納入掃描）。`);
+      } else if (failedCount === 0) {
         setScanNotice("全部可掃描曲目已完成 BPM 分析。");
       }
     } finally {
@@ -225,6 +250,16 @@ import { Chip } from "@/components/ui-system";
                     採用 {item.detection.detectedBpm} BPM
                   </button>
                   <CustomBpmInput trackId={item.track.id} currentBpm={item.effectiveBpm} allowedBpms={item.allowedBpms} />
+                  <TapBpmButton
+                    onResult={(bpm) =>
+                      updateTrackReviewOverride(item.track.id, {
+                        bpm,
+                        ignoreBpmMismatch: false,
+                      })
+                    }
+                    currentBpm={item.effectiveBpm}
+                    allowedBpms={item.allowedBpms}
+                  />
                   <button
                     type="button"
                     onClick={() => updateTrackReviewOverride(item.track.id, { ignoreBpmMismatch: true })}
