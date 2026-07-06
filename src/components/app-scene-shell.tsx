@@ -34,7 +34,9 @@ export function AppSceneShell({
           ? {
               backgroundImage: `linear-gradient(180deg, rgba(5,3,11,0.66), rgba(2,5,15,0.94)), url("${generatedSceneImageUrl}")`,
               backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              backgroundPosition: 'center center',
+              backgroundAttachment: 'scroll',
+              backgroundRepeat: 'no-repeat',
             }
           : {}
       }
@@ -53,7 +55,7 @@ export function AppSceneShell({
 
       {/* Fallback: Smart Placeholder Background */}
       {imageErrored && (
-        <div className="absolute inset-0 z-0">
+        <div className="absolute inset-0 z-0 bg-[#0a0414]">
           <SmartPlaceholder
             width={1920}
             height={1080}
