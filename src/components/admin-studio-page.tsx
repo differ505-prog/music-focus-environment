@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { AdminPlaybackWorkbench } from "@/components/admin-playback-workbench";
 import { AppSceneShell } from "@/components/app-scene-shell";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { BpmAnalysisPanel } from "@/components/bpm-analysis-panel";
 import { FilterBar } from "@/components/filter-bar";
 import { MediaCard } from "@/components/media-card";
 import { MixInsightsPanel } from "@/components/mix-insights-panel";
+import { OverrideHistoryList } from "@/components/override-history-list";
 import { TrackBpmReviewPanel } from "@/components/track-bpm-review-panel";
 import { TrackTransitionReviewPanel } from "@/components/track-transition-review-panel";
 import { usePlayback } from "@/components/playback-provider";
@@ -159,6 +161,10 @@ export function AdminStudioPage() {
       </div>
 
       <div className="mt-6">
+        <AdminPlaybackWorkbench programs={themePrograms} />
+      </div>
+
+      <div className="mt-6">
         <TrackBpmReviewPanel tracks={tracks} />
       </div>
 
@@ -195,6 +201,10 @@ export function AdminStudioPage() {
           </div>
         )}
       </section>
+
+      <div className="mt-10">
+        <OverrideHistoryList tracks={tracks} />
+      </div>
     </AppSceneShell>
   );
 }

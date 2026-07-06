@@ -67,7 +67,7 @@ export function MediaCard({
         : "border-rose-300/25 bg-rose-300/12 text-rose-100";
 
   return (
-    <article className="group relative overflow-hidden rounded-[32px] border border-fuchsia-400/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.05))] p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
+    <article data-track-id={asset.id} className="group relative overflow-hidden rounded-[32px] border border-fuchsia-400/12 bg-[linear-gradient(180deg,rgba(255,255,255,0.09),rgba(255,255,255,0.05))] p-4 shadow-[0_28px_90px_rgba(3,7,18,0.48)] backdrop-blur-2xl">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(192,38,211,0.12),transparent_28%),radial-gradient(circle_at_bottom_right,rgba(34,211,238,0.12),transparent_32%)]" />
       <div className="pointer-events-none absolute -inset-x-6 -top-10 h-32 bg-[radial-gradient(circle,rgba(255,255,255,0.08),transparent_62%)] opacity-70 blur-2xl transition duration-700 group-hover:opacity-100" />
       <div className="relative">
