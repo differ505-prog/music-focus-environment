@@ -233,6 +233,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
   const [collapsedSections, setCollapsedSections] = useState<Record<string, SectionState>>({});
   const [collapsedTemplates, setCollapsedTemplates] = useState<Set<string>>(new Set()); // which module templates are collapsed
+  const [collapsedOutputs, setCollapsedOutputs] = useState<Set<string>>(new Set()); // which module output areas are collapsed
+  const [collapsedWorking, setCollapsedWorking] = useState<Set<string>>(new Set()); // which working-prompt areas are collapsed
   const [moduleOutputs, setModuleOutputs] = useState<Record<string, string>>({});
   const [feedbackMap, setFeedbackMap] = useState<FeedbackMap>({});
   const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
@@ -607,6 +609,39 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     return collapsedTemplates.has(`${programId}::${moduleId}`);
   }
 
+  function toggleOutput(programId: string, moduleId: string) {
+    const key = `${programId}::${moduleId}`;
+    setCollapsedOutputs((current) => {
+      const next = new Set(current);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  function isOutputCollapsed(programId: string, moduleId: string) {
+    return collapsedOutputs.has(`${programId}::${moduleId}`);
+  }
+
+  function toggleWorking(programId: string, moduleId: string) {
+    const key = `${programId}::${moduleId}`;
+    setCollapsedWorking((current) => {
+      const next = new Set(current);
+      next.has(key) ? next.delete(key) : next.add(key);
+      return next;
+    });
+  }
+
+  function isWorkingCollapsed(programId: string, moduleId: string) {
+    return collapsedWorking.has(`${programId}::${moduleId}`);
+  }
+
+  function isAllStepsComplete(program: ThemeProgram) {
+    return program.promptModules.every((module) => {
+      const combined = combineModuleOutputs(program.id, module, moduleOutputs);
+      return Boolean(combined.trim());
+    });
+  }
+
   const renderSectionToggle = (programId: string, section: SectionKey, label: string) => {
     const isCollapsed = (collapsedSections[programId] ?? defaultSectionState())[section];
 
@@ -712,6 +747,35 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                 })}
               </div>
 
+              {/* All-done celebration */}
+              {isAllStepsComplete(program) && (
+                <div className="mt-4 rounded-[16px] border border-emerald-300/28 bg-emerald-300/10 p-4">
+                  <p className="text-xs font-medium uppercase tracking-widest text-emerald-100/85">全部步驟完成</p>
+                  <p className="mt-2 text-sm leading-6 text-emerald-50/78">
+                    所有 Prompt 已完成，可隨時回到任意步驟重新編輯。已儲存的內容會自動帶入。
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleCopyText(`${program.id}::all-outputs`, program.promptModules.map((m) => combineModuleOutputs(program.id, m, moduleOutputs)).join('\n\n---\n\n'), '全部步驟結果已複製')}
+                      className="rounded-full border border-emerald-300/28 bg-emerald-300/10 px-4 py-2 text-xs text-emerald-50/82 transition hover:bg-emerald-300/16"
+                    >
+                      一次複製全部結果
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setActiveStepIndex(0);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="rounded-full border border-white/10 bg-white/8 px-4 py-2 text-xs text-white/72 transition hover:bg-white/12"
+                    >
+                      回到第一步重做
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Step content: only the active step is fully rendered */}
               <div className="mt-4 grid gap-3">
                 {program.promptModules.map((module, moduleIndex) => {
@@ -810,27 +874,38 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                   : '這一框會把前一步已儲存內容自動帶入模板，直接複製給 AI 使用。'}
                               </p>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() =>
-                                hasMissingUpstreamModules
-                                  ? (() => {
-                                      setFeedback(moduleKey, `請先完成並儲存 ${missingUpstreamModules[0].title}`);
-                                      focusModuleFirstOutput(program.id, missingUpstreamModules[0].id);
-                                    })()
-                                  : handleCopyText(`${moduleKey}::working-prompt`, workingPromptValue, '自動組裝工作指令已複製')
-                              }
-                              className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] text-fuchsia-50/82 transition hover:bg-fuchsia-400/14"
-                            >
-                              {hasMissingUpstreamModules ? `前往 ${missingUpstreamModules[0].title}` : '複製此框'}
-                            </button>
+                            <div className="flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => toggleWorking(program.id, module.id)}
+                                className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/60 transition hover:bg-white/12"
+                              >
+                                {isWorkingCollapsed(program.id, module.id) ? '展開' : '收合'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  hasMissingUpstreamModules
+                                    ? (() => {
+                                        setFeedback(moduleKey, `請先完成並儲存 ${missingUpstreamModules[0].title}`);
+                                        focusModuleFirstOutput(program.id, missingUpstreamModules[0].id);
+                                      })()
+                                    : handleCopyText(`${moduleKey}::working-prompt`, workingPromptValue, '自動組裝工作指令已複製')
+                                }
+                                className="rounded-full border border-fuchsia-400/20 bg-fuchsia-400/10 px-3 py-1.5 text-[11px] text-fuchsia-50/82 transition hover:bg-fuchsia-400/14"
+                              >
+                                {hasMissingUpstreamModules ? `前往 ${missingUpstreamModules[0].title}` : '複製此框'}
+                              </button>
+                            </div>
                           </div>
-                          <textarea
-                            value={workingPromptValue}
-                            onChange={(event) => handleWorkingPromptDraftChange(program.id, module.id, event.target.value)}
-                            className="mt-3 min-h-36 w-full rounded-[14px] border border-white/8 bg-[#090512]/90 p-4 text-xs leading-6 text-fuchsia-50/82 outline-none transition placeholder:text-fuchsia-50/28 focus:border-fuchsia-300/28"
-                            placeholder="這裡會顯示可直接送進 AI 的完整工作指令。"
-                          />
+                          {(!isWorkingCollapsed(program.id, module.id) || !workingPromptValue.trim()) && (
+                            <textarea
+                              value={workingPromptValue}
+                              onChange={(event) => handleWorkingPromptDraftChange(program.id, module.id, event.target.value)}
+                              className="mt-3 min-h-36 w-full rounded-[14px] border border-white/8 bg-[#090512]/90 p-4 text-xs leading-6 text-fuchsia-50/82 outline-none transition placeholder:text-fuchsia-50/28 focus:border-fuchsia-300/28"
+                              placeholder="這裡會顯示可直接送進 AI 的完整工作指令。"
+                            />
+                          )}
                         </div>
                       ) : null}
 
@@ -918,13 +993,22 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                                 ? `此步驟輸出（${slotCount} 組候選）`
                                 : '此步驟輸出'}
                           </p>
-                          <span className="text-xs text-cyan-50/64">
-                            {feedback ??
-                              feedbackMap[`${moduleKey}::working-prompt`] ??
-                              feedbackMap[`${moduleKey}::template`] ??
-                              feedbackMap[`${moduleKey}::output`] ??
-                              '可貼上 AI 生成結果'}
-                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleOutput(program.id, module.id)}
+                              className="rounded-full border border-white/10 bg-white/8 px-3 py-1.5 text-[11px] text-white/60 transition hover:bg-white/12"
+                            >
+                              {isOutputCollapsed(program.id, module.id) ? '展開' : '收合'}
+                            </button>
+                            <span className="text-xs text-cyan-50/64">
+                              {feedback ??
+                                feedbackMap[`${moduleKey}::working-prompt`] ??
+                                feedbackMap[`${moduleKey}::template`] ??
+                                feedbackMap[`${moduleKey}::output`] ??
+                                (isOutputCollapsed(program.id, module.id) ? '已折疊' : '可貼上 AI 生成結果')}
+                            </span>
+                          </div>
                         </div>
                         <div className="grid gap-3">
                           {Array.from({ length: slotCount }, (_, slotIndex) => {
@@ -956,28 +1040,42 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                             );
                           })}
                         </div>
-                        <div className="mt-3 flex flex-wrap items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => handleSaveModuleOutput(program.id, module.id)}
-                            className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
-                              hasSavedCurrentModuleOutput
-                                ? 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50 hover:bg-cyan-300/16'
-                                : 'border-white/10 bg-white/8 text-white/82 hover:bg-white/12'
-                            }`}
-                          >
-                            {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
-                          </button>
-                          <span className="text-xs text-white/45">
-                            {hasSavedCurrentModuleOutput
-                              ? slotCount > 1
-                                ? '已可重新儲存；後續模組會讀取這兩組候選內容。'
-                                : '已可重新儲存；後續模組會讀取這份內容。'
-                              : slotCount > 1
-                                ? '請先把 AI 回傳的候選內容貼到下方輸出框，再儲存。'
-                                : '請先把 AI 回傳內容貼到下方輸出框，再儲存。'}
-                          </span>
-                        </div>
+                        {isOutputCollapsed(program.id, module.id) ? (
+                          <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-cyan-50/48">
+                            <span>{slotCount > 1 ? `${slotCount} 個候選輸出框` : '1 個輸出框'}</span>
+                            {hasSavedCurrentModuleOutput && (
+                              <span className="rounded-full border border-emerald-300/22 bg-emerald-300/8 px-2 py-0.5 text-emerald-400/80">
+                                已儲存 ✓
+                              </span>
+                            )}
+                            {moduleOutputs[buildModuleSlotKey(program.id, module.id, 0)]?.trim() && (
+                              <span className="text-white/32">有草稿內容</span>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-3 flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => handleSaveModuleOutput(program.id, module.id)}
+                              className={`rounded-full border px-3 py-2 text-xs font-medium transition ${
+                                hasSavedCurrentModuleOutput
+                                  ? 'border-cyan-300/20 bg-cyan-300/10 text-cyan-50 hover:bg-cyan-300/16'
+                                  : 'border-white/10 bg-white/8 text-white/82 hover:bg-white/12'
+                              }`}
+                            >
+                              {slotCount > 1 ? '儲存此步驟全部候選結果' : '儲存此步驟結果'}
+                            </button>
+                            <span className="text-xs text-white/45">
+                              {hasSavedCurrentModuleOutput
+                                ? slotCount > 1
+                                  ? '已可重新儲存；後續模組會讀取這兩組候選內容。'
+                                  : '已可重新儲存；後續模組會讀取這份內容。'
+                                : slotCount > 1
+                                  ? '請先把 AI 回傳的候選內容貼到下方輸出框，再儲存。'
+                                  : '請先把 AI 回傳內容貼到下方輸出框，再儲存。'}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
