@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 
+import { copyTextToClipboard } from '@/lib/clipboard';
 import type { ThemeProgram } from "@/types/music";
 
 type ThemeProgramPanelProps = {
@@ -225,39 +226,6 @@ function buildLowInputAssembly(
     '以下是少量補充資料（可能為空，僅在有提供時覆寫對應欄位）：',
     supplementalInput.trim() || '無',
   ].join('\n');
-}
-
-async function copyTextToClipboard(value: string) {
-  if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(value);
-      return true;
-    } catch {
-      // Fallback below.
-    }
-  }
-
-  if (typeof document === 'undefined') {
-    return false;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = value;
-  textarea.setAttribute('readonly', 'true');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  textarea.style.pointerEvents = 'none';
-  document.body.appendChild(textarea);
-  textarea.focus();
-  textarea.select();
-
-  try {
-    return document.execCommand('copy');
-  } catch {
-    return false;
-  } finally {
-    document.body.removeChild(textarea);
-  }
 }
 
 export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {

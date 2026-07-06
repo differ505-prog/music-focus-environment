@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Loader2, Waves } from "lucide-react";
 
 import { tracks as baseTracks } from "@/data/music-assets";
@@ -8,7 +8,6 @@ import { detectTrackMixInSuggestionFromUrl } from "@/lib/track-transition-detect
 import {
   buildTrackTransitionReviewItems,
   clearTrackReviewOverride,
-  getTrackReviewStorageEventName,
   readTrackMixInSuggestions,
   readTrackReviewOverrides,
   saveTrackMixInSuggestion,
@@ -16,6 +15,10 @@ import {
   updateTrackReviewOverrides,
 } from "@/lib/track-review-store";
 import type { Track } from "@/types/music";
+
+import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
+import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
+import { Chip } from "@/components/ui-system";
 
 type TrackTransitionReviewPanelProps = {
   tracks: Track[];
@@ -29,21 +32,8 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const refreshTick = useTrackReviewSync();
   const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
-
-  useEffect(() => {
-    const eventName = getTrackReviewStorageEventName();
-    const refresh = () => setRefreshTick((current) => current + 1);
-
-    window.addEventListener(eventName, refresh);
-    window.addEventListener("storage", refresh);
-
-    return () => {
-      window.removeEventListener(eventName, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
 
   const suggestions = useMemo(() => readTrackMixInSuggestions(), [refreshTick]);
   const overrides = useMemo(() => readTrackReviewOverrides(), [refreshTick]);
@@ -116,7 +106,6 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       }
     } finally {
       setIsScanning(false);
-      setRefreshTick((current) => current + 1);
     }
   };
 
@@ -155,16 +144,12 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
   };
 
   return (
-    <section className="rounded-[28px] border border-cyan-300/16 bg-black/20 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-cyan-100/58">接歌進點建議</p>
-          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">自動抓比較有節拍感的進場位置</h2>
-          <p className="mt-3 text-sm leading-7 text-white/68">
-            系統會分析每首歌前段的能量與 onset，給出建議 Mix In，讓你對照目前 metadata 再決定是否採用。
-          </p>
-        </div>
-
+    <ReviewPanelShell
+      eyebrow="接歌進點建議"
+      title="自動抓比較有節拍感的進場位置"
+      description="系統會分析每首歌前段的能量與 onset，給出建議 Mix In，讓你對照目前 metadata 再決定是否採用。"
+      accentColor="cyan"
+      actions={
         <div className="flex flex-wrap justify-end gap-3">
           <button
             type="button"
@@ -194,53 +179,36 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
             {isScanning ? "分析中..." : "掃描接歌進點"}
           </button>
         </div>
-      </div>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">已分析</p>
-          <p className="mt-3 text-3xl font-semibold text-white">{reviewItems.length}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
-          <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始分析。"}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">操作建議</p>
-          <p className="mt-3 text-sm leading-7 text-white/72">
-            差距超過 1 秒的進點先人工試聽，再決定是否採用建議值。
-          </p>
-          <p className="mt-2 text-xs text-white/46">目前可一鍵採用 {pendingApplyItems.length} 首。</p>
-          <p className="mt-1 text-xs text-white/46">目前可一鍵還原 {pendingRestoreItems.length} 首。</p>
-        </div>
-      </div>
-
-      {scanNotice ? (
-        <div className="mt-4 rounded-[20px] border border-cyan-300/16 bg-cyan-300/8 px-4 py-3 text-sm text-cyan-100/88">
-          {scanNotice}
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-4">
-        {reviewItems.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm leading-7 text-white/48">
-            先掃描接歌進點，系統才會顯示每首歌的建議 Mix In。
+      }
+      summaryCards={
+        <>
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">已分析</p>
+            <p className="mt-3 text-3xl font-semibold text-white">{reviewItems.length}</p>
           </div>
-        ) : (
-          reviewItems.map((item) => {
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始分析。"}</p>
+          </div>
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">操作建議</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">
+              差距超過 1 秒的進點先人工試聽，再決定是否採用建議值。
+            </p>
+            <p className="mt-2 text-xs text-white/46">目前可一鍵採用 {pendingApplyItems.length} 首。</p>
+            <p className="mt-1 text-xs text-white/46">目前可一鍵還原 {pendingRestoreItems.length} 首。</p>
+          </div>
+        </>
+      }
+      notice={scanNotice}
+      isEmpty={reviewItems.length === 0}
+      emptyLabel="先掃描接歌進點，系統才會顯示每首歌的建議 Mix In。"
+    >
+      {reviewItems.length > 0 && reviewItems.map((item) => {
             const confidencePercent = Math.round(item.suggestion.confidence * 100);
-            const diffToneClass =
-              item.diffSeconds <= 1
-                ? "border-emerald-300/18 bg-emerald-300/10 text-emerald-100/88"
-                : item.diffSeconds <= 3
-                  ? "border-amber-300/18 bg-amber-300/10 text-amber-100/88"
-                  : "border-rose-300/18 bg-rose-300/10 text-rose-100/88";
 
             return (
-              <article
-                key={`${item.track.id}-${item.suggestion.analyzedAt}`}
-                className="rounded-[22px] border border-cyan-300/14 bg-[#080811]/86 p-4 text-sm text-white/74"
-              >
+              <ReviewItemShell key={`${item.track.id}-${item.suggestion.analyzedAt}`} accentColor="cyan">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">
@@ -248,32 +216,28 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                     </p>
                     <h3 className="mt-2 text-lg font-medium text-white">{item.track.title}</h3>
                   </div>
-                  <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs ${diffToneClass}`}>
+                  <Chip variant={item.diffSeconds <= 1 ? "emerald" : item.diffSeconds <= 3 ? "amber" : "rose"}>
                     差 {formatSeconds(item.diffSeconds)}
-                  </div>
+                  </Chip>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-4">
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">目前 Mix In</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{formatSeconds(item.effectiveMixInPointSeconds)}</p>
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">系統建議</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{formatSeconds(item.suggestion.suggestedMixInSeconds)}</p>
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">可信度</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{confidencePercent}%</p>
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">特性</p>
-                    <p className="mt-2 text-sm font-medium text-white">
+                <StatGrid>
+                  <StatCard label="目前 Mix In">
+                    <p className="text-2xl font-semibold text-white">{formatSeconds(item.effectiveMixInPointSeconds)}</p>
+                  </StatCard>
+                  <StatCard label="系統建議">
+                    <p className="text-2xl font-semibold text-white">{formatSeconds(item.suggestion.suggestedMixInSeconds)}</p>
+                  </StatCard>
+                  <StatCard label="可信度">
+                    <p className="text-2xl font-semibold text-white">{confidencePercent}%</p>
+                  </StatCard>
+                  <StatCard label="特性">
+                    <p className="text-sm font-medium text-white">
                       {item.suggestion.beatAligned ? "已對齊節拍格" : "未對齊節拍格"}
                     </p>
                     <p className="mt-1 text-xs text-white/48">分析窗 {formatSeconds(item.suggestion.analysisWindowSeconds)}</p>
-                  </div>
-                </div>
+                  </StatCard>
+                </StatGrid>
 
                 <div className="mt-4 rounded-[18px] border border-white/8 bg-black/24 p-3 text-sm leading-6 text-white/68">
                   {item.suggestion.summary}
@@ -310,11 +274,9 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                     清除該曲覆核
                   </button>
                 </div>
-              </article>
+              </ReviewItemShell>
             );
-          })
-        )}
-      </div>
-    </section>
+          })}
+    </ReviewPanelShell>
   );
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Loader2, Radar, ShieldAlert } from "lucide-react";
 
 import { bpmOptions, themePrograms, tracks as baseTracks } from "@/data/music-assets";
@@ -9,13 +9,16 @@ import {
   buildTrackBpmReviewItems,
   clearTrackReviewOverride,
   extractAllowedBpms,
-  getTrackReviewStorageEventName,
   readTrackBpmDetections,
   readTrackReviewOverrides,
   saveTrackBpmDetection,
   updateTrackReviewOverride,
 } from "@/lib/track-review-store";
 import type { Track } from "@/types/music";
+
+import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
+import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
+import { Chip } from "@/components/ui-system";
 
 type TrackBpmReviewPanelProps = {
   tracks: Track[];
@@ -25,22 +28,9 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
-  const [refreshTick, setRefreshTick] = useState(0);
+  const refreshTick = useTrackReviewSync();
   const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
   const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
-
-  useEffect(() => {
-    const eventName = getTrackReviewStorageEventName();
-    const refresh = () => setRefreshTick((current) => current + 1);
-
-    window.addEventListener(eventName, refresh);
-    window.addEventListener("storage", refresh);
-
-    return () => {
-      window.removeEventListener(eventName, refresh);
-      window.removeEventListener("storage", refresh);
-    };
-  }, []);
 
   const detections = useMemo(() => readTrackBpmDetections(), [refreshTick]);
   const overrides = useMemo(() => readTrackReviewOverrides(), [refreshTick]);
@@ -122,21 +112,16 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
       }
     } finally {
       setIsScanning(false);
-      setRefreshTick((current) => current + 1);
     }
   };
 
   return (
-    <section className="rounded-[28px] border border-rose-300/16 bg-black/20 p-5 shadow-[0_32px_90px_rgba(8,9,28,0.46)] backdrop-blur-2xl md:p-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-3xl">
-          <p className="text-xs uppercase tracking-[0.32em] text-rose-100/58">BPM 待覆核</p>
-          <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">抓出 metadata 與實際節拍不一致的歌</h2>
-          <p className="mt-3 text-sm leading-7 text-white/68">
-            先掃描整個曲庫，再逐首決定要移到未分類、採用偵測 BPM，或忽略警告。
-          </p>
-        </div>
-
+    <ReviewPanelShell
+      eyebrow="BPM 待覆核"
+      title="抓出 metadata 與實際節拍不一致的歌"
+      description="先掃描整個曲庫，再逐首決定要移到未分類、採用偵測 BPM，或忽略警告。"
+      accentColor="rose"
+      actions={
         <button
           type="button"
           onClick={() => void handleScanAllTracks()}
@@ -146,48 +131,37 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
           {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radar className="h-4 w-4" />}
           {isScanning ? "掃描中..." : "掃描全部曲目"}
         </button>
-      </div>
-
-      <div className="mt-5 grid gap-4 md:grid-cols-3">
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">待處理</p>
-          <p className="mt-3 text-3xl font-semibold text-white">{reviewItems.length}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
-          <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描或已掃描完成。"}</p>
-        </div>
-        <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-          <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">建議</p>
-          <p className="mt-3 text-sm leading-7 text-white/72">
-            差距明顯且不在原路線允許 BPM 內的歌，先移到未分類，再決定是否採用偵測值。
-          </p>
-        </div>
-      </div>
-
-      {scanNotice ? (
-        <div className="mt-4 rounded-[20px] border border-amber-300/16 bg-amber-300/8 px-4 py-3 text-sm text-amber-100/88">
-          {scanNotice}
-        </div>
-      ) : null}
-
-      <div className="mt-5 grid gap-4">
-        {reviewItems.length === 0 ? (
-          <div className="rounded-[22px] border border-dashed border-white/12 bg-white/5 p-8 text-center text-sm leading-7 text-white/48">
-            目前沒有待覆核項目。先掃描全部曲目，或用播放器播放幾首歌讓系統先抓到 BPM。
+      }
+      summaryCards={
+        <>
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">待處理</p>
+            <p className="mt-3 text-3xl font-semibold text-white">{reviewItems.length}</p>
           </div>
-        ) : (
-          reviewItems.map((item) => {
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描或已掃描完成。"}</p>
+          </div>
+          <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">建議</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">
+              差距明顯且不在原路線允許 BPM 內的歌，先移到未分類，再決定是否採用偵測值。
+            </p>
+          </div>
+        </>
+      }
+      notice={scanNotice}
+      isEmpty={reviewItems.length === 0}
+      emptyLabel="目前沒有待覆核項目。先掃描全部曲目，或用播放器播放幾首歌讓系統先抓到 BPM。"
+    >
+      {reviewItems.length > 0 && reviewItems.map((item) => {
             const isUncategorized = item.effectiveThemeProgramId === "uncategorized-lane";
             const confidencePercent = Math.round(item.detection.confidence * 100);
             const rawDetectedBpm = item.detection.rawDetectedBpm ?? item.detection.detectedBpm;
             const detectionWasResolved = rawDetectedBpm !== item.detection.detectedBpm;
 
             return (
-              <article
-                key={`${item.track.id}-${item.detection.detectedAt}`}
-                className="rounded-[22px] border border-rose-300/14 bg-[#080811]/86 p-4 text-sm text-white/74"
-              >
+              <ReviewItemShell key={`${item.track.id}-${item.detection.detectedAt}`} accentColor="rose">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">
@@ -196,31 +170,27 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                     </p>
                     <h3 className="mt-2 text-lg font-medium text-white">{item.track.title}</h3>
                   </div>
-                  <div className="inline-flex items-center gap-2 rounded-full border border-rose-300/18 bg-rose-300/10 px-3 py-1 text-xs text-rose-100/88">
+                  <Chip variant={item.canReturnToSuggestedRoute ? "emerald" : "rose"}>
                     <ShieldAlert className="h-3.5 w-3.5" />
                     {item.canReturnToSuggestedRoute ? `可回 ${item.suggestedProgramTitle}` : `差 ${item.bpmDiff} BPM`}
-                  </div>
+                  </Chip>
                 </div>
 
-                <div className="mt-4 grid gap-3 md:grid-cols-4">
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">Metadata</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{item.effectiveBpm}</p>
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">偵測 BPM</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{item.detection.detectedBpm}</p>
+                <StatGrid>
+                  <StatCard label="Metadata">
+                    <p className="text-2xl font-semibold text-white">{item.effectiveBpm}</p>
+                  </StatCard>
+                  <StatCard label="偵測 BPM">
+                    <p className="text-2xl font-semibold text-white">{item.detection.detectedBpm}</p>
                     {detectionWasResolved ? (
                       <p className="mt-1 text-xs text-white/48">原始脈衝 {rawDetectedBpm} BPM，已折算回路線節拍</p>
                     ) : null}
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">可信度</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">{confidencePercent}%</p>
-                  </div>
-                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3">
-                    <p className="text-[11px] uppercase tracking-[0.2em] text-white/45">路線建議</p>
-                    <p className="mt-2 text-sm font-medium text-white">
+                  </StatCard>
+                  <StatCard label="可信度">
+                    <p className="text-2xl font-semibold text-white">{confidencePercent}%</p>
+                  </StatCard>
+                  <StatCard label="路線建議">
+                    <p className="text-sm font-medium text-white">
                       {item.canReturnToSuggestedRoute
                         ? `建議放回 ${item.suggestedProgramTitle}`
                         : item.routeMismatch
@@ -229,8 +199,8 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                             ? "已在未分類"
                             : "原路線仍可接受"}
                     </p>
-                  </div>
-                </div>
+                  </StatCard>
+                </StatGrid>
 
                 <div className="mt-4 flex flex-wrap gap-2">
                   {item.canReturnToSuggestedRoute && item.suggestedThemeProgramId ? (
@@ -281,11 +251,9 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                     清除覆核
                   </button>
                 </div>
-              </article>
+              </ReviewItemShell>
             );
-          })
-        )}
-      </div>
-    </section>
+          })}
+    </ReviewPanelShell>
   );
 }

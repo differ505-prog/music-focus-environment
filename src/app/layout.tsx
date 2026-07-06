@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { Metadata } from "next";
 import { Cormorant_Garamond, Manrope } from "next/font/google";
 
+import { ErrorBoundary } from "@/components/error-boundary";
 import { PlaybackProvider } from "@/components/playback-provider";
 import { getSiteUrl, siteDescription, siteName } from "@/lib/site-metadata";
 import "./globals.css";
@@ -53,7 +54,9 @@ export default function RootLayout({
   return (
     <html lang="zh-Hant">
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`}>
-        <PlaybackProvider>{children}</PlaybackProvider>
+        <ErrorBoundary>
+          <PlaybackProvider>{children}</PlaybackProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
