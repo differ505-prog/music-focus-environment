@@ -115,7 +115,7 @@ export function PublicFocusBrowser({
               type="button"
               onClick={onRandomPlay}
               disabled={visibleTracks.length === 0}
-              className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
+              className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-4 py-2 text-sm font-medium text-fuchsia-50 transition hover:-translate-y-0.5 hover:bg-fuchsia-300/18 disabled:cursor-not-allowed disabled:opacity-45"
             >
               Auto DJ Random
             </button>
@@ -123,14 +123,14 @@ export function PublicFocusBrowser({
               type="button"
               onClick={onQueueTracks}
               disabled={visibleTracks.length === 0}
-              className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/18 disabled:cursor-not-allowed disabled:opacity-45"
+              className="rounded-full border border-cyan-300/20 bg-cyan-300/12 px-4 py-2 text-sm font-medium text-cyan-50 transition hover:-translate-y-0.5 hover:bg-cyan-300/18 disabled:cursor-not-allowed disabled:opacity-45"
             >
               加入播放清單
             </button>
             <button
               type="button"
               onClick={onClearSelection}
-              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:border-white/20 hover:text-white"
+              className="rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm font-medium text-white/72 transition hover:-translate-y-0.5 hover:border-white/20 hover:text-white"
             >
               清空清單
             </button>
