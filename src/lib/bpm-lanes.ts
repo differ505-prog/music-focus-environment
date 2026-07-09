@@ -62,3 +62,66 @@ export function rankTracksForMixing(currentTrack: Track | null, tracks: Track[])
     })
     .sort((left, right) => right.score - left.score);
 }
+
+export type MergedBpmGroup = {
+  type: "single" | "range";
+  /** For single: the BPM value; for range: the representative (middle-ish) BPM. */
+  representative: number;
+  /** Display label shown on the chip. */
+  label: string;
+  /** Original BPM values contained in this group. */
+  values: number[];
+  /** Whether this group is currently selected (all member values are in activeBpms). */
+  isSelected: boolean;
+  /** Whether some but not all member values are active. */
+  isPartial: boolean;
+};
+
+/**
+ * Groups BPM values into range chips when adjacent values differ by ≤ MERGE_THRESHOLD.
+ * For active-filter purposes each group carries the full value set — the parent
+ * `onToggleBpm` receives a `number[]` so the entire group (or all members)
+ * gets activated/deactivated in one gesture.
+ */
+export function buildMergedBpmOptions(
+  rawBpms: number[],
+  activeBpms: number[],
+): MergedBpmGroup[] {
+  if (rawBpms.length === 0) return [];
+
+  const sorted = [...new Set(rawBpms)].sort((a, b) => a - b);
+  const MERGE_THRESHOLD = 5;
+
+  const groups: MergedBpmGroup[] = [];
+  let i = 0;
+
+  while (i < sorted.length) {
+    const rangeValues: number[] = [sorted[i]];
+
+    while (
+      i + rangeValues.length < sorted.length &&
+      sorted[i + rangeValues.length] - rangeValues[rangeValues.length - 1] <= MERGE_THRESHOLD
+    ) {
+      rangeValues.push(sorted[i + rangeValues.length]);
+    }
+
+    const isSingle = rangeValues.length === 1;
+    const label = isSingle
+      ? String(rangeValues[0])
+      : `${rangeValues[0]}–${rangeValues[rangeValues.length - 1]}`;
+
+    const representative = isSingle
+      ? rangeValues[0]
+      : Math.round(rangeValues.reduce((s, v) => s + v, 0) / rangeValues.length);
+
+    const activeSet = new Set(activeBpms);
+    const isSelected = rangeValues.every((v) => activeSet.has(v));
+    const isPartial = rangeValues.some((v) => activeSet.has(v)) && !isSelected;
+
+    groups.push({ type: isSingle ? "single" : "range", representative, label, values: rangeValues, isSelected, isPartial });
+
+    i += rangeValues.length;
+  }
+
+  return groups;
+}

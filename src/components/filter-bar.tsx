@@ -1,16 +1,17 @@
 'use client';
 
 import type { Track } from "@/types/music";
+import { buildMergedBpmOptions, type MergedBpmGroup } from "@/lib/bpm-lanes";
 import { MoreMenu } from "@/components/more-menu";
 
 type FilterBarProps = {
-  bpmOptions: readonly number[];
+  rawBpms: number[];
   activeBpms: number[];
   visibleCount: number;
   selectedCount: number;
   activeCollectionLabel: string;
   filteredAssets: Track[];
-  onToggleBpm: (bpm: number) => void;
+  onToggleBpms: (bpms: number[]) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
   onStartRandom?: (assetIds: string[]) => void;
@@ -53,17 +54,19 @@ function exportTracksToCsv(tracks: Track[], filename: string) {
 }
 
 export function FilterBar({
-  bpmOptions,
+  rawBpms,
   activeBpms,
   visibleCount,
   selectedCount,
   activeCollectionLabel,
   filteredAssets,
-  onToggleBpm,
+  onToggleBpms,
   onSelectAll,
   onClearSelection,
   onStartRandom,
 }: FilterBarProps) {
+  const bpmGroups = buildMergedBpmOptions(rawBpms, activeBpms);
+
   const handleExportCsv = () => {
     const filename = `omnisonic-tracks-${activeCollectionLabel.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.csv`;
     exportTracksToCsv(filteredAssets, filename);
@@ -80,22 +83,25 @@ export function FilterBar({
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            {bpmOptions.map((bpm) => {
-              const isActive = activeBpms.includes(bpm);
+            {bpmGroups.map((group) => {
+              const isActive = group.isSelected;
+              const isPartial = group.isPartial;
 
               return (
                 <button
-                  key={bpm}
+                  key={group.label}
                   type="button"
-                  onClick={() => onToggleBpm(bpm)}
+                  onClick={() => onToggleBpms(group.values)}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     isActive
                       ? "border-fuchsia-300/70 bg-fuchsia-400/18 text-fuchsia-50 shadow-[0_0_24px_rgba(217,70,239,0.24)]"
-                      : "border-white/10 bg-black/20 text-white/70 hover:border-white/20 hover:bg-white/8 hover:text-white"
+                      : isPartial
+                        ? "border-amber-300/50 bg-amber-400/14 text-amber-100"
+                        : "border-white/10 bg-black/20 text-white/70 hover:border-white/20 hover:bg-white/8 hover:text-white"
                   }`}
                   aria-pressed={isActive}
                 >
-                  {bpm} BPM
+                  {group.type === "range" ? `${group.label} BPM` : `${group.label} BPM`}
                 </button>
               );
             })}

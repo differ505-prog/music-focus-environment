@@ -8,6 +8,7 @@ import { AppSceneShell } from "@/components/app-scene-shell";
 import { MediaCard } from "@/components/media-card";
 import { usePlayback } from "@/components/playback-provider";
 import { trackCollections, trackBatches } from "@/data/music-assets";
+import { buildMergedBpmOptions } from "@/lib/bpm-lanes";
 import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 
 type SearchResult = {
@@ -81,7 +82,8 @@ export default function SearchPage() {
   const [showFilters, setShowFilters] = useState(false);
   const { selectedIds, toggleAsset, playTrack } = usePlayback();
 
-  const bpmOptions = useMemo(() => Array.from(new Set(tracks.map((t) => t.bpm))).sort((a, b) => a - b), [tracks]);
+  const rawBpms = useMemo(() => Array.from(new Set(tracks.map((t) => t.bpm))).sort((a, b) => a - b), [tracks]);
+  const bpmGroups = buildMergedBpmOptions(rawBpms, activeBpms);
 
   const allMoodTags = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -175,8 +177,17 @@ export default function SearchPage() {
     setRecentSearches([]);
   }, []);
 
-  const toggleBpm = useCallback((bpm: number) => {
-    setActiveBpms((current) => (current.includes(bpm) ? current.filter((b) => b !== bpm) : [...current, bpm]));
+  const toggleBpms = useCallback((bpms: number[]) => {
+    setActiveBpms((current) => {
+      const newSet = new Set(current);
+      const allActive = bpms.every((b) => newSet.has(b));
+      if (allActive) {
+        bpms.forEach((b) => newSet.delete(b));
+      } else {
+        bpms.forEach((b) => newSet.add(b));
+      }
+      return Array.from(newSet);
+    });
   }, []);
 
   const toggleMood = useCallback((mood: string) => {
@@ -261,21 +272,24 @@ export default function SearchPage() {
             )}
           </div>
           <div className="mb-5 flex flex-wrap gap-2">
-            {bpmOptions.map((bpm) => {
-              const isActive = activeBpms.includes(bpm);
+            {bpmGroups.map((group) => {
+              const isActive = group.isSelected;
+              const isPartial = group.isPartial;
               return (
                 <button
-                  key={bpm}
+                  key={group.label}
                   type="button"
-                  onClick={() => toggleBpm(bpm)}
+                  onClick={() => toggleBpms(group.values)}
                   className={`rounded-full border px-4 py-2 text-sm font-medium transition ${
                     isActive
                       ? "border-fuchsia-400/70 bg-fuchsia-400/18 text-fuchsia-50 shadow-[0_0_20px_rgba(217,70,239,0.2)]"
-                      : "border-white/10 bg-white/8 text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
+                      : isPartial
+                        ? "border-amber-300/50 bg-amber-400/14 text-amber-100"
+                        : "border-white/10 bg-white/8 text-white/70 hover:border-white/20 hover:bg-white/10 hover:text-white"
                   }`}
                   aria-pressed={isActive}
                 >
-                  {bpm} BPM
+                  {group.type === "range" ? `${group.label} BPM` : `${group.label} BPM`}
                 </button>
               );
             })}
@@ -319,7 +333,7 @@ export default function SearchPage() {
                 <button
                   key={bpm}
                   type="button"
-                  onClick={() => toggleBpm(bpm)}
+                  onClick={() => toggleBpms([bpm])}
                   className="inline-flex items-center gap-1 rounded-full border border-fuchsia-400/30 bg-fuchsia-400/12 px-3 py-1 text-[11px] text-fuchsia-200 transition hover:border-fuchsia-400/60"
                 >
                   {bpm} BPM

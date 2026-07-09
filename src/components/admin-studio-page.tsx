@@ -131,14 +131,23 @@ export function AdminStudioPage() {
 
       <div className="mt-6">
         <FilterBar
-          bpmOptions={availableBpmOptions}
+          rawBpms={availableBpmOptions}
           activeBpms={activeBpms}
           visibleCount={filteredAssets.length}
           selectedCount={selectedAssets.length}
           activeCollectionLabel={activeCollection?.title ?? "全部曲目"}
           filteredAssets={filteredAssets}
-          onToggleBpm={(bpm) =>
-            setActiveBpms((current) => (current.includes(bpm) ? current.filter((item) => item !== bpm) : [...current, bpm]))
+          onToggleBpms={(bpms) =>
+            setActiveBpms((current) => {
+              const newSet = new Set(current);
+              const allActive = bpms.every((b) => newSet.has(b));
+              if (allActive) {
+                bpms.forEach((b) => newSet.delete(b));
+              } else {
+                bpms.forEach((b) => newSet.add(b));
+              }
+              return Array.from(newSet);
+            })
           }
           onSelectAll={() =>
             setSelectedIds((current) => {
