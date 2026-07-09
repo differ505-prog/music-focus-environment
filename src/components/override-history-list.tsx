@@ -152,8 +152,8 @@ export function OverrideHistoryList(_props: OverrideHistoryListProps) {
     <ReviewPanelShell
       accentColor="cyan"
       eyebrow="覆核紀錄"
-      title="我過去校正過的紀錄"
-      description="列出所有已寫入 localStorage 的覆核決策，可以回頭檢查、取消、跳到對應歌曲卡片再次試聽。"
+      title="過去的覆核紀錄"
+      description="localStorage 中的覆核決策，可回頭檢查或取消。"
       summaryCards={
         <>
           <StatCard label="已覆核曲目">
@@ -164,11 +164,11 @@ export function OverrideHistoryList(_props: OverrideHistoryListProps) {
             <p className="text-2xl font-semibold text-white">
               {historyItems[0] ? formatRelativeTime(historyItems[0].reviewedAt) : "—"}
             </p>
-            <p className="mt-1 text-xs text-white/48">依 reviewedAt 時間倒序排列</p>
+            <p className="mt-1 text-xs text-white/48">依覆核時間倒序</p>
           </StatCard>
           <StatCard label="對應卡片">
             <p className="text-2xl font-semibold text-white">{historyItems.length}</p>
-            <p className="mt-1 text-xs text-white/48">點「跳到歌曲卡片」會平滑滾動並高亮 1.6 秒</p>
+            <p className="mt-1 text-xs text-white/48">點擊可跳至 BPM 覆核面板</p>
           </StatCard>
         </>
       }

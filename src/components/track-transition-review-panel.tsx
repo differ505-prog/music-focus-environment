@@ -146,8 +146,8 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
   return (
     <ReviewPanelShell
       eyebrow="接歌進點建議"
-      title="自動抓比較有節拍感的進場位置"
-      description="分析每首歌前段 onset 能量，給出建議 Mix In，對照 metadata 決定是否採用"
+      title="抓最有節拍感的進場位置"
+      description="分析前段 onset 能量，對照 metadata 決定是否採用。"
       accentColor="cyan"
       actions={
         <div className="flex flex-wrap justify-end gap-3">
@@ -157,7 +157,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
             disabled={isScanning || pendingRestoreItems.length === 0}
             className="inline-flex items-center gap-3 rounded-full border border-white/12 bg-white/8 px-4 py-3 text-sm font-medium text-white/82 transition hover:bg-white/12 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            一鍵還原全部 Base Mix In
+            一鍵還原
             {pendingRestoreItems.length > 0 ? ` (${pendingRestoreItems.length})` : ""}
           </button>
           <button
@@ -166,7 +166,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
             disabled={isScanning || pendingApplyItems.length === 0}
             className="inline-flex items-center gap-3 rounded-full border border-fuchsia-300/24 bg-fuchsia-300/10 px-4 py-3 text-sm font-medium text-fuchsia-50 transition hover:bg-fuchsia-300/14 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            一鍵採用全部建議
+            一鍵採用
             {pendingApplyItems.length > 0 ? ` (${pendingApplyItems.length})` : ""}
           </button>
           <button
@@ -188,7 +188,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
           </div>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始分析"}</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未掃描"}</p>
           </div>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">待採用</p>
@@ -198,7 +198,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       }
       notice={scanNotice}
       isEmpty={reviewItems.length === 0}
-      emptyLabel="掃描後顯示建議 Mix In"
+      emptyLabel="掃描後顯示建議"
     >
       {reviewItems.length > 0 && reviewItems.map((item) => {
             const confidencePercent = Math.round(item.suggestion.confidence * 100);

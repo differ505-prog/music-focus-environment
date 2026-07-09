@@ -47,6 +47,8 @@ export type TrackBpmReviewItem = {
   suggestedThemeProgramId: string | null;
   suggestedProgramTitle: string | null;
   canReturnToSuggestedRoute: boolean;
+  /** true when the override BPM came from a manual Tap correction (override BPM differs from detected BPM). */
+  isTapCorrected: boolean;
 };
 
 export type TrackTransitionReviewItem = {
@@ -357,6 +359,9 @@ export function buildTrackBpmReviewItems(
       const canReturnToSuggestedRoute =
         Boolean(suggestedThemeProgramId) && suggestedThemeProgramId !== effectiveThemeProgramId;
 
+      // Manual override BPM that differs from detected BPM = "Tap校正" item
+      const isTapCorrected = override?.bpm != null && override.bpm !== detection.detectedBpm;
+
       if ((bpmDiff < 3 && !routeMismatch && !canReturnToSuggestedRoute) || ignored) {
         return null;
       }
@@ -375,6 +380,7 @@ export function buildTrackBpmReviewItems(
         suggestedThemeProgramId,
         suggestedProgramTitle: suggestedThemeProgramId ? (baseProgram?.title ?? "原始路線") : null,
         canReturnToSuggestedRoute,
+        isTapCorrected,
       };
     })
     .filter(isPresent)

@@ -165,7 +165,8 @@ export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: Ta
     if (stats.bpm === null) {
       return;
     }
-    onResult(Math.round(stats.bpm * 10) / 10);
+    const snapped = nearestLane !== null && isWithinLane ? nearestLane : stats.bpm;
+    onResult(Math.round(snapped * 10) / 10);
     stop();
   };
 
@@ -193,7 +194,10 @@ export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: Ta
           {stats.bpm !== null ? (
             <>
               <span className="text-white/36">·</span>
-              <span className="text-base font-semibold text-white">{stats.bpm.toFixed(1)}</span>
+              <span className="text-base font-semibold text-white">{nearestLane !== null && isWithinLane ? nearestLane : stats.bpm.toFixed(1)}</span>
+              {nearestLane !== null && isWithinLane && Math.abs(stats.bpm - nearestLane) >= 0.3 ? (
+                <span className="text-xs text-white/30">{stats.bpm.toFixed(1)}</span>
+              ) : null}
               <span className="text-white/52">BPM</span>
               {stabilityLabel ? (
                 <span className={`text-[10px] uppercase tracking-[0.18em] ${stabilityTone}`}>
@@ -209,8 +213,8 @@ export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: Ta
                     : "border-amber-300/20 bg-amber-300/10 text-amber-100/84 hover:bg-amber-300/16"
                 }`}
               >
-                {isWithinLane
-                  ? `套用 ${stats.bpm.toFixed(1)}`
+                {              isWithinLane
+                  ? `套用 ${nearestLane}`
                   : nearestLane !== null
                     ? `套用 → ${nearestLane}`
                     : `套用 ${stats.bpm.toFixed(1)}`}

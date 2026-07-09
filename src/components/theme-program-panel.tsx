@@ -660,7 +660,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/60">主題手冊</p>
         <h2 className="mt-3 font-serif text-2xl text-white md:text-3xl">主題管理</h2>
         <p className="mt-3 text-sm leading-7 text-white/66">
-          每個程式包含四個步驟式 Prompt 模組，已儲存的內容將自動帶入後續環節。
+          四步 Prompt 模組，前步內容自動帶入後續。
         </p>
       </div>
 
@@ -907,7 +907,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                         <div className="mb-4 rounded-[14px] border border-amber-300/12 bg-[#151108]/80 p-4">
                           <p className="text-[11px] uppercase tracking-widest text-amber-100/60">補充資料</p>
                           <p className="mt-2 text-xs leading-6 text-amber-50/76">
-                            {module.autoAssembleNote ?? '前步已自動整理，只需補充外部連結與特殊覆寫欄位'}
+                            {module.autoAssembleNote ?? '前步已整理，只需補充外部連結與特殊覆寫欄位'}
                           </p>
                           <div className="mt-4">
                             <p className="text-xs uppercase tracking-widest text-white/48">{module.supplementalLabel ?? '補充欄位'}</p>

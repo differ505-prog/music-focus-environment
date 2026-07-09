@@ -51,7 +51,7 @@ export function AdminStudioPage() {
     <AppSceneShell
       eyebrow="管理工作台"
       title="OmniSonic 後台工作台"
-      description="把系列、上架素材、主題手冊與播放資料拆成清楚的工作區"
+      description="系列、素材、手冊、播放資料，各司其位。"
       bottomPaddingClassName="pb-[18rem] md:pb-[22rem]"
       badges={["主題手冊", "上架素材", "流程管理"]}
     >
@@ -61,7 +61,7 @@ export function AdminStudioPage() {
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">已上架路線</p>
             <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列</h2>
-            <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">先縮小工作範圍，再進到細部管理</p>
+            <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">先縮小範圍，再進到細部管理。</p>
           </div>
         </div>
 

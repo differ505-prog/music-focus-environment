@@ -250,7 +250,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
     return (
       <ReviewItemShell accentColor="cyan">
         <p className="text-sm leading-7 text-white/62">
-          從卡片點「播放」或從下方播放列切歌，覆寫工具就會在這裡顯示目前曲目的即時狀態。
+          播放或切歌後，此處即時顯示目前曲目的覆寫狀態。
         </p>
       </ReviewItemShell>
     );
@@ -265,7 +265,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
           </p>
           <h3 className="mt-2 text-lg font-medium text-white">{currentTrack.title}</h3>
           <p className="mt-2 text-xs leading-5 text-white/48">
-            覆寫會即時寫入 localStorage，前台客人下次載入就會看到你的整理結果。
+            覆寫即時寫入 localStorage，下次載入前台即可見。
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">

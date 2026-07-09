@@ -101,7 +101,7 @@ export function BpmAnalysisPanel() {
     <ReviewPanelShell
       eyebrow="BPM 檢查"
       title="匯入後確認 BPM"
-      description="上傳音檔後，系統會先估算 BPM，你再用 x2、÷2 或手動輸入確認。"
+      description="上傳音檔，系統估算 BPM，再以 x2 / ÷2 或手動校正。"
       accentColor="amber"
       actions={
         <label className="inline-flex cursor-pointer items-center gap-3 rounded-full border border-amber-300/24 bg-amber-300/10 px-4 py-3 text-sm font-medium text-amber-50 transition hover:bg-amber-300/14">
@@ -120,9 +120,7 @@ export function BpmAnalysisPanel() {
         <>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">使用步驟</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">
-              1. 上傳音檔 2. 看估算 BPM 與可信度 3. 用 x2 / ÷2 修正 4. 寫回曲目資料。
-            </p>
+            <p className="mt-3 text-sm leading-7 text-white/72">上傳 → 估算 → x2/÷2 校正 → 寫回資料。</p>
           </div>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">可用範圍</p>
@@ -179,7 +177,7 @@ export function BpmAnalysisPanel() {
                     <div>
                       <p className="text-[11px] uppercase tracking-[0.2em] text-amber-100/60">人工確認</p>
                       <p className="mt-2 text-sm leading-6 text-amber-50/76">
-                        如果節奏抓錯，可用 x2 或 ÷2 修正，再用最接近的建議值作為上架參考。
+                        如果節奏抓錯，可用 x2 或 ÷2 修正。
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
