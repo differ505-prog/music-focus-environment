@@ -5,6 +5,7 @@ import { Loader2, Upload, Waves } from "lucide-react";
 
 import { bpmOptions } from "@/data/music-assets";
 import { analyzeAudioBufferForBpm, type BpmAnalysis } from "@/lib/bpm-analyzer";
+import { classifyLane } from "@/lib/bpm-lanes";
 
 import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/components/review-panel-shell";
 import { Chip } from "@/components/ui-system";
@@ -141,11 +142,7 @@ export function BpmAnalysisPanel() {
       emptyLabel="上傳音檔後，這裡會顯示估算 BPM、可信度與建議範圍。"
     >
       {items.length > 0 && items.map((item) => {
-            const nearestLane = bpmOptions.reduce((closest, candidate) => {
-              return Math.abs(candidate - item.adjustedBpm) < Math.abs(closest - item.adjustedBpm)
-                ? candidate
-                : closest;
-            }, bpmOptions[0]);
+            const lane = classifyLane(item.adjustedBpm);
 
             return (
               <ReviewItemShell key={item.id}>
@@ -195,13 +192,19 @@ export function BpmAnalysisPanel() {
                       >
                         x2
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => updateAdjustedBpm(item.id, nearestLane)}
-                        className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
-                      >
-                        對齊 {nearestLane}
-                      </button>
+                      {lane !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => updateAdjustedBpm(item.id, lane)}
+                          className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
+                        >
+                          對齊 {lane}
+                        </button>
+                      ) : (
+                        <span className="rounded-full border border-rose-300/20 bg-rose-300/8 px-3 py-2 text-xs text-rose-200/80">
+                          未分類
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -214,13 +217,14 @@ export function BpmAnalysisPanel() {
                       <input
                         type="number"
                         min={1}
+                        step="1"
                         value={item.adjustedBpm}
                         onChange={(event) => updateAdjustedBpm(item.id, Number(event.target.value))}
                         className="ml-3 w-24 rounded-full border border-white/12 bg-[#04070c] px-3 py-2 text-sm text-white outline-none transition focus:border-cyan-300/30"
                       />
                     </label>
                     <div className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-4 py-2 text-sm text-emerald-100/84">
-                      最近建議：{nearestLane}
+                      {lane !== null ? `建議 ${lane}` : "超出車道範圍"}
                     </div>
                   </div>
                 </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import type { Track } from "@/types/music";
-import { buildMergedBpmOptions, type MergedBpmGroup } from "@/lib/bpm-lanes";
+import { buildMergedBpmOptions } from "@/lib/bpm-lanes";
 import { MoreMenu } from "@/components/more-menu";
 
 type FilterBarProps = {
@@ -101,7 +101,7 @@ export function FilterBar({
                   }`}
                   aria-pressed={isActive}
                 >
-                  {group.type === "range" ? `${group.label} BPM` : `${group.label} BPM`}
+                  {group.label}
                 </button>
               );
             })}

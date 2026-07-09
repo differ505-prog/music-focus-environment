@@ -1,6 +1,10 @@
 import type { Track } from "@/types/music";
 
-export const bpmLaneOptions = [85, 100, 105, 115, 120] as const;
+/** Canonical BPM lane pivots. */
+export const bpmLaneOptions = [85, 100, 105, 115, 120, 180] as const;
+
+/** ±1.5 BPM tolerance around each pivot defines a lane. */
+export const LANE_TOLERANCE = 1.5;
 
 export type BpmCompatibility = {
   status: "exact" | "adjacent" | "distant";
@@ -63,65 +67,76 @@ export function rankTracksForMixing(currentTrack: Track | null, tracks: Track[])
     .sort((left, right) => right.score - left.score);
 }
 
+/**
+ * Returns the canonical lane BPM for a given raw BPM, or null if it falls
+ * outside every lane's ± LANE_TOLERANCE range.
+ */
+export function classifyLane(bpm: number): number | null {
+  const rounded = Math.round(bpm);
+  for (const pivot of bpmLaneOptions) {
+    if (Math.abs(rounded - pivot) <= LANE_TOLERANCE) {
+      return pivot;
+    }
+  }
+  return null;
+}
+
+/**
+ * Returns the label shown on a lane chip: "85 BPM" or "± 2 BPM" for uncategorised.
+ */
+export function labelForLane(lane: number | null): string {
+  if (lane === null) return "± 2 BPM";
+  return `${lane} BPM`;
+}
+
 export type MergedBpmGroup = {
-  type: "single" | "range";
-  /** For single: the BPM value; for range: the representative (middle-ish) BPM. */
-  representative: number;
+  /** Canonical lane BPM, or null for uncategorised tracks. */
+  lane: number | null;
   /** Display label shown on the chip. */
   label: string;
-  /** Original BPM values contained in this group. */
+  /** BPM values contained in this lane (for filtering). */
   values: number[];
-  /** Whether this group is currently selected (all member values are in activeBpms). */
   isSelected: boolean;
-  /** Whether some but not all member values are active. */
   isPartial: boolean;
 };
 
 /**
- * Rounds raw BPM values to integers before grouping, then merges adjacent groups
- * where the difference is ≤ MERGE_THRESHOLD. This ensures chips always show clean
- * integer ranges like "85–100" rather than "85–85.4".
+ * Groups raw BPM values by canonical lane (±1.5).
+ * Lanes are ordered by their pivot value; tracks outside every lane appear
+ * as a single "± 2 BPM" group.
  */
 export function buildMergedBpmOptions(
   rawBpms: number[],
   activeBpms: number[],
 ): MergedBpmGroup[] {
-  if (rawBpms.length === 0) return [];
+  const activeSet = new Set(activeBpms.map(Math.round));
 
-  // Normalise every value to an integer up-front
-  const sorted = [...new Set(rawBpms.map(Math.round))].sort((a, b) => a - b);
-  const MERGE_THRESHOLD = 5;
-
-  const groups: MergedBpmGroup[] = [];
-  let i = 0;
-
-  while (i < sorted.length) {
-    const rangeValues: number[] = [sorted[i]];
-
-    while (
-      i + rangeValues.length < sorted.length &&
-      sorted[i + rangeValues.length] - rangeValues[rangeValues.length - 1] <= MERGE_THRESHOLD
-    ) {
-      rangeValues.push(sorted[i + rangeValues.length]);
-    }
-
-    const isSingle = rangeValues.length === 1;
-    const label = isSingle
-      ? String(rangeValues[0])
-      : `${rangeValues[0]}–${rangeValues[rangeValues.length - 1]}`;
-
-    const representative = isSingle
-      ? rangeValues[0]
-      : Math.round(rangeValues.reduce((s, v) => s + v, 0) / rangeValues.length);
-
-    const activeSet = new Set(activeBpms);
-    const isSelected = rangeValues.every((v) => activeSet.has(v));
-    const isPartial = rangeValues.some((v) => activeSet.has(v)) && !isSelected;
-
-    groups.push({ type: isSingle ? "single" : "range", representative, label, values: rangeValues, isSelected, isPartial });
-
-    i += rangeValues.length;
+  // Group by lane
+  const laneMap = new Map<number | null, number[]>();
+  for (const bpm of rawBpms) {
+    const lane = classifyLane(bpm);
+    const bucket = laneMap.get(lane) ?? [];
+    bucket.push(bpm);
+    laneMap.set(lane, bucket);
   }
 
-  return groups;
+  // Canonical lanes come first in order, uncategorised last
+  const laneKeys: Array<number | null> = [
+    ...bpmLaneOptions.filter((p) => laneMap.has(p)),
+    ...(laneMap.has(null) ? [null] : []),
+  ];
+
+  return laneKeys.map((lane) => {
+    const values = laneMap.get(lane) ?? [];
+    const roundedValues = values.map(Math.round);
+    const isSelected = roundedValues.every((v) => activeSet.has(v));
+    const isPartial = roundedValues.some((v) => activeSet.has(v)) && !isSelected;
+    return {
+      lane,
+      label: labelForLane(lane),
+      values: roundedValues,
+      isSelected,
+      isPartial,
+    };
+  });
 }

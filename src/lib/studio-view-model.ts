@@ -1,4 +1,4 @@
-import { getBpmCompatibility } from "@/lib/bpm-lanes";
+import { classifyLane, getBpmCompatibility } from "@/lib/bpm-lanes";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
 import type { MixEvent, MixSession, ThemeProgram, Track } from "@/types/music";
 
@@ -42,10 +42,10 @@ export function buildPublicRouteEntries(programs: readonly ThemeProgram[], track
   const routeEntries = programs.map((program) => {
     const configuredBpms = configuredBpmMap.get(program.id) ?? [];
     const programTracks = trackList.filter(
-      (track) => track.themeProgramId === program.id && configuredBpms.includes(track.bpm),
+      (track) => track.themeProgramId === program.id && configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm),
     );
     const subroutes = configuredBpms.map((bpm) => {
-      const bpmTracks = programTracks.filter((track) => track.bpm === bpm);
+      const bpmTracks = programTracks.filter((track) => classifyLane(track.bpm) === bpm);
 
       return {
         bpm,
@@ -65,35 +65,27 @@ export function buildPublicRouteEntries(programs: readonly ThemeProgram[], track
 
   const uncategorizedTracks = trackList.filter((track) => {
     const configuredBpms = configuredBpmMap.get(track.themeProgramId ?? "");
-
-    if (!configuredBpms) {
-      return true;
-    }
-
-    return !configuredBpms.includes(track.bpm);
+    if (!configuredBpms || configuredBpms.length === 0) return true;
+    return !configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm);
   });
 
   if (uncategorizedTracks.length === 0) {
     return routeEntries;
   }
 
-  const uncategorizedBpms = Array.from(new Set(uncategorizedTracks.map((track) => track.bpm))).sort((left, right) => left - right);
-
   return [
     ...routeEntries,
     {
-      program: buildUncategorizedProgram(uncategorizedBpms),
+      program: buildUncategorizedProgram([]),
       programTracks: uncategorizedTracks,
-      configuredBpms: uncategorizedBpms,
-      subroutes: uncategorizedBpms.map((bpm) => {
-        const bpmTracks = uncategorizedTracks.filter((track) => track.bpm === bpm);
-
-        return {
-          bpm,
-          tracks: bpmTracks,
-          totalMinutes: Math.max(1, Math.round(bpmTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
-        };
-      }),
+      configuredBpms: [],
+      subroutes: [
+        {
+          bpm: 0,
+          tracks: uncategorizedTracks,
+          totalMinutes: Math.max(1, Math.round(uncategorizedTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
+        },
+      ],
       totalMinutes: Math.max(1, Math.round(uncategorizedTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
     },
   ];

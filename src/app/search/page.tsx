@@ -289,7 +289,7 @@ export default function SearchPage() {
                   }`}
                   aria-pressed={isActive}
                 >
-                  {group.type === "range" ? `${group.label} BPM` : `${group.label} BPM`}
+                  {group.label}
                 </button>
               );
             })}
