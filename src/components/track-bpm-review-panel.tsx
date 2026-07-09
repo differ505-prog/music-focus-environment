@@ -48,8 +48,6 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
   const autoItems = allReviewItems.filter((item) => !item.isTapCorrected);
   const showTapSection = tapItems.length > 0;
 
-  const fmtBpm = (value: number) => value.toFixed(1);
-
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgressLabel, setScanProgressLabel] = useState<string | null>(null);
   const [scanNotice, setScanNotice] = useState<string | null>(null);
@@ -166,7 +164,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
       const parsed = Number.parseFloat(customBpmState?.draft ?? String(item.effectiveBpm));
       if (Number.isFinite(parsed) && parsed > 0) {
         updateTrackReviewOverride(item.track.id, {
-          bpm: Math.round(parsed * 10) / 10,
+          bpm: Math.round(parsed),
           ignoreBpmMismatch: false,
         });
       }
@@ -191,18 +189,18 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
           </div>
           <Chip variant={item.canReturnToSuggestedRoute ? "emerald" : "rose"}>
             <ShieldAlert className="h-3.5 w-3.5" />
-            {item.canReturnToSuggestedRoute ? `可回 ${item.suggestedProgramTitle}` : `差 ${fmtBpm(item.bpmDiff)} BPM`}
+            {item.canReturnToSuggestedRoute ? `可回 ${item.suggestedProgramTitle}` : `差 ${item.bpmDiff} BPM`}
           </Chip>
         </div>
 
         <StatGrid>
           <StatCard label="Metadata">
-            <p className="text-2xl font-semibold text-white">{fmtBpm(item.effectiveBpm)}</p>
+            <p className="text-2xl font-semibold text-white">{item.effectiveBpm}</p>
           </StatCard>
           <StatCard label="偵測 BPM">
-            <p className="text-2xl font-semibold text-white">{fmtBpm(item.detection.detectedBpm)}</p>
+            <p className="text-2xl font-semibold text-white">{item.detection.detectedBpm}</p>
             {detectionWasResolved ? (
-              <p className="mt-1 text-xs text-white/48">原始 {fmtBpm(rawDetectedBpm)}，已折算</p>
+              <p className="mt-1 text-xs text-white/48">原始脈衝 {Math.round(rawDetectedBpm)}，已折算</p>
             ) : null}
           </StatCard>
           <StatCard label="可信度">
@@ -253,7 +251,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             }
             className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
           >
-            採用 {fmtBpm(item.detection.detectedBpm)}
+            採用 {Math.round(item.detection.detectedBpm)}
           </button>
           <TapBpmButton
             onResult={(bpm) =>
@@ -298,7 +296,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
               id={`custom-bpm-${item.track.id}`}
               type="number"
               inputMode="decimal"
-              step="0.1"
+              step="1"
               min="20"
               max="300"
               value={customBpmState?.draft ?? String(item.effectiveBpm)}
