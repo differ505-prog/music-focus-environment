@@ -101,11 +101,13 @@ export type MergedBpmGroup = {
   values: number[];
   isSelected: boolean;
   isPartial: boolean;
+  /** True when the lane has no songs at all (useful for showing a placeholder framework). */
+  isEmpty: boolean;
 };
 
 /**
  * Groups raw BPM values by canonical lane (±2).
- * All canonical lanes are always shown in order, even if empty.
+ * Lanes are ordered by pivot value; lanes with no songs are marked isEmpty=true.
  * Tracks outside every lane appear as a single "± 2 BPM" group at the end.
  */
 export function buildMergedBpmOptions(
@@ -125,22 +127,22 @@ export function buildMergedBpmOptions(
 
   const groups: MergedBpmGroup[] = [];
 
-  // Always show every canonical lane in order (even if it has zero songs)
   for (const pivot of bpmLaneOptions) {
     const values = laneMap.get(pivot) ?? [];
     const roundedValues = values.map(Math.round);
     const isSelected = roundedValues.length > 0 && roundedValues.every((v) => activeSet.has(v));
     const isPartial = roundedValues.some((v) => activeSet.has(v)) && !isSelected;
-    groups.push({ lane: pivot, label: labelForLane(pivot), values: roundedValues, isSelected, isPartial });
+    const isEmpty = roundedValues.length === 0;
+    groups.push({ lane: pivot, label: labelForLane(pivot), values: roundedValues, isSelected, isPartial, isEmpty });
   }
 
-  // Append uncategorised group if any tracks fall outside every lane
+  // Append uncategorised group only when there are tracks outside every lane
   const uncategorised = laneMap.get(null) ?? [];
   if (uncategorised.length > 0) {
     const roundedValues = uncategorised.map(Math.round);
     const isSelected = roundedValues.every((v) => activeSet.has(v));
     const isPartial = roundedValues.some((v) => activeSet.has(v)) && !isSelected;
-    groups.push({ lane: null, label: labelForLane(null), values: roundedValues, isSelected, isPartial });
+    groups.push({ lane: null, label: labelForLane(null), values: roundedValues, isSelected, isPartial, isEmpty: false });
   }
 
   return groups;

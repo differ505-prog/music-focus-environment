@@ -83,9 +83,11 @@ export function FilterBar({
             </span>
           </div>
           <div className="flex flex-wrap gap-3">
-            {bpmGroups.map((group) => {
-              const isActive = group.isSelected;
-              const isPartial = group.isPartial;
+            {bpmGroups
+              .filter((group) => !group.isEmpty)
+              .map((group) => {
+                const isActive = group.isSelected;
+                const isPartial = group.isPartial;
 
               return (
                 <button
