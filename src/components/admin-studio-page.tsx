@@ -25,7 +25,7 @@ export function AdminStudioPage() {
   const [activeBpms, setActiveBpms] = useState<number[]>([]);
   const [activeCollectionId, setActiveCollectionId] = useState<string>("all");
   const [activeZone, setActiveZone] = useState<AdminZone>("theme");
-  const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack } = usePlayback();
+  const { selectedIds, setSelectedIds, selectedAssets, currentTrack, playback, toggleAsset, playTrack, startRandomSession } = usePlayback();
 
   const activeCollection = useMemo(
     () => (activeCollectionId === "all" ? null : trackCollections.find((collection) => collection.id === activeCollectionId) ?? null),
@@ -147,6 +147,10 @@ export function AdminStudioPage() {
             })
           }
           onClearSelection={() => setSelectedIds([])}
+          onStartRandom={(assetIds) => {
+            startRandomSession(assetIds);
+            setActiveZone("playback");
+          }}
         />
       </div>
 

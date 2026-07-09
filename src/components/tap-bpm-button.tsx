@@ -176,43 +176,44 @@ export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: Ta
             : "border-white/10 bg-white/8 text-white/74 hover:border-white/18 hover:text-white"
         } disabled:cursor-not-allowed disabled:opacity-45`}
         aria-pressed={isActive}
-        title={isActive ? "點擊停止 tap" : "開始 tap BPM，按空白鍵計算節拍"}
+        title="空白鍵對拍"
       >
         <Activity className="h-3.5 w-3.5" />
-        {isActive ? "Tap 進行中" : "Tap 空白鍵測 BPM"}
+        {isActive ? "Tap 中" : "Tap BPM"}
       </button>
 
       {isActive ? (
         <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/78">
-          <span className="text-white/56">tap {stats.sampleCount} 次</span>
+          <span className="text-white/56">{stats.sampleCount} taps</span>
           {stats.bpm !== null ? (
             <>
               <span className="text-white/36">·</span>
-              <span className="text-base font-semibold text-white">{stats.bpm.toFixed(1)} BPM</span>
+              <span className="text-base font-semibold text-white">{stats.bpm.toFixed(1)}</span>
+              <span className="text-white/52">BPM</span>
               {stabilityLabel ? (
-                <span className={`text-[10px] uppercase tracking-[0.18em] ${stabilityTone}`}>±{Math.round(stats.intervalStdDevMs ?? 0)}ms {stabilityLabel}</span>
+                <span className={`text-[10px] uppercase tracking-[0.18em] ${stabilityTone}`}>
+                  ±{Math.round(stats.intervalStdDevMs ?? 0)}ms {stabilityLabel}
+                </span>
               ) : null}
+              <button
+                type="button"
+                onClick={handleApply}
+                className={`ml-1 rounded-full border px-2.5 py-1 text-[11px] transition ${
+                  isWithinLane
+                    ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100/84 hover:bg-emerald-300/16"
+                    : "border-amber-300/20 bg-amber-300/10 text-amber-100/84 hover:bg-amber-300/16"
+                }`}
+              >
+                {isWithinLane
+                  ? `套用 ${stats.bpm.toFixed(1)}`
+                  : nearestLane !== null
+                    ? `套用 → ${nearestLane}`
+                    : `套用 ${stats.bpm.toFixed(1)}`}
+              </button>
             </>
           ) : (
-            <span className="text-white/40">至少 {2} 次才能計算</span>
+            <span className="text-white/40">2 taps min</span>
           )}
-          {stats.bpm !== null ? (
-            <button
-              type="button"
-              onClick={handleApply}
-              className={`ml-1 rounded-full border px-2.5 py-1 text-[11px] transition ${
-                isWithinLane
-                  ? "border-emerald-300/20 bg-emerald-300/10 text-emerald-100/84 hover:bg-emerald-300/16"
-                  : "border-amber-300/20 bg-amber-300/10 text-amber-100/84 hover:bg-amber-300/16"
-              }`}
-            >
-              {isWithinLane
-                ? `套用 ${stats.bpm.toFixed(1)}（符合路線）`
-                : nearestLane !== null
-                  ? `套用 ${stats.bpm.toFixed(1)}（超出，最近 ${nearestLane}）`
-                  : `套用 ${stats.bpm.toFixed(1)}`}
-            </button>
-          ) : null}
           <button
             type="button"
             onClick={reset}

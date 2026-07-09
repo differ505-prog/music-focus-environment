@@ -10,11 +10,12 @@ import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import { PlayerProgressBar } from "@/components/player-progress-bar";
 import { PlayerTransportControls } from "@/components/player-transport-controls";
+import { TapBpmButton } from "@/components/tap-bpm-button";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
 import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
-import { extractAllowedBpms, saveTrackBpmDetection } from "@/lib/track-review-store";
+import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -552,7 +553,7 @@ export function GlobalPlayer({
                 </div>
               </div>
               {currentTrack ? (
-                <div className="mt-3 flex flex-wrap items-center gap-2 text-xs">
+                <div className="mt-3 flex flex-wrap items-center gap-2">
                   {showAdminDetails && sessionPlan ? (
                     <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
                       {sessionPlan.currentPhaseLabel}
@@ -565,80 +566,31 @@ export function GlobalPlayer({
                   ) : null}
                   <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
                     {showAdminDetails
-                      ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey} · Energy ${currentTrack.energyLevel.toFixed(1)}`
+                      ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
-                  {detectedBpmState.status === "loading" ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      BPM 偵測中...
-                    </span>
-                  ) : null}
                   {detectedBpmMeta ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      偵測 {detectedBpmMeta.detectedBpm} BPM · {detectedBpmMeta.confidencePercent}%
+                      偵 {detectedBpmMeta.detectedBpm} / {detectedBpmMeta.confidencePercent}%
                     </span>
-                  ) : null}
-                  {detectedBpmMeta && detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? (
-                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                      原始脈衝 {detectedBpmMeta.rawDetectedBpm} BPM
-                    </span>
-                  ) : null}
-                  {detectedBpmMeta && detectedBpmMeta.diff > 0 ? (
-                    <span
-                      className={`rounded-full border px-3 py-1 ${
-                        detectedBpmMeta.compatibility.status === "adjacent"
-                          ? "border-amber-300/20 bg-amber-300/10 text-amber-100/85"
-                          : "border-rose-300/20 bg-rose-300/10 text-rose-100/85"
-                      }`}
-                    >
-                      Metadata {currentTrack.bpm} / 偵測 {detectedBpmMeta.detectedBpm}
-                    </span>
-                  ) : null}
-                  {detectedBpmState.status === "error" ? (
-                    <span className="rounded-full border border-rose-300/20 bg-rose-300/10 px-3 py-1 text-rose-100/85">
-                      {detectedBpmState.message}
+                  ) : detectedBpmState.status === "loading" ? (
+                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">
+                      偵測中
                     </span>
                   ) : null}
                   {showAdminDetails ? (
-                    <span className="rounded-full border border-emerald-300/20 bg-emerald-300/10 px-3 py-1 text-emerald-100/85">
-                      {currentTrack.transition.sourceLufs.toFixed(1)} → {currentTrack.transition.targetLufs.toFixed(1)} LUFS
-                    </span>
-                  ) : null}
-                  {showAdminDetails ? (
-                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                      Norm {currentTrack.transition.normalizationGainDb > 0 ? "+" : ""}
-                      {currentTrack.transition.normalizationGainDb.toFixed(2)} dB
-                    </span>
-                  ) : null}
-                  {showAdminDetails ? (
-                    <span className="rounded-full border border-amber-300/20 bg-amber-300/10 px-3 py-1 text-amber-100/85">
-                      {playback.prefersBackgroundPlayback ? "背景播放" : "平滑轉場"}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && transitionMeta ? (
-                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                      Mix Out {transitionMeta.outStartLabel ?? "--:--"} · Fade {transitionMeta.fadeWindowLabel}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && transitionMeta ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      Next In {transitionMeta.inStartLabel ?? "--:--"} → Mix In {transitionMeta.targetMixInLabel ?? "--:--"}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && playback.transitionStrategyLabel ? (
-                    <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
-                      {playback.transitionStrategyLabel}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && transitionDeltaToneClass && playback.transitionBpmDelta != null ? (
-                    <span className={`rounded-full border px-3 py-1 ${transitionDeltaToneClass}`}>
-                      Δ BPM {playback.transitionBpmDelta}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && playback.prefersBackgroundPlayback ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      背景模式
-                    </span>
+                    <TapBpmButton
+                      onResult={(bpm) => {
+                        if (currentTrack) {
+                          updateTrackReviewOverride(currentTrack.id, { bpm });
+                        }
+                      }}
+                      currentBpm={currentTrack.bpm}
+                      allowedBpms={extractAllowedBpms(
+                        currentTrack.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null,
+                      )}
+                      disabled={!currentTrack}
+                    />
                   ) : null}
                 </div>
               ) : null}

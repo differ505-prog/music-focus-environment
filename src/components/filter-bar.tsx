@@ -13,6 +13,7 @@ type FilterBarProps = {
   onToggleBpm: (bpm: number) => void;
   onSelectAll: () => void;
   onClearSelection: () => void;
+  onStartRandom?: (assetIds: string[]) => void;
 };
 
 function exportTracksToCsv(tracks: Track[], filename: string) {
@@ -61,6 +62,7 @@ export function FilterBar({
   onToggleBpm,
   onSelectAll,
   onClearSelection,
+  onStartRandom,
 }: FilterBarProps) {
   const handleExportCsv = () => {
     const filename = `omnisonic-tracks-${activeCollectionLabel.replace(/\s+/g, "-").toLowerCase()}-${Date.now()}.csv`;
@@ -102,6 +104,15 @@ export function FilterBar({
 
         <div className="flex flex-col gap-3 md:items-end">
           <div className="flex flex-wrap items-center gap-3">
+            {onStartRandom ? (
+              <button
+                type="button"
+                onClick={() => onStartRandom(filteredAssets.map((a) => a.id))}
+                className="rounded-full border border-fuchsia-300/28 bg-fuchsia-400/12 px-4 py-2 text-sm font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/20"
+              >
+                Auto DJ Random
+              </button>
+            ) : null}
             <button
               type="button"
               onClick={onSelectAll}
