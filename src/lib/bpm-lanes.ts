@@ -6,6 +6,9 @@ export const bpmLaneOptions = [85, 90, 95, 100, 105, 115, 120, 125, 180] as cons
 /** ±2 BPM tolerance around each pivot defines a lane. */
 export const LANE_TOLERANCE = 2;
 
+/** All canonical BPM lane pivots. */
+export const ALL_LANES: readonly number[] = bpmLaneOptions;
+
 export type BpmCompatibility = {
   status: "exact" | "adjacent" | "distant";
   label: string;
@@ -101,9 +104,9 @@ export type MergedBpmGroup = {
 };
 
 /**
- * Groups raw BPM values by canonical lane (±1.5).
- * Lanes are ordered by their pivot value; tracks outside every lane appear
- * as a single "± 2 BPM" group.
+ * Groups raw BPM values by canonical lane (±2).
+ * All canonical lanes are always shown in order, even if empty.
+ * Tracks outside every lane appear as a single "± 2 BPM" group at the end.
  */
 export function buildMergedBpmOptions(
   rawBpms: number[],
@@ -111,7 +114,7 @@ export function buildMergedBpmOptions(
 ): MergedBpmGroup[] {
   const activeSet = new Set(activeBpms.map(Math.round));
 
-  // Group by lane
+  // Group by lane — classifyLane returns null for uncategorised
   const laneMap = new Map<number | null, number[]>();
   for (const bpm of rawBpms) {
     const lane = classifyLane(bpm);
@@ -120,23 +123,25 @@ export function buildMergedBpmOptions(
     laneMap.set(lane, bucket);
   }
 
-  // Canonical lanes come first in order, uncategorised last
-  const laneKeys: Array<number | null> = [
-    ...bpmLaneOptions.filter((p) => laneMap.has(p)),
-    ...(laneMap.has(null) ? [null] : []),
-  ];
+  const groups: MergedBpmGroup[] = [];
 
-  return laneKeys.map((lane) => {
-    const values = laneMap.get(lane) ?? [];
+  // Always show every canonical lane in order (even if it has zero songs)
+  for (const pivot of bpmLaneOptions) {
+    const values = laneMap.get(pivot) ?? [];
     const roundedValues = values.map(Math.round);
+    const isSelected = roundedValues.length > 0 && roundedValues.every((v) => activeSet.has(v));
+    const isPartial = roundedValues.some((v) => activeSet.has(v)) && !isSelected;
+    groups.push({ lane: pivot, label: labelForLane(pivot), values: roundedValues, isSelected, isPartial });
+  }
+
+  // Append uncategorised group if any tracks fall outside every lane
+  const uncategorised = laneMap.get(null) ?? [];
+  if (uncategorised.length > 0) {
+    const roundedValues = uncategorised.map(Math.round);
     const isSelected = roundedValues.every((v) => activeSet.has(v));
     const isPartial = roundedValues.some((v) => activeSet.has(v)) && !isSelected;
-    return {
-      lane,
-      label: labelForLane(lane),
-      values: roundedValues,
-      isSelected,
-      isPartial,
-    };
-  });
+    groups.push({ lane: null, label: labelForLane(null), values: roundedValues, isSelected, isPartial });
+  }
+
+  return groups;
 }

@@ -42,7 +42,9 @@ export function buildPublicRouteEntries(programs: readonly ThemeProgram[], track
   const routeEntries = programs.map((program) => {
     const configuredBpms = configuredBpmMap.get(program.id) ?? [];
     const programTracks = trackList.filter(
-      (track) => track.themeProgramId === program.id && configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm),
+      (track) =>
+        track.themeProgramId === program.id &&
+        (configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm) || classifyLane(track.bpm) === null),
     );
     const subroutes = configuredBpms.map((bpm) => {
       const bpmTracks = programTracks.filter((track) => classifyLane(track.bpm) === bpm);
@@ -65,6 +67,7 @@ export function buildPublicRouteEntries(programs: readonly ThemeProgram[], track
 
   const uncategorizedTracks = trackList.filter((track) => {
     const configuredBpms = configuredBpmMap.get(track.themeProgramId ?? "");
+    // No program, or no configured lanes, or BPM doesn't match any lane → uncategorised
     if (!configuredBpms || configuredBpms.length === 0) return true;
     return !configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm);
   });
