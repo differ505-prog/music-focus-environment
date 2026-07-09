@@ -7,6 +7,7 @@ import { Waves } from "lucide-react";
 
 import { generatedSceneImageUrl } from "@/data/music-assets";
 import { GlobalPlayer } from "@/components/global-player";
+import { tapBpmActiveRef } from "@/components/tap-bpm-button";
 import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 import { buildAutoDjQueue, createAutoDjSessionPlan } from "@/lib/auto-dj";
 import { HowlerPlaylistController } from "@/lib/howler-playlist";
@@ -163,6 +164,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
       switch (e.code) {
         case "Space": {
+          if (tapBpmActiveRef.current) {
+            return;
+          }
           e.preventDefault();
           if (playback.isPlaying) {
             controllerRef.current?.pause();

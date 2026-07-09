@@ -4,6 +4,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Activity } from "lucide-react";
 
+/** Shared flag: true when any TapBpmButton has activated spacebar capture. */
+export const tapBpmActiveRef = { current: false };
+
 type UseTapBpmOptions = {
   /** Max number of recent taps to keep in the rolling window. */
   windowSize?: number;
@@ -94,6 +97,7 @@ export function useTapBpm(options: UseTapBpmOptions = {}) {
     if (!isActive) {
       return;
     }
+    tapBpmActiveRef.current = true;
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.code !== "Space" && event.key !== " ") {
@@ -105,12 +109,12 @@ export function useTapBpm(options: UseTapBpmOptions = {}) {
         return;
       }
       event.preventDefault();
-      event.stopPropagation();
       recordTap();
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => {
+      tapBpmActiveRef.current = false;
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [isActive, recordTap]);
