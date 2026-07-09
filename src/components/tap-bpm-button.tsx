@@ -105,6 +105,7 @@ export function useTapBpm(options: UseTapBpmOptions = {}) {
         return;
       }
       event.preventDefault();
+      event.stopPropagation();
       recordTap();
     };
 
