@@ -51,7 +51,7 @@ export function AdminStudioPage() {
     <AppSceneShell
       eyebrow="管理工作台"
       title="OmniSonic 後台工作台"
-      description="把系列、上架素材、主題手冊與播放資料拆成清楚的工作區。"
+      description="把系列、上架素材、主題手冊與播放資料拆成清楚的工作區"
       bottomPaddingClassName="pb-[18rem] md:pb-[22rem]"
       badges={["主題手冊", "上架素材", "流程管理"]}
     >
@@ -61,7 +61,7 @@ export function AdminStudioPage() {
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.32em] text-fuchsia-100/58">已上架路線</p>
             <h2 className="mt-3 font-serif text-3xl text-white md:text-4xl">已上架系列</h2>
-            <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">先縮小工作範圍，再進到細部管理。</p>
+            <p className="mt-3 text-sm leading-7 text-white/68 md:text-base">先縮小工作範圍，再進到細部管理</p>
           </div>
         </div>
 
@@ -75,7 +75,7 @@ export function AdminStudioPage() {
           >
             <p className="text-[11px] uppercase tracking-[0.3em] text-white/52">全部瀏覽</p>
             <h3 className="mt-3 font-serif text-2xl text-white">全部曲目</h3>
-            <p className="mt-3 text-sm leading-6 text-white/68">回到完整曲目庫，直接挑現在想處理的內容。</p>
+            <p className="mt-3 text-sm leading-6 text-white/68">回到完整曲目庫，直接挑現在想處理的內容</p>
             <div className="mt-4 flex flex-wrap gap-2 text-xs text-white/62">
               <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">{tracks.length} 首曲目</span>
               <span className="rounded-full border border-white/10 bg-black/20 px-3 py-1.5">
@@ -228,7 +228,7 @@ export function AdminStudioPage() {
           ))
         ) : (
           <div className="col-span-full rounded-[28px] border border-white/10 bg-white/6 p-8 text-center text-white/68">
-            目前沒有符合條件的曲目，請放寬節奏篩選或回到全部曲目。
+            目前沒有符合條件的曲目，請放寬節奏篩選或回到全部曲目
           </div>
         )}
       </section>

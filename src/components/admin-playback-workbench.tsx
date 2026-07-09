@@ -55,7 +55,7 @@ export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps
       accentColor="cyan"
       eyebrow="後台播放工作台"
       title="邊聽邊校正的工作台"
-      description="前台 GlobalPlayer 與現在播放的歌曲共用。當按下 Tap BPM 或寫入自訂 BPM，前台下次載入就會直接套用整理後的結果。"
+      description="前台播放器同步顯示，Tap BPM 與自訂 BPM 將直接寫入 localStorage，供後續轉場演算法取用"
     >
       <div className="mt-4">
         <div className="flex gap-1 rounded-[20px] border border-white/8 bg-black/24 p-1">
@@ -91,11 +91,11 @@ export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps
                     ? programs.find((program) => program.id === currentTrack.themeProgramId)?.title ?? "未分類路線"
                     : "未指派"}
                 </p>
-                <p className="mt-1 text-xs text-white/48">與 metadata BPM 同步顯示</p>
+                <p className="mt-1 text-xs text-white/48">覆寫寫入 localStorage</p>
               </StatCard>
               <StatCard label="本曲覆寫">
                 <p className="text-2xl font-semibold text-white">{summarizeOverrideCount(currentTrack?.id ?? null)}</p>
-                <p className="mt-1 text-xs text-white/48">已寫入 localStorage 的覆核決策</p>
+                <p className="mt-1 text-xs text-white/48">localStorage 覆核決策</p>
               </StatCard>
             </div>
           ) : null}
@@ -105,14 +105,14 @@ export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps
               {currentTrack ? (
                 <div className="flex flex-wrap items-center gap-3 rounded-[18px] border border-cyan-300/14 bg-cyan-300/8 p-4">
                   <Headphones className="h-5 w-5 text-cyan-100/86 shrink-0" />
-                  <p className="text-sm leading-6 text-cyan-100/86">
-                    <span className="font-medium text-cyan-50">{currentTrack.title}</span> 正在播放，邊聽邊校正。
+                  <p className="text-sm text-cyan-100/86">
+                    <span className="font-medium text-cyan-50">{currentTrack.title}</span> 正在播放
                   </p>
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center gap-3 rounded-[18px] border border-white/8 bg-white/4 p-4">
-                  <p className="text-sm leading-6 text-white/52">
-                    從卡片按「播放」或使用前台播放列切歌，這裡會自動同步目前曲目，並打開即時校正工具。
+                  <p className="text-sm text-white/52">
+                    播放曲目，這裡會自動同步目前曲目
                   </p>
                 </div>
               )}

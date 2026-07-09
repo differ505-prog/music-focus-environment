@@ -57,7 +57,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
 
     setIsScanning(true);
     setScanNotice(null);
-    setScanProgressLabel(`準備分析 ${tracks.length} 首曲目的接歌進點...`);
+    setScanProgressLabel(`分析 ${tracks.length} 首曲目的接歌進點`);
 
     try {
       await new Promise<void>((resolve) => {
@@ -102,7 +102,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       setScanProgressLabel(`分析完成 · ${successCount} 首成功${failedCount > 0 ? ` / ${failedCount} 首失敗` : ""}`);
 
       if (failedCount === 0) {
-        setScanNotice("全部曲目的建議進點已完成分析。");
+        setScanNotice("全部曲目的建議進點已完成分析");
       }
     } finally {
       setIsScanning(false);
@@ -123,7 +123,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       })),
     );
 
-    setScanNotice(`已一鍵採用 ${pendingApplyItems.length} 首曲目的建議 Mix In。`);
+    setScanNotice(`已一鍵採用 ${pendingApplyItems.length} 首曲目的建議 Mix In`);
   };
 
   const handleRestoreAllMixIns = () => {
@@ -140,14 +140,14 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       })),
     );
 
-    setScanNotice(`已一鍵還原 ${pendingRestoreItems.length} 首曲目的 Base Mix In。`);
+    setScanNotice(`已一鍵還原 ${pendingRestoreItems.length} 首曲目的 Base Mix In`);
   };
 
   return (
     <ReviewPanelShell
       eyebrow="接歌進點建議"
       title="自動抓比較有節拍感的進場位置"
-      description="系統會分析每首歌前段的能量與 onset，給出建議 Mix In，讓你對照目前 metadata 再決定是否採用。"
+      description="分析每首歌前段 onset 能量，給出建議 Mix In，對照 metadata 決定是否採用"
       accentColor="cyan"
       actions={
         <div className="flex flex-wrap justify-end gap-3">
@@ -188,21 +188,17 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
           </div>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
             <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">最近進度</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始分析。"}</p>
+            <p className="mt-3 text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始分析"}</p>
           </div>
           <div className="rounded-[20px] border border-white/10 bg-[#07101a]/80 p-4">
-            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">操作建議</p>
-            <p className="mt-3 text-sm leading-7 text-white/72">
-              差距超過 1 秒的進點先人工試聽，再決定是否採用建議值。
-            </p>
-            <p className="mt-2 text-xs text-white/46">目前可一鍵採用 {pendingApplyItems.length} 首。</p>
-            <p className="mt-1 text-xs text-white/46">目前可一鍵還原 {pendingRestoreItems.length} 首。</p>
+            <p className="text-[11px] uppercase tracking-[0.24em] text-white/45">待採用</p>
+            <p className="mt-3 text-3xl font-semibold text-white">{pendingApplyItems.length}</p>
           </div>
         </>
       }
       notice={scanNotice}
       isEmpty={reviewItems.length === 0}
-      emptyLabel="先掃描接歌進點，系統才會顯示每首歌的建議 Mix In。"
+      emptyLabel="掃描後顯示建議 Mix In"
     >
       {reviewItems.length > 0 && reviewItems.map((item) => {
             const confidencePercent = Math.round(item.suggestion.confidence * 100);
@@ -253,7 +249,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                     }
                     className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
                   >
-                    採用建議 {formatSeconds(item.suggestion.suggestedMixInSeconds)}
+                    採用 {formatSeconds(item.suggestion.suggestedMixInSeconds)}
                   </button>
                   <button
                     type="button"
@@ -264,14 +260,14 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                     }
                     className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
                   >
-                    還原 Base Mix In
+                    還原 Base
                   </button>
                   <button
                     type="button"
                     onClick={() => clearTrackReviewOverride(item.track.id)}
                     className="rounded-full border border-white/10 bg-black/20 px-3 py-2 text-xs text-white/62 transition hover:border-white/18 hover:text-white"
                   >
-                    清除該曲覆核
+                    清除覆核
                   </button>
                 </div>
               </ReviewItemShell>

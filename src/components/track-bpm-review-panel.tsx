@@ -127,9 +127,9 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
       setScanProgressLabel(summaryLabel);
 
       if (failedCount === 0 && skippedOverrideCount > 0) {
-        setScanNotice(`略過 ${skippedOverrideCount} 首已手動校正的曲目（清除覆核後會再納入掃描）。`);
-      } else if (failedCount === 0) {
-        setScanNotice("全部可掃描曲目已完成 BPM 分析。");
+        setScanNotice(`略過 ${skippedOverrideCount} 首已手動校正的曲目（清除覆核後會再納入掃描）`);
+        } else if (failedCount === 0) {
+          setScanNotice("全部可掃描曲目已完成 BPM 分析");
       }
     } finally {
       setIsScanning(false);
@@ -140,7 +140,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
     <ReviewPanelShell
       eyebrow="BPM 待覆核"
       title="抓出 metadata 與實際節拍不一致的歌"
-      description="先掃描整個曲庫，再逐首決定要移到未分類、採用偵測 BPM，或忽略警告。"
+      description="掃描曲庫比對 metadata BPM 與偵測 BPM，逐首決定路線歸屬"
       accentColor="rose"
       actions={
         <button
@@ -159,18 +159,13 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             <p className="text-3xl font-semibold text-white">{reviewItems.length}</p>
           </StatCard>
           <StatCard label="最近進度">
-            <p className="text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描或已掃描完成。"}</p>
-          </StatCard>
-          <StatCard label="建議">
-            <p className="text-sm leading-7 text-white/72">
-              差距明顯且不在原路線允許 BPM 內的歌，先移到未分類，再決定是否採用偵測值。
-            </p>
+            <p className="text-sm leading-7 text-white/72">{scanProgressLabel ?? "尚未開始掃描"}</p>
           </StatCard>
         </>
       }
       notice={scanNotice}
       isEmpty={reviewItems.length === 0}
-      emptyLabel="目前沒有待覆核項目。先掃描全部曲目，或用播放器播放幾首歌讓系統先抓到 BPM。"
+      emptyLabel="掃描曲庫後即可開始逐首覆核"
     >
       {reviewItems.length > 0 && reviewItems.map((item) => {
             const isUncategorized = item.effectiveThemeProgramId === "uncategorized-lane";
@@ -349,7 +344,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
                       onClick={handleApplyCustom}
                       className="rounded-full border border-cyan-300/30 bg-cyan-300/14 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/20"
                     >
-                      寫入覆寫
+                      寫入
                     </button>
                     <button
                       type="button"
