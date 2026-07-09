@@ -1,10 +1,10 @@
 import type { Track } from "@/types/music";
 
 /** Canonical BPM lane pivots. */
-export const bpmLaneOptions = [85, 100, 105, 115, 120, 180] as const;
+export const bpmLaneOptions = [85, 90, 95, 100, 105, 115, 120, 125, 180] as const;
 
-/** ±1.5 BPM tolerance around each pivot defines a lane. */
-export const LANE_TOLERANCE = 1.5;
+/** ±2 BPM tolerance around each pivot defines a lane. */
+export const LANE_TOLERANCE = 2;
 
 export type BpmCompatibility = {
   status: "exact" | "adjacent" | "distant";
