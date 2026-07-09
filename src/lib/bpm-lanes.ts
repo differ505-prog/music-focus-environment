@@ -78,10 +78,9 @@ export type MergedBpmGroup = {
 };
 
 /**
- * Groups BPM values into range chips when adjacent values differ by ≤ MERGE_THRESHOLD.
- * For active-filter purposes each group carries the full value set — the parent
- * `onToggleBpm` receives a `number[]` so the entire group (or all members)
- * gets activated/deactivated in one gesture.
+ * Rounds raw BPM values to integers before grouping, then merges adjacent groups
+ * where the difference is ≤ MERGE_THRESHOLD. This ensures chips always show clean
+ * integer ranges like "85–100" rather than "85–85.4".
  */
 export function buildMergedBpmOptions(
   rawBpms: number[],
@@ -89,7 +88,8 @@ export function buildMergedBpmOptions(
 ): MergedBpmGroup[] {
   if (rawBpms.length === 0) return [];
 
-  const sorted = [...new Set(rawBpms)].sort((a, b) => a - b);
+  // Normalise every value to an integer up-front
+  const sorted = [...new Set(rawBpms.map(Math.round))].sort((a, b) => a - b);
   const MERGE_THRESHOLD = 5;
 
   const groups: MergedBpmGroup[] = [];
