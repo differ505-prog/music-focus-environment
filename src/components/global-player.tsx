@@ -589,6 +589,7 @@ export function GlobalPlayer({
                       onSeekChange={(seconds) => {
                         setLiveSeekSeconds(seconds);
                       }}
+                      isPlaying={playback.isPlaying}
                       allowedBpms={allowedBpms}
                     />
                   ) : null}

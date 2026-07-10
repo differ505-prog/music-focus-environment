@@ -62,13 +62,15 @@ type PlayheadBpmDetectorProps = {
   playheadSeconds: number;
   /** Fires on every input/drag event — use to detect when user is actively dragging the seekbar */
   onSeekChange?: (seconds: number) => void;
+  /** Whether the track is currently playing — drives the auto-sample interval */
+  isPlaying: boolean;
   /** BPM lanes for the current track's theme program */
   allowedBpms: number[];
   /** "high" = confident, "medium" = less confident, "low" = unstable */
   onConfidenceTier?: (tier: ConfidenceTier, analysis: BpmAnalysis) => void;
 };
 
-export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
+export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPlaying, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
@@ -148,6 +150,19 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
     }, 350);
     return () => clearTimeout(timer);
   }, [isActive, phase, playheadSeconds]);
+
+  // Auto-sample while playing: fire analysis every 4 seconds
+  useEffect(() => {
+    if (!isActive || !isPlaying) return;
+    // Don't fire during an in-flight request
+    if (phase === "fetching" || phase === "analyzing") return;
+
+    const interval = setInterval(() => {
+      console.log(`[PlayheadBpm] interval → analyzing at ${playheadSeconds.toFixed(2)}s`);
+      void handleAnalyzeRef.current(playheadSeconds);
+    }, 4_000);
+    return () => clearInterval(interval);
+  }, [isActive, isPlaying, phase]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
