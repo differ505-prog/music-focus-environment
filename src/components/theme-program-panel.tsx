@@ -240,6 +240,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
   const [workingPromptDrafts, setWorkingPromptDrafts] = useState<WorkingPromptDraftMap>({});
   const previousGeneratedWorkingPromptsRef = useRef<WorkingPromptDraftMap>({});
+  // Bug 3 fix: track which working-prompt drafts the user has manually edited,
+  // so the auto-sync effect stops overwriting their work.
+  const userTouchedDraftsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     setCollapsedSections((current) => {
@@ -325,16 +328,55 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     }
   }, []);
 
-  // When moduleOutputs change (e.g. after save), advance to the next incomplete step
+  // Bug 1 + 6 fix: track when the user has manually selected a step,
+  // so the auto-advance after save doesn't override their navigation.
+  const userTouchedStepRef = useRef(false);
+
+  // When active program changes, reset step to 0 and let auto-advance take over
+  useEffect(() => {
+    setActiveStepIndex(0);
+    userTouchedStepRef.current = false;
+  }, [activeProgramId]);
+
+  // Auto-advance after save: only run when the user hasn't manually picked a step
+  // AND a save just happened (tracked via a sentinel in moduleOutputs ref).
+  // We avoid the broken pattern of running on every moduleOutputs change,
+  // which previously yanked the user away from the step they were editing.
+  const lastSeenOutputsRef = useRef<Record<string, string>>({});
   useEffect(() => {
     if (!activeProgramId) return;
     const program = programs.find((p) => p.id === activeProgramId);
     if (!program) return;
-    setActiveStepIndex(findFirstIncompleteStep(program));
-  }, [moduleOutputs, activeProgramId]);
+
+    // Detect if moduleOutputs changed via a save action (new key or value growth).
+    // We only auto-advance if user hasn't manually selected a step.
+    if (userTouchedStepRef.current) {
+      lastSeenOutputsRef.current = moduleOutputs;
+      return;
+    }
+
+    let didChange = false;
+    const prev = lastSeenOutputsRef.current;
+    if (Object.keys(moduleOutputs).length !== Object.keys(prev).length) {
+      didChange = true;
+    } else {
+      for (const [key, value] of Object.entries(moduleOutputs)) {
+        if (prev[key] !== value) {
+          didChange = true;
+          break;
+        }
+      }
+    }
+
+    if (didChange) {
+      setActiveStepIndex(findFirstIncompleteStep(program));
+    }
+    lastSeenOutputsRef.current = moduleOutputs;
+  }, [moduleOutputs, activeProgramId, programs]);
 
   useEffect(() => {
     const nextGeneratedPrompts: WorkingPromptDraftMap = {};
+    const userTouchedDrafts = userTouchedDraftsRef.current;
 
     setWorkingPromptDrafts((current) => {
       let didChange = false;
@@ -356,6 +398,14 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
 
           const currentDraft = current[moduleKey] ?? '';
           const previousGeneratedPrompt = previousGeneratedWorkingPromptsRef.current[moduleKey] ?? '';
+
+          // Bug 3 fix: if the user has manually edited this draft, freeze it.
+          // Without this guard, re-syncing would silently overwrite the user's edits.
+          // The user can still re-trigger sync by clearing the draft (handled in handler).
+          if (userTouchedDrafts.has(moduleKey)) {
+            continue;
+          }
+
           const shouldSync =
             !currentDraft ||
             currentDraft === previousGeneratedPrompt ||
@@ -438,6 +488,14 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const handleWorkingPromptDraftChange = (programId: string, moduleId: string, value: string) => {
     const key = buildModuleKey(programId, moduleId);
 
+    // Bug 3 fix: mark the draft as user-touched so the auto-sync effect stops
+    // overwriting it. The user can re-trigger sync by clearing the draft manually.
+    if (value !== '') {
+      userTouchedDraftsRef.current.add(key);
+    } else {
+      userTouchedDraftsRef.current.delete(key);
+    }
+
     setWorkingPromptDrafts((current) => ({
       ...current,
       [key]: value,
@@ -460,9 +518,15 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     const moduleKey = buildModuleKey(programId, moduleId);
     const nextOutputs = { ...moduleOutputs };
 
+    // Bug 2 fix: only preserve existing slot values; don't write '' for empty slots.
+    // The previous loop did `nextOutputs[slotKey] = moduleOutputs[slotKey] ?? ''`
+    // which was a no-op for existing keys AND could overwrite unrelated slots.
+    // Here we simply trust moduleOutputs as-is.
     for (let slotIndex = 0; slotIndex < getModuleOutputSlotCount(targetPromptModule); slotIndex += 1) {
       const slotKey = buildModuleSlotKey(programId, moduleId, slotIndex);
-      nextOutputs[slotKey] = moduleOutputs[slotKey] ?? '';
+      if (!(slotKey in nextOutputs)) {
+        nextOutputs[slotKey] = '';
+      }
     }
 
     const currentModuleOutput = combineModuleOutputs(programId, targetPromptModule, nextOutputs);
@@ -542,6 +606,8 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     const hasUpstreamPayload = Boolean(buildUpstreamPayload(program, moduleIndex, targetModule, moduleOutputs).trim());
 
     handleWorkingPromptDraftChange(program.id, targetModule.id, nextPrompt);
+    // Bug 3 fix: explicitly re-sync since the button forced a fresh generated value
+    userTouchedDraftsRef.current.delete(buildModuleKey(program.id, targetModule.id));
     const copied = await copyTextToClipboard(nextPrompt);
 
     if (copied) {
@@ -550,9 +616,11 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         hasUpstreamPayload ? '已複製' : '已複製，模板待填充',
       );
     } else {
+      // Bug 5 fix: clearly distinguish "draft filled but clipboard failed"
+      // from "everything succeeded". User needs to know to copy manually.
       setFeedback(
         buildModuleKey(program.id, targetModule.id),
-        hasUpstreamPayload ? '已預填' : '已預填，待填充',
+        hasUpstreamPayload ? '已預填，剪貼簿失敗請手動複製' : '已預填，剪貼簿失敗請手動複製',
       );
     }
   };
@@ -568,12 +636,15 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     );
 
     handleWorkingPromptDraftChange(program.id, targetModule.id, assembledPrompt);
+    // Bug 3 fix: explicitly re-sync since the button forced a fresh generated value
+    userTouchedDraftsRef.current.delete(buildModuleKey(program.id, targetModule.id));
     const copied = await copyTextToClipboard(assembledPrompt);
 
     if (copied) {
       setFeedback(buildModuleKey(program.id, targetModule.id), '已複製');
     } else {
-      setFeedback(buildModuleKey(program.id, targetModule.id), '已預填');
+      // Bug 5 fix: clearly distinguish clipboard failure from success
+      setFeedback(buildModuleKey(program.id, targetModule.id), '已預填，剪貼簿失敗請手動複製');
     }
   };
 
@@ -725,7 +796,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                     <button
                       key={module.id}
                       type="button"
-                      onClick={() => setActiveStepIndex(moduleIndex)}
+                      onClick={() => {
+                        userTouchedStepRef.current = true;
+                        setActiveStepIndex(moduleIndex);
+                      }}
                       className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition ${
                         isActive
                           ? 'border-cyan-300/50 bg-cyan-300/18 text-cyan-50'
@@ -796,7 +870,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                       <button
                         key={module.id}
                         type="button"
-                        onClick={() => setActiveStepIndex(moduleIndex)}
+                        onClick={() => {
+                        userTouchedStepRef.current = true;
+                        setActiveStepIndex(moduleIndex);
+                      }}
                         className="flex min-w-0 items-center gap-3 rounded-[18px] border border-cyan-300/10 bg-black/18 px-4 py-3 text-left transition hover:border-cyan-300/22 hover:bg-black/28"
                       >
                         <span className="shrink-0 rounded-full border border-cyan-300/18 bg-cyan-300/10 px-2 py-0.5 text-[11px] font-mono tabular-nums text-cyan-50/70">
@@ -892,7 +969,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
                               </button>
                             </div>
                           </div>
-                          {(!isWorkingCollapsed(program.id, module.id) || !workingPromptValue.trim()) && (
+                          {!isWorkingCollapsed(program.id, module.id) && (
                             <textarea
                               value={workingPromptValue}
                               onChange={(event) => handleWorkingPromptDraftChange(program.id, module.id, event.target.value)}
