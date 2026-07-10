@@ -29,6 +29,7 @@ const initialPlaybackState: PlaybackSnapshot = {
   engine: "precision_web_audio",
   prefersBackgroundPlayback: false,
   repeatEnabled: true,
+  playbackRate: 1,
 };
 
 type PlaybackContextValue = {

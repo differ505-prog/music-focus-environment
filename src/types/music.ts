@@ -212,4 +212,5 @@ export type PlaybackSnapshot = {
   engine: PlaybackEngine;
   prefersBackgroundPlayback: boolean;
   repeatEnabled: boolean;
+  playbackRate: number;
 };

@@ -64,13 +64,15 @@ type PlayheadBpmDetectorProps = {
   onSeekChange?: (seconds: number) => void;
   /** Whether the track is currently playing — drives the auto-sample interval */
   isPlaying: boolean;
+  /** Current playback speed — rate change triggers history reset to avoid mixing pre/post-rate samples */
+  playbackRate: number;
   /** BPM lanes for the current track's theme program */
   allowedBpms: number[];
   /** "high" = confident, "medium" = less confident, "low" = unstable */
   onConfidenceTier?: (tier: ConfidenceTier, analysis: BpmAnalysis) => void;
 };
 
-export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPlaying, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
+export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPlaying, playbackRate, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
@@ -163,6 +165,13 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     }, 4_000);
     return () => clearInterval(interval);
   }, [isActive, isPlaying, phase]);
+
+  // Reset samples when playback rate changes — avoid mixing pre/post-rate analysis windows
+  useEffect(() => {
+    if (!isActive) return;
+    setSamples([]);
+    console.log("[PlayheadBpm] playbackRate changed → history reset");
+  }, [playbackRate, isActive]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;

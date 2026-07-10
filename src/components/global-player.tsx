@@ -590,6 +590,7 @@ export function GlobalPlayer({
                         setLiveSeekSeconds(seconds);
                       }}
                       isPlaying={playback.isPlaying}
+                      playbackRate={playback.playbackRate}
                       allowedBpms={allowedBpms}
                     />
                   ) : null}

@@ -766,6 +766,7 @@ export class HowlerPlaylistController {
       engine: this.playbackEngine,
       prefersBackgroundPlayback: this.prefersBackgroundPlayback,
       repeatEnabled: this.repeatEnabled,
+      playbackRate: this.getPlaybackRate(),
     });
   }
 }
