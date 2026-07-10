@@ -127,9 +127,16 @@ type TapBpmButtonProps = {
   currentBpm: number;
   allowedBpms: number[];
   disabled?: boolean;
+  manualOverrideCount?: number;
 };
 
-export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: TapBpmButtonProps) {
+export function TapBpmButton({
+  onResult,
+  currentBpm,
+  allowedBpms,
+  disabled,
+  manualOverrideCount = 0,
+}: TapBpmButtonProps) {
   const { stats, isActive, start, stop, reset } = useTapBpm();
   const nearestLane = allowedBpms.length > 0 && stats.bpm !== null
     ? allowedBpms.reduce((closest, candidate) =>
@@ -187,6 +194,24 @@ export function TapBpmButton({ onResult, currentBpm, allowedBpms, disabled }: Ta
         <Activity className="h-3.5 w-3.5" />
         {isActive ? "Tap 中" : "Tap BPM"}
       </button>
+
+      <span
+        className="inline-flex items-center gap-1 rounded-full border border-amber-300/24 bg-amber-300/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-amber-100/78"
+        title="Tap 為過渡產物；終局由自動偵測取代（見 #confidence-floor）"
+        data-testid="tap-bpm-deprecation-flag"
+      >
+        <span aria-hidden>⚠️</span>
+        待淘汰
+      </span>
+      {manualOverrideCount > 0 ? (
+        <span
+          className="inline-flex items-center rounded-full border border-rose-300/22 bg-rose-300/8 px-2.5 py-1 text-[10px] uppercase tracking-[0.18em] text-rose-100/82"
+          title="累計人工覆寫次數 — 越高表示自動偵測越需要改進"
+          data-testid="tap-bpm-override-count"
+        >
+          已修 {manualOverrideCount}×
+        </span>
+      ) : null}
 
       {isActive ? (
         <div className="inline-flex flex-wrap items-center gap-2 rounded-full border border-white/10 bg-black/30 px-3 py-2 text-xs text-white/78">

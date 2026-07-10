@@ -60,7 +60,9 @@ type TrackBpmDetectionState =
   | { status: "ready"; result: BpmAnalysis }
   | { status: "error"; message: string };
 
+const confidenceFloor = 0.6;
 const detectedBpmCache = new Map<string, BpmAnalysis>();
+const inspectionLog = new Map<string, "passed" | "rejected">();
 
 export function GlobalPlayer({
   playlist,
@@ -86,6 +88,7 @@ export function GlobalPlayer({
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
+  const [manualOverrideCount, setManualOverrideCount] = useState(0);
   const lastResultRef = useRef<BpmAnalysis | null>(null);
   const prevTrackRef = useRef<Track | null>(null);
   const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
@@ -175,7 +178,15 @@ export function GlobalPlayer({
           allowedBpms,
         });
 
-        detectedBpmCache.set(cacheKey, result);
+        if (result.confidence >= confidenceFloor) {
+          detectedBpmCache.set(cacheKey, result);
+          inspectionLog.set(cacheKey, "passed");
+        } else {
+          inspectionLog.set(cacheKey, "rejected");
+          console.warn(
+            `[Player] BPM detection rejected (confidence ${result.confidence.toFixed(2)} < ${confidenceFloor}) for "${track.title}" → raw ${result.rawDetectedBpm} BPM`,
+          );
+        }
         saveTrackBpmDetection({
           trackId: track.id,
           audioUrl: track.media.audioUrl,
@@ -191,7 +202,14 @@ export function GlobalPlayer({
 
         if (!cancelled) {
           lastResultRef.current = result;
-          setDetectedBpmState({ status: "ready", result });
+          setDetectedBpmState(
+            result.confidence >= confidenceFloor
+              ? { status: "ready", result }
+              : {
+                  status: "error",
+                  message: `信心 ${Math.round(result.confidence * 100)}% · 待多段交叉驗證`,
+                },
+          );
         }
       } catch (error) {
         if (!cancelled) {
@@ -215,13 +233,17 @@ export function GlobalPlayer({
     const prevAudioUrl = prevTrackRef.current?.media?.audioUrl ?? null;
     const cacheKey = `${currentTrack.id}:${currentTrack.media.audioUrl}`;
 
-    // Same track (e.g., navigated back) — show last known result immediately
+    // Same track (e.g., navigated back) — show last known result immediately, but
+    // only when the cached result has passed the confidence gate. Rejected detections
+    // are re-run so the next sample (e.g., after the listener's audio engine warms up)
+    // can still produce a usable answer.
     if (prevTrackId === currentTrack.id && prevAudioUrl === currentTrack.media.audioUrl) {
       const cached = detectedBpmCache.get(cacheKey);
-      if (cached) {
+      const inspection = inspectionLog.get(cacheKey);
+      if (cached && inspection === "passed") {
         lastResultRef.current = cached;
         setDetectedBpmState({ status: "ready", result: cached });
-      } else if (lastResultRef.current) {
+      } else if (lastResultRef.current && lastResultRef.current.confidence >= confidenceFloor) {
         setDetectedBpmState({ status: "ready", result: lastResultRef.current });
       }
       prevTrackRef.current = currentTrack;
@@ -631,6 +653,13 @@ export function GlobalPlayer({
                     <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">
                       偵測中
                     </span>
+                  ) : detectedBpmState.status === "error" ? (
+                    <span
+                      className="rounded-full border border-amber-300/24 bg-amber-300/8 px-3 py-1 text-amber-100/84"
+                      title="信心低於門檻 60%，結果未寫入 cache；多長度交叉驗證是下一輪待辦"
+                    >
+                      ⚠ 信心不足 {detectedBpmState.message}
+                    </span>
                   ) : null}
                   {showAdminDetails ? (
                     <PlayheadBpmDetector
@@ -651,6 +680,7 @@ export function GlobalPlayer({
                       onResult={(bpm) => {
                         if (currentTrack) {
                           updateTrackReviewOverride(currentTrack.id, { bpm });
+                          setManualOverrideCount((count) => count + 1);
                         }
                       }}
                       currentBpm={currentTrack.bpm}
@@ -658,6 +688,7 @@ export function GlobalPlayer({
                         currentTrack.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null,
                       )}
                       disabled={!currentTrack}
+                      manualOverrideCount={manualOverrideCount}
                     />
                   ) : null}
                 </div>
