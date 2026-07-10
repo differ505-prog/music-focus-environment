@@ -176,13 +176,6 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     return () => clearInterval(interval);
   }, [detectorActive, isPlaying, phase]);
 
-  // Reset samples when playback rate changes — avoid mixing pre/post-rate analysis windows
-  useEffect(() => {
-    if (!detectorActive) return;
-    setSamples([]);
-    console.log("[PlayheadBpm] playbackRate changed → history reset");
-  }, [playbackRate, detectorActive]);
-
   const handleActivate = useCallback(() => {
     if (!track) return;
     onDetectorActiveChange(!detectorActive);

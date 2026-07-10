@@ -94,6 +94,17 @@ export function GlobalPlayer({
   const [playbackRate, setPlaybackRate] = useState(1);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
 
+  // When playback rate changes while the detector is active, auto-extinguish and re-ignite
+  // so the detector clears its state and starts sampling fresh at the new rate.
+  useEffect(() => {
+    if (!detectorActive) return;
+    const timer = setTimeout(() => {
+      setDetectorActive(true);
+    }, 600);
+    setDetectorActive(false);
+    return () => clearTimeout(timer);
+  }, [playbackRate]);
+
   const playbackRateOptions = [0.75, 1, 1.25, 1.5] as const;
   const themeProgramMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
   const currentProgram = currentTrack?.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null;
