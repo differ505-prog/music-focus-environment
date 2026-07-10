@@ -113,6 +113,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   useEffect(() => { detectorActiveRef.current = detectorActive; }, [detectorActive]);
   /** Tracks whether an analysis is currently in-flight — ref to avoid stale closure vs phase state */
   const isAnalyzingRef = useRef(false);
+  /** Always reads the live playheadSeconds value inside setInterval callbacks */
+  const playheadSecondsRef = useRef(playheadSeconds);
+  useEffect(() => { playheadSecondsRef.current = playheadSeconds; }, [playheadSeconds]);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -152,23 +155,11 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   // Detect drag end: fire analysis after 350ms of no movement
   const prevSecondsRef = useRef(playheadSeconds);
   useEffect(() => {
-    if (!detectorActive) {
-      console.log(`[PlayheadBpm] settle effect → detectorActive=false, skipping`);
-      return;
-    }
-    if (isAnalyzingRef.current) {
-      console.log(`[PlayheadBpm] settle effect → already analyzing, skipping`);
-      return;
-    }
-    if (playheadSeconds === prevSecondsRef.current) {
-      console.log(`[PlayheadBpm] settle effect → no change in playheadSeconds (${playheadSeconds.toFixed(2)}s), skipping`);
-      return;
-    }
+    if (!detectorActive || isAnalyzingRef.current) return;
+    if (playheadSeconds === prevSecondsRef.current) return;
     prevSecondsRef.current = playheadSeconds;
     const timer = setTimeout(() => {
-      // settled — seconds have stopped changing
       if (playheadSeconds === prevSecondsRef.current) {
-        console.log(`[PlayheadBpm] settle → analyzing at playbackTime=${playheadSeconds.toFixed(2)}s, playbackRate=${playbackRate}`);
         void handleAnalyzeRef.current(playheadSeconds);
       }
     }, 350);
@@ -194,11 +185,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         console.log(`[PlayheadBpm] interval → skipped (already analyzing)`);
         return;
       }
-      console.log(`[PlayheadBpm] interval → analyzing at ${playheadSeconds.toFixed(2)}s`);
-      void handleAnalyzeRef.current(playheadSeconds);
+      const currentPlayhead = playheadSecondsRef.current;
+      console.log(`[PlayheadBpm] interval → analyzing at ${currentPlayhead.toFixed(2)}s`);
+      void handleAnalyzeRef.current(currentPlayhead);
     }, 4_000);
     return () => clearInterval(interval);
-  }, [detectorActive, isPlaying, isAnalyzingRef]);
+  }, [detectorActive, isPlaying, isAnalyzingRef, playheadSeconds]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
