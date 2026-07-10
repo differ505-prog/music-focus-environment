@@ -7,6 +7,7 @@ import {
   buildWorkingPrompt,
   combineModuleOutputs,
   extractTemplateReferencedModuleIds,
+  findFirstIncompleteStep,
   getModuleOutputSlotLabel,
 } from './theme-program-panel';
 
@@ -319,5 +320,63 @@ describe('buildLowInputAssembly', () => {
 
     const result = buildLowInputAssembly(program, 0, moduleB, {}, '   ');
     expect(result).toContain('無');
+  });
+});
+
+// ── findFirstIncompleteStep ───────────────────────────────────────────────
+
+describe('findFirstIncompleteStep', () => {
+  function filled(programId: string, moduleId: string) {
+    return { [slotKey(programId, moduleId, 0)]: 'filled' };
+  }
+
+  it('returns 0 when the first module has no output', () => {
+    const program = makeProgram([
+      makeModule({ id: 'm1' }),
+      makeModule({ id: 'm2' }),
+    ]);
+    expect(findFirstIncompleteStep(program, {})).toBe(0);
+  });
+
+  it('returns 1 when first is filled but second is not', () => {
+    const program = makeProgram([
+      makeModule({ id: 'm1' }),
+      makeModule({ id: 'm2' }),
+    ]);
+    const outputs = filled('program-x', 'm1');
+    expect(findFirstIncompleteStep(program, outputs)).toBe(1);
+  });
+
+  it('returns the middle index when there is a gap in the middle', () => {
+    const program = makeProgram([
+      makeModule({ id: 'm1' }),
+      makeModule({ id: 'm2' }),
+      makeModule({ id: 'm3' }),
+    ]);
+    // 只填 m1 與 m3,m2 留空
+    const outputs = {
+      ...filled('program-x', 'm1'),
+      ...filled('program-x', 'm3'),
+    };
+    expect(findFirstIncompleteStep(program, outputs)).toBe(1);
+  });
+
+  it('returns last index when all modules are filled', () => {
+    const program = makeProgram([
+      makeModule({ id: 'm1' }),
+      makeModule({ id: 'm2' }),
+    ]);
+    const outputs = {
+      ...filled('program-x', 'm1'),
+      ...filled('program-x', 'm2'),
+    };
+    // 「全部完成」時回傳最後一個 index (目前實作為 promptModules.length - 1)
+    expect(findFirstIncompleteStep(program, outputs)).toBe(1);
+  });
+
+  it('treats whitespace-only output as incomplete', () => {
+    const program = makeProgram([makeModule({ id: 'm1' })]);
+    const outputs = { [slotKey('program-x', 'm1', 0)]: '   ' };
+    expect(findFirstIncompleteStep(program, outputs)).toBe(0);
   });
 });

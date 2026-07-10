@@ -228,6 +228,20 @@ export function buildLowInputAssembly(
   ].join('\n');
 }
 
+export function findFirstIncompleteStep(
+  program: ThemeProgram,
+  moduleOutputs: Record<string, string>,
+): number {
+  for (let i = 0; i < program.promptModules.length; i++) {
+    const module = program.promptModules[i];
+    const combined = combineModuleOutputs(program.id, module, moduleOutputs);
+    if (!combined.trim()) {
+      return i;
+    }
+  }
+  return program.promptModules.length - 1;
+}
+
 export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [activeProgramId, setActiveProgramId] = useState<string | null>(null);
   const [activeStepIndex, setActiveStepIndex] = useState<number>(0);
@@ -369,7 +383,7 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     }
 
     if (didChange) {
-      setActiveStepIndex(findFirstIncompleteStep(program));
+      setActiveStepIndex(findFirstIncompleteStep(program, moduleOutputs));
     }
     lastSeenOutputsRef.current = moduleOutputs;
   }, [moduleOutputs, activeProgramId, programs]);
@@ -647,18 +661,6 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       setFeedback(buildModuleKey(program.id, targetModule.id), '已預填，剪貼簿失敗請手動複製');
     }
   };
-
-  /** Find the first module index that has no saved output — the natural next step */
-  function findFirstIncompleteStep(program: ThemeProgram): number {
-    for (let i = 0; i < program.promptModules.length; i++) {
-      const module = program.promptModules[i];
-      const combined = combineModuleOutputs(program.id, module, moduleOutputs);
-      if (!combined.trim()) {
-        return i;
-      }
-    }
-    return program.promptModules.length - 1;
-  }
 
   function toggleTemplate(programId: string, moduleId: string) {
     const key = `${programId}::${moduleId}`;
