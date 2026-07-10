@@ -268,10 +268,17 @@ export function analyzeAudioBufferForBpm(
   audioBuffer: AudioBuffer,
   laneOptions: readonly number[],
   options: BpmAnalysisOptions = {},
+  playheadSeconds: number = 0,
 ): BpmAnalysis {
-  const targetLength = Math.min(audioBuffer.length, Math.floor(audioBuffer.sampleRate * MAX_ANALYSIS_SECONDS));
+  const sampleRate = audioBuffer.sampleRate;
+  const totalLength = Math.floor(audioBuffer.length);
+
+  // Clamp playhead to valid range
+  const safePlayheadSeconds = Math.max(0, Math.min(playheadSeconds, totalLength / sampleRate));
+  const startSample = Math.floor(safePlayheadSeconds * sampleRate);
+  const targetLength = Math.min(totalLength - startSample, Math.floor(sampleRate * MAX_ANALYSIS_SECONDS));
   const channelData = Array.from({ length: audioBuffer.numberOfChannels }, (_, channelIndex) =>
-    audioBuffer.getChannelData(channelIndex).slice(0, targetLength),
+    audioBuffer.getChannelData(channelIndex).slice(startSample, startSample + targetLength),
   );
   const mono = mixToMono(channelData);
   const histogram = new Map<number, number>();
@@ -303,7 +310,7 @@ export function analyzeAudioBufferForBpm(
     confidence,
     laneSuggestion: getNearestLane(resolvedBpm, laneOptions),
     candidates,
-    sampleDurationSeconds: Number((targetLength / audioBuffer.sampleRate).toFixed(1)),
+    sampleDurationSeconds: Number((targetLength / sampleRate).toFixed(1)),
     peakCount,
     resolvedByReference: resolvedBpm !== primary.bpm,
   };

@@ -584,6 +584,7 @@ export function GlobalPlayer({
                   {showAdminDetails ? (
                     <PlayheadBpmDetector
                       track={currentTrack}
+                      playheadSeconds={playback.currentTime}
                       allowedBpms={allowedBpms}
                     />
                   ) : null}

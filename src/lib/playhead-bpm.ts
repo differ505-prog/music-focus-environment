@@ -45,6 +45,8 @@ async function fetchAudioBuffer(audioUrl: string): Promise<AudioBuffer> {
 export type PlayheadBpmResult = {
   analysis: BpmAnalysis;
   audioUrl: string;
+  /** Offset (seconds) into the audio where analysis should begin */
+  playheadSeconds?: number;
 };
 
 const _bufferCache = new Map<string, Promise<AudioBuffer>>();
@@ -57,24 +59,33 @@ export async function getAudioBuffer(audioUrl: string): Promise<AudioBuffer> {
   return _bufferCache.get(audioUrl)!;
 }
 
-/** 對已解碼的 AudioBuffer 分析 BPM。 */
+/** 對已解碼的 AudioBuffer 分析 BPM。
+ * @param buffer - decoded AudioBuffer
+ * @param laneOptions - BPM lane values to match against
+ * @param options - analysis options
+ * @param playheadSeconds - start offset into the audio (defaults to 0 = from beginning)
+ */
 export function analyzePlayheadBpm(
   buffer: AudioBuffer,
   laneOptions: readonly number[],
   options: BpmAnalysisOptions = {},
+  playheadSeconds: number = 0,
 ): BpmAnalysis {
-  return analyzeAudioBufferForBpm(buffer, laneOptions, options);
+  return analyzeAudioBufferForBpm(buffer, laneOptions, options, playheadSeconds);
 }
 
-/** 一步完成 URL → Buffer → BPM 分析。 */
+/** 一步完成 URL → Buffer → BPM 分析。
+ * @param playheadSeconds - start offset into the audio (defaults to 0 = from beginning)
+ */
 export async function analyzePlayheadBpmFromUrl(
   audioUrl: string,
   laneOptions: readonly number[],
   options: BpmAnalysisOptions = {},
+  playheadSeconds: number = 0,
 ): Promise<PlayheadBpmResult> {
   const buffer = await getAudioBuffer(audioUrl);
-  const analysis = analyzePlayheadBpm(buffer, laneOptions, options);
-  return { analysis, audioUrl };
+  const analysis = analyzePlayheadBpm(buffer, laneOptions, options, playheadSeconds);
+  return { analysis, audioUrl, playheadSeconds };
 }
 
 /** 清除指定 URL 的緩存（更換曲目時呼叫）。 */

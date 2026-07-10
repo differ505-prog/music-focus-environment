@@ -42,13 +42,15 @@ function formatRelativeTime(): string {
 
 type PlayheadBpmDetectorProps = {
   track: Track | null;
+  /** Current playback position in seconds (driven from parent for auto-analysis) */
+  playheadSeconds: number;
   /** BPM lanes for the current track's theme program */
   allowedBpms: number[];
   /** "high" = confident, "medium" = less confident, "low" = unstable */
   onConfidenceTier?: (tier: ConfidenceTier, analysis: BpmAnalysis) => void;
 };
 
-export function PlayheadBpmDetector({ track, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
+export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
   const [isActive, setIsActive] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
@@ -86,6 +88,16 @@ export function PlayheadBpmDetector({ track, allowedBpms, onConfidenceTier }: Pl
     return () => clearTimeout(timer);
   }, [phase]);
 
+  // Auto-trigger analysis when playhead changes and detector is active
+  useEffect(() => {
+    if (!isActive || phase !== "idle") return;
+    // Debounce: only fire after user settles (300ms no further movement)
+    const timer = setTimeout(() => {
+      void handleAnalyze(playheadSeconds);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [isActive, playheadSeconds, phase]);
+
   const handleActivate = useCallback(() => {
     if (!track) return;
     setIsActive((v) => !v);
@@ -95,7 +107,7 @@ export function PlayheadBpmDetector({ track, allowedBpms, onConfidenceTier }: Pl
     setAdoptedBpm(null);
   }, [track]);
 
-  const handleAnalyze = useCallback(async () => {
+  const handleAnalyze = useCallback(async (seekedPlayhead?: number) => {
     if (!track || !track.media.audioUrl) return;
 
     // Cancel any in-flight request
@@ -108,10 +120,12 @@ export function PlayheadBpmDetector({ track, allowedBpms, onConfidenceTier }: Pl
 
     try {
       setPhase("analyzing");
+      const analysisOffset = typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds;
       const playheadResult = await analyzePlayheadBpmFromUrl(
         track.media.audioUrl,
         allowedBpms,
         { metadataBpm: track.bpm, allowedBpms },
+        analysisOffset,
       );
 
       setResult(playheadResult);
@@ -139,7 +153,7 @@ export function PlayheadBpmDetector({ track, allowedBpms, onConfidenceTier }: Pl
       setPhase("idle");
       setIsActive(false);
     }
-  }, [track, allowedBpms, onConfidenceTier]);
+  }, [track, allowedBpms, onConfidenceTier, playheadSeconds]);
 
   const handleApply = useCallback(() => {
     if (!track || !result) return;
