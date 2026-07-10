@@ -15,6 +15,8 @@ type PlayerProgressBarProps = {
   currentTime: number;
   duration: number;
   onSeek: (seconds: number) => void;
+  /** Fires on every input event during drag — use for live UI updates separate from committed seek */
+  onSeekChange?: (seconds: number) => void;
   formatTime: (value: number) => string;
   markers?: ProgressMarker[];
   ranges?: ProgressRange[];
@@ -79,6 +81,7 @@ export function PlayerProgressBar({
   currentTime,
   duration,
   onSeek,
+  onSeekChange,
   formatTime,
   markers = [],
   ranges = [],
@@ -96,7 +99,11 @@ export function PlayerProgressBar({
             max={duration || 0}
             step={0.1}
             value={Math.min(currentTime, duration || 0)}
-            onInput={(event) => onSeek(Number((event.target as HTMLInputElement).value))}
+            onInput={(event) => {
+              const value = Number((event.target as HTMLInputElement).value);
+              onSeek(value);
+              onSeekChange?.(value);
+            }}
             onChange={(event) => onSeek(Number(event.target.value))}
             disabled={duration <= 0}
             className="pointer-events-auto h-2 w-full cursor-pointer accent-fuchsia-400 disabled:cursor-not-allowed"

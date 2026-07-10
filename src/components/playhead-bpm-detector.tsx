@@ -53,14 +53,17 @@ type PlayheadBpmDetectorProps = {
   track: Track | null;
   /** Current playback position in seconds (driven from parent for auto-analysis) */
   playheadSeconds: number;
+  /** Fires on every input/drag event — use to detect when user is actively dragging the seekbar */
+  onSeekChange?: (seconds: number) => void;
   /** BPM lanes for the current track's theme program */
   allowedBpms: number[];
   /** "high" = confident, "medium" = less confident, "low" = unstable */
   onConfidenceTier?: (tier: ConfidenceTier, analysis: BpmAnalysis) => void;
 };
 
-export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
+export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
   const [isActive, setIsActive] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -97,22 +100,32 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
     return () => clearTimeout(timer);
   }, [phase]);
 
-  // Auto-trigger analysis when playhead changes and detector is active
+  // Track drag state and fire analysis when user stops dragging (settle trigger)
   useEffect(() => {
-    console.log(
-      `[PlayheadBpm] useEffect fired — isActive=${isActive}, phase=${phase}, playheadSeconds=${playheadSeconds.toFixed(2)}`,
-    );
+    if (!onSeekChange) return;
+    onSeekChange(playheadSeconds);
+  }, [playheadSeconds, onSeekChange]);
+
+  // Detect drag start (when playheadSeconds changes while isActive)
+  const prevSecondsRef = useRef(playheadSeconds);
+  useEffect(() => {
     if (!isActive || phase !== "idle") return;
-    // Debounce: only fire after user settles (300ms no further movement)
+    if (playheadSeconds !== prevSecondsRef.current) {
+      prevSecondsRef.current = playheadSeconds;
+      // Dragging started or is in progress — pause any pending analysis
+      setIsDragging(true);
+    }
+  }, [isActive, phase, playheadSeconds]);
+
+  // Detect drag end: fire analysis after 350ms of no movement
+  useEffect(() => {
+    if (!isActive || phase !== "idle") return;
     const timer = setTimeout(() => {
-      console.log(`[PlayheadBpm] debounce settled → calling handleAnalyze(${playheadSeconds.toFixed(2)})`);
+      console.log(`[PlayheadBpm] settle → analyzing at ${playheadSeconds.toFixed(2)}s`);
       void handleAnalyzeRef.current(playheadSeconds);
-    }, 300);
-    return () => {
-      console.log(`[PlayheadBpm] debounce cancelled`);
-      clearTimeout(timer);
-    };
-  }, [isActive, playheadSeconds, phase]);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [isActive, phase, playheadSeconds]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;

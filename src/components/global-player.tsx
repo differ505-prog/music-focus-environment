@@ -84,6 +84,7 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(1);
@@ -585,6 +586,9 @@ export function GlobalPlayer({
                     <PlayheadBpmDetector
                       track={currentTrack}
                       playheadSeconds={playback.currentTime}
+                      onSeekChange={(seconds) => {
+                        setLiveSeekSeconds(seconds);
+                      }}
                       allowedBpms={allowedBpms}
                     />
                   ) : null}
@@ -724,9 +728,10 @@ export function GlobalPlayer({
           ) : null}
 
           <PlayerProgressBar
-            currentTime={playback.currentTime}
+            currentTime={liveSeekSeconds ?? playback.currentTime}
             duration={playback.duration}
             onSeek={onSeek}
+            onSeekChange={setLiveSeekSeconds}
             formatTime={formatTime}
             markers={progressMarkers}
             ranges={progressRanges}
