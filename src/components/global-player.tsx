@@ -84,6 +84,8 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
+  const [detectorActive, setDetectorActive] = useState(false);
   const lastResultRef = useRef<BpmAnalysis | null>(null);
   const prevTrackRef = useRef<Track | null>(null);
   const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
@@ -622,6 +624,8 @@ export function GlobalPlayer({
                       isPlaying={playback.isPlaying}
                       playbackRate={playback.playbackRate}
                       allowedBpms={allowedBpms}
+                      detectorActive={detectorActive}
+                      onDetectorActiveChange={setDetectorActive}
                     />
                   ) : null}
                   {showAdminDetails ? (

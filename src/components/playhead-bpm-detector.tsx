@@ -70,10 +70,12 @@ type PlayheadBpmDetectorProps = {
   allowedBpms: number[];
   /** "high" = confident, "medium" = less confident, "low" = unstable */
   onConfidenceTier?: (tier: ConfidenceTier, analysis: BpmAnalysis) => void;
+  /** Lifted activation state — stays alive across track changes (controlled by global-player) */
+  detectorActive: boolean;
+  onDetectorActiveChange: (active: boolean) => void;
 };
 
-export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPlaying, playbackRate, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
-  const [isActive, setIsActive] = useState(false);
+export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPlaying, playbackRate, allowedBpms, onConfidenceTier, detectorActive, onDetectorActiveChange }: PlayheadBpmDetectorProps) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -82,9 +84,6 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   const [samples, setSamples] = useState<BpmSample[]>([]);
   /** Show the detailed popover when user clicks the live estimate row */
   const [showDetail, setShowDetail] = useState(false);
-
-  /** Track previous track ID to keep isActive alive across song changes */
-  const prevTrackIdRef = useRef<string | null>(null);
 
   /** Weighted rolling average: confidence * count as weight, weighted by confidence */
   const rollingEstimate = useMemo(() => {
@@ -106,10 +105,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   const abortRef = useRef<AbortController | null>(null);
   const activeTrackIdRef = useRef<string | null>(null);
 
-  // Reset when track changes
+  // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
     if (track?.id !== activeTrackIdRef.current) {
-      setIsActive(false);
       setPhase("idle");
       setResult(null);
       setErrorMsg(null);
@@ -143,7 +141,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   // Detect drag end: fire analysis after 350ms of no movement
   const prevSecondsRef = useRef(playheadSeconds);
   useEffect(() => {
-    if (!isActive || phase !== "idle") return;
+    if (!detectorActive || phase !== "idle") return;
     if (playheadSeconds === prevSecondsRef.current) return; // no change
     prevSecondsRef.current = playheadSeconds;
     const timer = setTimeout(() => {
@@ -154,29 +152,11 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [isActive, phase, playheadSeconds]);
-
-  // Keep isActive alive across track changes — only clear samples/result to restart analysis
-  useEffect(() => {
-    if (!isActive) {
-      prevTrackIdRef.current = track?.id ?? null;
-      return;
-    }
-    if (!track) return;
-    if (prevTrackIdRef.current !== null && prevTrackIdRef.current !== track.id) {
-      // Song changed while detector was active — reset analysis state but keep button lit
-      setSamples([]);
-      setResult(null);
-      setErrorMsg(null);
-      setAdoptedBpm(null);
-      setShowDetail(false);
-    }
-    prevTrackIdRef.current = track.id;
-  }, [track?.id, isActive]);
+  }, [detectorActive, phase, playheadSeconds]);
 
   // Auto-sample while playing: fire analysis every 4 seconds
   useEffect(() => {
-    if (!isActive || !isPlaying) return;
+    if (!detectorActive || !isPlaying) return;
     // Don't fire during an in-flight request
     if (phase === "fetching" || phase === "analyzing") return;
 
@@ -185,25 +165,25 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       void handleAnalyzeRef.current(playheadSeconds);
     }, 4_000);
     return () => clearInterval(interval);
-  }, [isActive, isPlaying, phase]);
+  }, [detectorActive, isPlaying, phase]);
 
   // Reset samples when playback rate changes — avoid mixing pre/post-rate analysis windows
   useEffect(() => {
-    if (!isActive) return;
+    if (!detectorActive) return;
     setSamples([]);
     console.log("[PlayheadBpm] playbackRate changed → history reset");
-  }, [playbackRate, isActive]);
+  }, [playbackRate, detectorActive]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
-    setIsActive((v) => !v);
+    onDetectorActiveChange(!detectorActive);
     setPhase("idle");
     setResult(null);
     setErrorMsg(null);
     setAdoptedBpm(null);
     setSamples([]);
     setShowDetail(false);
-  }, [track]);
+  }, [track, detectorActive, onDetectorActiveChange]);
 
   const handleAnalyze = useCallback(async (seekedPlayhead?: number) => {
     if (!track || !track.media.audioUrl) return;
@@ -256,7 +236,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       if ((err as Error).name === "AbortError") return;
       setErrorMsg(err instanceof Error ? err.message : "分析失敗");
       setPhase("idle");
-      setIsActive(false);
+      onDetectorActiveChange(false);
     }
   }, [track, allowedBpms, onConfidenceTier, playheadSeconds]);
 
@@ -274,21 +254,21 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     setTimeout(() => {
       setPhase("idle");
       setResult(null);
-      setIsActive(false);
+      onDetectorActiveChange(false);
       setSamples([]);
       setShowDetail(false);
     }, 1_500);
-  }, [track, result, rollingEstimate]);
+  }, [track, result, rollingEstimate, onDetectorActiveChange]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
     setPhase("idle");
     setResult(null);
     setErrorMsg(null);
-    setIsActive(false);
+    onDetectorActiveChange(false);
     setSamples([]);
     setShowDetail(false);
-  }, []);
+  }, [onDetectorActiveChange]);
 
   const isWorking = phase === "fetching" || phase === "analyzing";
   const rollingTier = rollingEstimate ? confidenceTier(rollingEstimate.confidence) : null;
@@ -302,9 +282,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         type="button"
         onClick={handleActivate}
         disabled={isWorking}
-        title={isActive ? "結束節奏偵測" : "節奏偵測：拖曳播放點後鬆開，分析 BPM"}
+        title={detectorActive ? "結束節奏偵測" : "節奏偵測：拖曳播放點後鬆開，分析 BPM"}
         className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 text-xs font-medium transition ${
-          isActive
+          detectorActive
             ? "border-fuchsia-300/50 bg-fuchsia-300/20 text-fuchsia-100 shadow-[0_0_16px_rgba(217,70,239,0.22)]"
             : isWorking
               ? "border-white/10 bg-white/6 text-white/40 cursor-not-allowed"
@@ -320,11 +300,11 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         ) : (
           <Crosshair className="h-3.5 w-3.5" />
         )}
-        {phase === "fetching" ? "下載" : phase === "analyzing" ? "分析" : isActive ? "離開" : "節奏"}
+        {phase === "fetching" ? "下載" : phase === "analyzing" ? "分析" : detectorActive ? "離開" : "節奏"}
       </button>
 
       {/* Drag hint — shown when active but not yet triggered */}
-      {isActive && phase === "idle" && samples.length === 0 && (
+      {detectorActive && phase === "idle" && samples.length === 0 && (
         <span className="hidden text-[11px] text-white/36 md:block">
           拖曳進度條後放開，以分析 BPM
         </span>
