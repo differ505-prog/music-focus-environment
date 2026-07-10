@@ -357,7 +357,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   if (!track) return null;
 
   return (
-    <div className="relative flex items-center gap-2">
+    <div className="relative flex items-center gap-2" suppressHydrationWarning>
       {/* Main trigger button */}
       <button
         type="button"
