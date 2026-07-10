@@ -152,8 +152,18 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   // Detect drag end: fire analysis after 350ms of no movement
   const prevSecondsRef = useRef(playheadSeconds);
   useEffect(() => {
-    if (!detectorActive || isAnalyzingRef.current) return;
-    if (playheadSeconds === prevSecondsRef.current) return; // no change
+    if (!detectorActive) {
+      console.log(`[PlayheadBpm] settle effect → detectorActive=false, skipping`);
+      return;
+    }
+    if (isAnalyzingRef.current) {
+      console.log(`[PlayheadBpm] settle effect → already analyzing, skipping`);
+      return;
+    }
+    if (playheadSeconds === prevSecondsRef.current) {
+      console.log(`[PlayheadBpm] settle effect → no change in playheadSeconds (${playheadSeconds.toFixed(2)}s), skipping`);
+      return;
+    }
     prevSecondsRef.current = playheadSeconds;
     const timer = setTimeout(() => {
       // settled — seconds have stopped changing
