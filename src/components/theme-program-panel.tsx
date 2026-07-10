@@ -8,6 +8,11 @@ import {
   importProgramsFromJSON,
   type ProgramFile,
 } from '@/lib/programs-factory';
+import {
+  RESET_CONFIRM_PHRASE,
+  buildResetResult,
+  countResettableItems,
+} from '@/lib/theme-panel-reset';
 import type { ThemeProgram } from "@/types/music";
 
 type ThemeProgramPanelProps = {
@@ -263,6 +268,9 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [importDraft, setImportDraft] = useState<string>('');
   const [importError, setImportError] = useState<string | null>(null);
   const [importedPreview, setImportedPreview] = useState<ProgramFile['programs'] | null>(null);
+  // C-UI Z3: 重置按鈕狀態 — confirmModal 是否顯示、確認詞輸入
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetConfirmInput, setResetConfirmInput] = useState('');
   // Bug 3 fix: track which working-prompt drafts the user has manually edited,
   // so the auto-sync effect stops overwriting their work.
   const userTouchedDraftsRef = useRef<Set<string>>(new Set());
@@ -499,6 +507,57 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
     setImportError(null);
     setImportedPreview(null);
   };
+
+  // C-UI Z3: 重置按鈕流程 — 雙重確認
+  // Step 1: 點按鈕 → 開 modal + 清空輸入
+  // Step 2: 輸入 RESET → 確認按鈕變 enabled
+  // Step 3: 點確認 → 執行 buildResetResult + Toast
+  // 為何這樣設計: 重置 = 不可逆刪除,符合第 13 條危險動作精神
+  const handleOpenReset = () => {
+    setResetConfirmInput('');
+    setIsResetModalOpen(true);
+  };
+
+  const handleCloseReset = () => {
+    setIsResetModalOpen(false);
+    setResetConfirmInput('');
+  };
+
+  const handleConfirmReset = () => {
+    if (resetConfirmInput !== RESET_CONFIRM_PHRASE) {
+      // 雙重保險:即使按鈕 enabled,程式碼層也要檢查
+      return;
+    }
+
+    const result = buildResetResult(
+      programs,
+      typeof window !== 'undefined' ? window.localStorage : null,
+    );
+    const counts = countResettableItems(moduleOutputs, supplementalInputs, workingPromptDrafts);
+
+    setModuleOutputs(result.moduleOutputs);
+    setSupplementalInputs(result.supplementalInputs);
+    setWorkingPromptDrafts(result.workingPromptDrafts);
+    setFeedbackMap(result.feedbackMap);
+    setImportDraft(result.importDraft);
+    setImportError(result.importError);
+    setImportedPreview(result.importedPreview as ProgramFile['programs'] | null);
+
+    // 重置 refs(防止 stale state)
+    userTouchedDraftsRef.current = new Set();
+    userTouchedStepRef.current = false;
+    previousGeneratedWorkingPromptsRef.current = {};
+    lastSeenOutputsRef.current = {};
+
+    setFeedback(
+      'theme-program-panel-reset',
+      `已重置:清除 ${counts.outputs} 個結果 + ${counts.supplementalInputs} 個補充欄位 + ${counts.drafts} 個草稿`,
+    );
+
+    handleCloseReset();
+  };
+
+  const resetCanConfirm = resetConfirmInput === RESET_CONFIRM_PHRASE;
 
   const toggleSection = (programId: string, section: SectionKey) => {
     setCollapsedSections((current) => ({
@@ -806,6 +865,21 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
           {feedbackMap['theme-program-panel-export'] && (
             <span className="text-xs text-fuchsia-100/70" data-testid="tpp-export-feedback">
               {feedbackMap['theme-program-panel-export']}
+            </span>
+          )}
+
+          {/* C-UI Z3: 重置按鈕 — 紅色警示、與匯出並排 */}
+          <button
+            type="button"
+            onClick={handleOpenReset}
+            className="rounded-full border border-rose-400/40 bg-rose-400/15 px-4 py-2 text-xs font-medium text-rose-100 transition hover:bg-rose-400/25"
+            data-testid="tpp-reset"
+          >
+            重置主題管理
+          </button>
+          {feedbackMap['theme-program-panel-reset'] && (
+            <span className="text-xs text-rose-100/80" data-testid="tpp-reset-feedback">
+              {feedbackMap['theme-program-panel-reset']}
             </span>
           )}
         </div>
@@ -1380,6 +1454,70 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
             </div>
           </article>
         ))}
+
+      {/* C-UI Z3: 重置確認 Modal — 雙重確認(需輸入 RESET) */}
+      {isResetModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="tpp-reset-modal-title"
+          data-testid="tpp-reset-modal"
+          onClick={handleCloseReset}
+        >
+          <div
+            className="w-full max-w-md rounded-[20px] border border-rose-400/30 bg-[#0d0810]/95 p-6 shadow-[0_32px_90px_rgba(8,9,28,0.66)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <p className="text-xs uppercase tracking-[0.24em] text-rose-200/70">危險操作</p>
+            <h3
+              id="tpp-reset-modal-title"
+              className="mt-3 font-serif text-2xl text-white"
+            >
+              重置主題管理
+            </h3>
+            <p className="mt-3 text-sm leading-7 text-white/72">
+              將清除所有<strong className="text-rose-100">已產生的結果、已儲存的文案、補充欄位、草稿與匯入預覽</strong>。
+              主題列表本身不會被刪除。
+            </p>
+            <p className="mt-3 text-xs leading-6 text-white/52">
+              為避免誤觸,請輸入 <code className="rounded bg-white/10 px-1.5 py-0.5 font-mono text-rose-200">{RESET_CONFIRM_PHRASE}</code> 以確認:
+            </p>
+            <input
+              type="text"
+              value={resetConfirmInput}
+              onChange={(event) => setResetConfirmInput(event.target.value)}
+              placeholder={RESET_CONFIRM_PHRASE}
+              autoFocus
+              className="mt-3 w-full min-w-0 rounded-[12px] border border-white/12 bg-black/40 px-4 py-3 font-mono text-sm tracking-[0.16em] text-white outline-none transition focus:border-rose-300/40"
+              data-testid="tpp-reset-confirm-input"
+            />
+            <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={handleCloseReset}
+                className="rounded-full border border-white/12 bg-white/6 px-4 py-2 text-xs font-medium text-white/72 transition hover:bg-white/10"
+                data-testid="tpp-reset-cancel"
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmReset}
+                disabled={!resetCanConfirm}
+                className={`rounded-full border px-4 py-2 text-xs font-medium transition ${
+                  resetCanConfirm
+                    ? 'border-rose-400/60 bg-rose-400/30 text-rose-50 hover:bg-rose-400/40'
+                    : 'cursor-not-allowed border-white/8 bg-white/4 text-white/30'
+                }`}
+                data-testid="tpp-reset-confirm"
+              >
+                確認重置
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
