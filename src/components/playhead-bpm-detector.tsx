@@ -88,14 +88,24 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
     return () => clearTimeout(timer);
   }, [phase]);
 
+  const handleAnalyzeRef = useRef(handleAnalyze);
+  handleAnalyzeRef.current = handleAnalyze;
+
   // Auto-trigger analysis when playhead changes and detector is active
   useEffect(() => {
+    console.log(
+      `[PlayheadBpm] useEffect fired — isActive=${isActive}, phase=${phase}, playheadSeconds=${playheadSeconds.toFixed(2)}`,
+    );
     if (!isActive || phase !== "idle") return;
     // Debounce: only fire after user settles (300ms no further movement)
     const timer = setTimeout(() => {
-      void handleAnalyze(playheadSeconds);
+      console.log(`[PlayheadBpm] debounce settled → calling handleAnalyze(${playheadSeconds.toFixed(2)})`);
+      void handleAnalyzeRef.current(playheadSeconds);
     }, 300);
-    return () => clearTimeout(timer);
+    return () => {
+      console.log(`[PlayheadBpm] debounce cancelled`);
+      clearTimeout(timer);
+    };
   }, [isActive, playheadSeconds, phase]);
 
   const handleActivate = useCallback(() => {
@@ -121,12 +131,14 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
     try {
       setPhase("analyzing");
       const analysisOffset = typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds;
+      console.log(`[PlayheadBpm] handleAnalyze → phase=analyzing, offset=${analysisOffset.toFixed(2)}s, url=${track.media.audioUrl.slice(0, 40)}…`);
       const playheadResult = await analyzePlayheadBpmFromUrl(
         track.media.audioUrl,
         allowedBpms,
         { metadataBpm: track.bpm, allowedBpms },
         analysisOffset,
       );
+      console.log(`[PlayheadBpm] analysis complete → bpm=${playheadResult.analysis.estimatedBpm}, confidence=${(playheadResult.analysis.confidence * 100).toFixed(0)}%, offset=${playheadResult.playheadSeconds?.toFixed(2)}s`);
 
       setResult(playheadResult);
       setPhase("result");
