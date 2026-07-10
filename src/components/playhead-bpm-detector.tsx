@@ -108,6 +108,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   const trackChangeMsRef = useRef<number>(0);
   /** Consecutive sample count where BPM deviates > 15% from the rolling dominant — triggers auto-reset on beat change */
   const consecutiveShiftRef = useRef(0);
+  /** Mirror of detectorActive for use inside closures (avoids stale closure in auto-sample interval) */
+  const detectorActiveRef = useRef(detectorActive);
+  useEffect(() => { detectorActiveRef.current = detectorActive; }, [detectorActive]);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -224,11 +227,13 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
 
       // BPM shift detection: check if new sample diverges from dominant BPM
       const prevSamples = samples; // captured before setSamples
-      if (prevSamples.length >= 2 && detectorActive) {
+      console.log(`[PlayheadBpm] shift check → prevSamples=${prevSamples.length}, newBpm=${playheadResult.analysis.estimatedBpm}, detectorActiveRef=${detectorActiveRef.current}`);
+      if (prevSamples.length >= 2 && detectorActiveRef.current) {
         const dominantBpm = prevSamples.reduce((best, s) =>
           s.confidence * s.count > best.confidence * best.count ? s : best
         ).bpm;
         const deviation = Math.abs(playheadResult.analysis.estimatedBpm - dominantBpm) / dominantBpm;
+        console.log(`[PlayheadBpm] shift calc → dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(1)}%, consecutive=${consecutiveShiftRef.current}`);
         if (deviation > 0.15) {
           consecutiveShiftRef.current++;
           console.log(`[PlayheadBpm] BPM shift candidate: new=${playheadResult.analysis.estimatedBpm}, dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(0)}%, consecutive=${consecutiveShiftRef.current}/3`);
@@ -242,6 +247,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         } else {
           consecutiveShiftRef.current = 0;
         }
+      } else {
+        console.log(`[PlayheadBpm] shift check skipped → prevSamples.length=${prevSamples.length}, detectorActiveRef=${detectorActiveRef.current}`);
       }
 
       const tier = confidenceTier(playheadResult.analysis.confidence);

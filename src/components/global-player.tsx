@@ -97,8 +97,10 @@ export function GlobalPlayer({
   // When playback rate changes while the detector is active, auto-extinguish and re-ignite
   // so the detector clears its state and starts sampling fresh at the new rate.
   useEffect(() => {
+    console.log(`[Player] playbackRate effect → rate=${playbackRate}, detectorActive=${detectorActive}`);
     if (!detectorActive) return;
     const timer = setTimeout(() => {
+      console.log(`[Player] playbackRate effect → re-igniting detector`);
       setDetectorActive(true);
     }, 600);
     setDetectorActive(false);
