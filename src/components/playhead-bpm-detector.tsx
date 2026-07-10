@@ -40,6 +40,15 @@ function formatRelativeTime(): string {
   });
 }
 
+/** Client-only time that won't cause hydration mismatch. Renders nothing on server. */
+function ClientTime({ className }: { className?: string }) {
+  const [time, setTime] = useState<string>("");
+  useEffect(() => {
+    setTime(formatRelativeTime());
+  }, []);
+  return time ? <span className={className}>{time}</span> : null;
+}
+
 type PlayheadBpmDetectorProps = {
   track: Track | null;
   /** Current playback position in seconds (driven from parent for auto-analysis) */
@@ -252,7 +261,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
           {/* Header */}
           <div className="flex items-start justify-between gap-2">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">{formatRelativeTime()}</p>
+              <p className="text-[11px] uppercase tracking-[0.24em] text-white/42"><ClientTime /></p>
               <p className="mt-1 text-sm font-medium text-white/78">節奏偵測結果</p>
             </div>
             <button

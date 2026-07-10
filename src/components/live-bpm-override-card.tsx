@@ -42,8 +42,16 @@ function median(values: number[]): number {
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
 }
 
-function formatRelativeLocalTime(): string {
-  return new Date().toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+function formatRelativeLocalTime(date: Date): string {
+  return date.toLocaleTimeString("zh-TW", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Client-only relative time. Renders null on server (no hydration mismatch). */
+function ClientRelativeTime({ date, className }: { date: Date; className?: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+  return <span className={className}>{formatRelativeLocalTime(date)}</span>;
 }
 
 export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideCardProps) {
@@ -55,6 +63,8 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
   const tapStateRef = useRef<TapBpmSnapshot>({ taps: [], startedAt: 0 });
   const [pulse, setPulse] = useState(0);
   const pulseRef = useRef(0);
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     setCustomDraft("");
@@ -64,22 +74,22 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
   }, [currentTrack?.id]);
 
   const detection = useMemo(() => {
-    if (!currentTrack) {
+    if (!currentTrack || !mounted) {
       return null;
     }
 
     const allDetections = readTrackBpmDetections();
     return allDetections[currentTrack.id] ?? null;
-  }, [currentTrack, refreshTick]);
+  }, [currentTrack, refreshTick, mounted]);
 
   const override = useMemo(() => {
-    if (!currentTrack) {
+    if (!currentTrack || !mounted) {
       return null;
     }
 
     const overrides = readTrackReviewOverrides();
     return overrides[currentTrack.id] ?? null;
-  }, [currentTrack, refreshTick]);
+  }, [currentTrack, refreshTick, mounted]);
 
   const programMap = useMemo(() => new Map(programs.map((program) => [program.id, program] as const)), [programs]);
 
@@ -445,7 +455,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
           </span>
         ) : null}
         {customError ? <span className="text-xs text-rose-200">{customError}</span> : null}
-        <span className="ml-auto text-[11px] text-white/32">最近一次覆寫：{formatRelativeLocalTime()}</span>
+        <span className="ml-auto text-[11px] text-white/32">最近一次覆寫：<ClientRelativeTime date={new Date()} /></span>
       </div>
     </ReviewItemShell>
   );
