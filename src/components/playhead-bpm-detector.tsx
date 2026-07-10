@@ -150,12 +150,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     const timer = setTimeout(() => {
       // settled — seconds have stopped changing
       if (playheadSeconds === prevSecondsRef.current) {
-        console.log(`[PlayheadBpm] settle → analyzing at ${playheadSeconds.toFixed(2)}s`);
+        console.log(`[PlayheadBpm] settle → analyzing at playbackTime=${playheadSeconds.toFixed(2)}s, playbackRate=${playbackRate}`);
         void handleAnalyzeRef.current(playheadSeconds);
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [detectorActive, phase, playheadSeconds]);
+  }, [detectorActive, phase, playheadSeconds, playbackRate]);
 
   // Auto-sample while playing: fire analysis every 4 seconds
   useEffect(() => {
@@ -207,15 +207,16 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
 
     try {
       setPhase("analyzing");
-      const analysisOffset = typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds;
-      console.log(`[PlayheadBpm] handleAnalyze → phase=analyzing, offset=${analysisOffset.toFixed(2)}s, url=${track.media.audioUrl.slice(0, 40)}…`);
+      // Convert playback-time to audio-file-time (playbackRate 1.2x → playhead 80s = audio 66.7s)
+      const audioFileSeconds = (typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds) / playbackRate;
+      console.log(`[PlayheadBpm] handleAnalyze → phase=analyzing, playbackTime=${(typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds).toFixed(2)}s, audioFileSeconds=${audioFileSeconds.toFixed(2)}s, playbackRate=${playbackRate}, url=${track.media.audioUrl.slice(0, 40)}…`);
       const playheadResult = await analyzePlayheadBpmFromUrl(
         track.media.audioUrl,
         allowedBpms,
         { metadataBpm: track.bpm, allowedBpms },
-        analysisOffset,
+        audioFileSeconds,
       );
-      console.log(`[PlayheadBpm] analysis complete → bpm=${playheadResult.analysis.estimatedBpm}, confidence=${(playheadResult.analysis.confidence * 100).toFixed(0)}%, offset=${playheadResult.playheadSeconds?.toFixed(2)}s`);
+      console.log(`[PlayheadBpm] analysis complete → bpm=${playheadResult.analysis.estimatedBpm}, confidence=${(playheadResult.analysis.confidence * 100).toFixed(0)}%, audioFileSeconds=${audioFileSeconds.toFixed(2)}s`);
 
       const newSample: BpmSample = {
         bpm: playheadResult.analysis.estimatedBpm,
@@ -247,7 +248,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       setPhase("idle");
       onDetectorActiveChange(false);
     }
-  }, [track, allowedBpms, onConfidenceTier, playheadSeconds]);
+  }, [track, allowedBpms, onConfidenceTier, playheadSeconds, playbackRate]);
 
   const handleAnalyzeRef = useRef(handleAnalyze);
   handleAnalyzeRef.current = handleAnalyze;
