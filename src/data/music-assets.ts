@@ -792,6 +792,114 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     createdAt: "2026-07-09T08:03:00.000Z",
   },
+  {
+    title: "Cliffside Strategy I",
+    slug: "cliffside-strategy-i",
+    musicalKey: "D Minor",
+    energyLevel: 6.6,
+    moodTags: ["崖壁", "策略", "壁爐火光", "深度工作"],
+    descriptionZh: "崖壁策略與壁爐火光交織的 85 BPM 深度工作節拍，適合高強度規劃會議與長時間談判準備。",
+    descriptionEn: "An 85 BPM executive strategy groove with cliffside tension and fireplace warmth, designed for high-stakes planning sessions and extended negotiation preparation.",
+    themeScenario: "站在懸崖崖壁旁的落地窗前，城市俯瞰圖在腳下展開，壁爐火光把每個策略會議的緊張節拍都壓進穩定而冷靜的執行狀態。",
+    bpm: 85,
+    durationSeconds: 275,
+    media: {
+      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Cliffside Strategy.mp3",
+      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230537.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, dark premium atmosphere, 85 BPM exact tempo, steady low-pressure groove, warm fireplace texture, subtle cliffside altitude ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+      imagePrompt:
+        "Photorealistic executive office perched on a cliffside at night, floor-to-ceiling glass overlooking a vast city below, warm fireplace on the right, dark desk illuminated by task lighting, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and deeply focused atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：崖壁高樓、落地窗、城市俯瞰、壁爐火光、高強度策略規劃。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與沉著執行聽感。",
+    },
+    createdAt: "2026-07-10T23:00:00.000Z",
+  },
+  {
+    title: "Matte Black Immersion",
+    slug: "matte-black-immersion",
+    musicalKey: "C Minor",
+    energyLevel: 4.8,
+    moodTags: ["啞光黑", "深浸", "極簡空間", "CEO 工作"],
+    descriptionZh: "啞光黑辦公室與極簡空間包圍出的 85 BPM 深度沉浸節拍，適合長時間閱讀、模型建構與高強度策略思考。",
+    descriptionEn: "An 85 BPM deep immersion loop set inside a matte-black minimalist executive office, designed for long-form reading, model-building, and uninterrupted strategic thinking.",
+    themeScenario: "啞光黑鋼與黑色石材構成的極簡辦公桌前，低頻像深水暗流般持續推動思緒，讓每一個決策都維持在絕對掌控與低干擾節奏中。",
+    bpm: 85,
+    durationSeconds: 366,
+    media: {
+      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Matte Black Immersion.mp3",
+      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230638.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, matte black minimalist atmosphere, 85 BPM exact tempo, steady low-pressure groove, fireplace texture, subtle dark architectural calm ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+      imagePrompt:
+        "Photorealistic executive office in matte black, obsidian stone desk, dark fireplace, floor-to-ceiling windows revealing a misty night forest, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and deeply focused atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：啞光黑極簡辦公室、黑色石材、深夜森林、絕對掌控與高強度深度工作。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與沉著執行聽感。",
+    },
+    createdAt: "2026-07-10T23:00:00.000Z",
+  },
+  {
+    title: "Midnight Focus",
+    slug: "midnight-focus",
+    musicalKey: "A Minor",
+    energyLevel: 5.2,
+    moodTags: ["午夜專注", "城市燈海", "深度工作", "深夜寫作"],
+    descriptionZh: "午夜城市燈海映照的 85 BPM 專注節拍，適合深夜寫作、決策審閱與創意思維整理，維持冷靜節奏直到最後一分鐘。",
+    descriptionEn: "An 85 BPM midnight focus groove shaped by city-light panoramas and controlled executive calm, designed for late-night writing, decision review, and creative brainstorming without losing momentum.",
+    themeScenario: "午夜時分，城市燈海在落地窗外延伸，思緒在穩定節拍裡維持高效率運轉，無論是深度寫作還是戰略決策都在這節奏中找到最好的節點。",
+    bpm: 85,
+    durationSeconds: 365,
+    media: {
+      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Midnight Focus.mp3",
+      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230727.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, midnight city-light atmosphere, 85 BPM exact tempo, steady low-pressure groove, fireplace texture, subtle urban panorama ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+      imagePrompt:
+        "Photorealistic executive office at midnight, floor-to-ceiling glass revealing a vast city skyline lit up below, warm fireplace glow, dark desk, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and deeply focused atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：午夜城市燈海、落地窗俯瞰、深夜寫作、決策審閱、高效率創意思維。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與沉著執行聽感。",
+    },
+    createdAt: "2026-07-10T23:00:00.000Z",
+  },
+  {
+    title: "Cliffside Strategy II",
+    slug: "cliffside-strategy-ii",
+    musicalKey: "E Minor",
+    energyLevel: 7.1,
+    moodTags: ["崖壁", "談判", "高張力", "執行力"],
+    descriptionZh: "高海拔崖壁視野與壁爐火光交織的 85 BPM 高張力執行節拍，適合談判前的最後準備、危機決策與高風險會議。",
+    descriptionEn: "An 85 BPM high-tension executive groove with cliffside altitude and fireplace warmth, designed for pre-negotiation preparation, crisis decisions, and high-stakes executive meetings.",
+    themeScenario: "在海拔最高的崖壁辦公室裡，談判桌旁只有壁爐火光與城市俯瞰，節奏在最緊繃的張力中維持冷靜，讓每一個高風險決策都在掌控之中完成。",
+    bpm: 85,
+    durationSeconds: 310,
+    media: {
+      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Cliffside Strategy (1).mp3",
+      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230846.png",
+      backgroundVideoUrl: "",
+    },
+    prompts: {
+      musicPrompt:
+        "Instrumental deep focus electronic, high-tension cliffside atmosphere, 85 BPM exact tempo, steady low-pressure groove, warm fireplace texture, subtle altitude wind ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+      imagePrompt:
+        "Photorealistic executive office perched at extreme cliffside altitude, floor-to-ceiling glass overlooking an endless night landscape below, warm fireplace in the background, dark executive desk, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and high-stakes atmosphere.",
+      videoPrompt: "",
+      generationPrompt:
+        "情境：崖壁高點、落地窗外無盡夜色、壁爐火光、高風險談判準備、危機決策。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與高張力執行聽感。",
+    },
+    createdAt: "2026-07-10T23:00:00.000Z",
+  },
 ] as const;
 
 const trackCollectionsSeed = [
@@ -836,6 +944,10 @@ const trackCollectionsSeed = [
       "boardroom-drone-ii",
       "pulse-grid-study",
       "meridian-focus-arc",
+      "cliffside-strategy-i",
+      "matte-black-immersion",
+      "midnight-focus",
+      "cliffside-strategy-ii",
     ],
     tone: "cyan",
   },
@@ -864,6 +976,10 @@ const trackCollectionsSeed = [
       "boardroom-drone-ii",
       "pulse-grid-study",
       "meridian-focus-arc",
+      "cliffside-strategy-i",
+      "matte-black-immersion",
+      "midnight-focus",
+      "cliffside-strategy-ii",
     ],
     tone: "amber",
   },
@@ -933,6 +1049,15 @@ const trackBatchesSeed = [
     themeProgramId: "ceo-focus-lanes",
     publishedAt: "2026-07-09T08:03:00.000Z",
     trackIds: ["boardroom-drone-i", "boardroom-drone-ii", "pulse-grid-study", "meridian-focus-arc"],
+  },
+  {
+    id: "batch-2026-07-10-cliffside",
+    label: "07.10 上架",
+    title: "CEO Deep Focus 85 BPM Cliffside 上架",
+    summary: "本輪上架的 4 首崖壁策略深度專注曲目。",
+    themeProgramId: "ceo-focus-lanes",
+    publishedAt: "2026-07-10T15:18:00.000Z",
+    trackIds: ["cliffside-strategy-i", "matte-black-immersion", "midnight-focus", "cliffside-strategy-ii"],
   },
 ] as const;
 
