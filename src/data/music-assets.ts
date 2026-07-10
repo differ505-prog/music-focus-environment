@@ -804,8 +804,8 @@ const trackNarratives: TrackNarrativeSeed[] = [
     bpm: 85,
     durationSeconds: 275,
     media: {
-      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Cliffside Strategy.mp3",
-      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230537.png",
+      audioUrl: "/audio/cliffside-strategy-i.mp3",
+      coverImageUrl: "/img/cliffside-strategy-i-cover.png",
       backgroundVideoUrl: "",
     },
     prompts: {
@@ -831,8 +831,8 @@ const trackNarratives: TrackNarrativeSeed[] = [
     bpm: 85,
     durationSeconds: 366,
     media: {
-      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Matte Black Immersion.mp3",
-      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230638.png",
+      audioUrl: "/audio/matte-black-immersion.mp3",
+      coverImageUrl: "/img/matte-black-immersion-cover.png",
       backgroundVideoUrl: "",
     },
     prompts: {
@@ -858,8 +858,8 @@ const trackNarratives: TrackNarrativeSeed[] = [
     bpm: 85,
     durationSeconds: 365,
     media: {
-      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Midnight Focus.mp3",
-      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230727.png",
+      audioUrl: "/audio/midnight-focus.mp3",
+      coverImageUrl: "/img/midnight-focus-cover.png",
       backgroundVideoUrl: "",
     },
     prompts: {
@@ -885,8 +885,8 @@ const trackNarratives: TrackNarrativeSeed[] = [
     bpm: 85,
     durationSeconds: 310,
     media: {
-      audioUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Cliffside Strategy (1).mp3",
-      coverImageUrl: "/Users/liangzhiwei/Desktop/BPM85-20260710/Copilot_20260710_230846.png",
+      audioUrl: "/audio/cliffside-strategy-ii.mp3",
+      coverImageUrl: "/img/cliffside-strategy-ii-cover.png",
       backgroundVideoUrl: "",
     },
     prompts: {
