@@ -362,7 +362,14 @@ export function buildTrackBpmReviewItems(
       // Manual override BPM that differs from detected BPM = "Tap校正" item
       const isTapCorrected = override?.bpm != null && override.bpm !== detection.detectedBpm;
 
-      if ((bpmDiff < 3 && !routeMismatch && !canReturnToSuggestedRoute) || ignored) {
+      // Override BPM === detected BPM = confirmed correct, treat as resolved
+      const overrideMatchesDetected = override?.bpm != null && override.bpm === detection.detectedBpm;
+
+      if (
+        (bpmDiff < 3 && !routeMismatch && !canReturnToSuggestedRoute) ||
+        ignored ||
+        overrideMatchesDetected
+      ) {
         return null;
       }
 

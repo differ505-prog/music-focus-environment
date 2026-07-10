@@ -333,7 +333,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
           <Activity className="h-3 w-3 text-fuchsia-300/70" />
           {isWorking ? (
             <>
-              <span className="text-white/52">{rollingEstimate.bpm}</span>
+              <span className="text-white/52">
+                {Math.round(rollingEstimate.bpm * playbackRate)}
+              </span>
               <span className="text-white/32">BPM</span>
               <span className="text-white/24 animate-pulse">·</span>
             </>
@@ -346,7 +348,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
                     ? "text-amber-200"
                     : "text-rose-200"
               }`}>
-                {rollingEstimate.bpm}
+                {Math.round(rollingEstimate.bpm * playbackRate)}
               </span>
               <span className="text-white/32">BPM</span>
               <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 text-[10px] text-white/40">
@@ -384,8 +386,15 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
 
           {/* BPM display */}
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-serif text-4xl font-semibold text-white">{result?.analysis.estimatedBpm ?? rollingEstimate?.bpm ?? "—"}</span>
+            <span className="font-serif text-4xl font-semibold text-white">
+              {Math.round((result?.analysis.estimatedBpm ?? rollingEstimate?.bpm ?? 0) * playbackRate)}
+            </span>
             <span className="text-sm text-white/52">BPM</span>
+            {playbackRate !== 1 && (
+              <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 text-[10px] text-white/40">
+                原 {result?.analysis.estimatedBpm ?? rollingEstimate?.bpm ?? "—"} · {playbackRate}×
+              </span>
+            )}
             {result?.analysis.resolvedByReference && (
               <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-200/80">
                 參考值

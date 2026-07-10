@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { Volume2, VolumeX, Waves } from "lucide-react";
 
@@ -84,6 +84,8 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const lastResultRef = useRef<BpmAnalysis | null>(null);
+  const prevTrackRef = useRef<Track | null>(null);
   const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -137,6 +139,7 @@ export function GlobalPlayer({
       const cached = detectedBpmCache.get(cacheKey);
 
       if (cached) {
+        lastResultRef.current = cached;
         setDetectedBpmState({ status: "ready", result: cached });
         return;
       }
@@ -167,6 +170,7 @@ export function GlobalPlayer({
         });
 
         if (!cancelled) {
+          lastResultRef.current = result;
           setDetectedBpmState({ status: "ready", result });
         }
       } catch (error) {
@@ -181,11 +185,32 @@ export function GlobalPlayer({
 
     if (!currentTrack?.media.audioUrl) {
       setDetectedBpmState({ status: "idle" });
+      lastResultRef.current = null;
       return () => {
         cancelled = true;
       };
     }
 
+    const prevTrackId = prevTrackRef.current?.id ?? null;
+    const prevAudioUrl = prevTrackRef.current?.media?.audioUrl ?? null;
+    const cacheKey = `${currentTrack.id}:${currentTrack.media.audioUrl}`;
+
+    // Same track (e.g., navigated back) — show last known result immediately
+    if (prevTrackId === currentTrack.id && prevAudioUrl === currentTrack.media.audioUrl) {
+      const cached = detectedBpmCache.get(cacheKey);
+      if (cached) {
+        lastResultRef.current = cached;
+        setDetectedBpmState({ status: "ready", result: cached });
+      } else if (lastResultRef.current) {
+        setDetectedBpmState({ status: "ready", result: lastResultRef.current });
+      }
+      prevTrackRef.current = currentTrack;
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    prevTrackRef.current = currentTrack;
     void detectTrackBpm(currentTrack);
 
     return () => {
@@ -200,18 +225,20 @@ export function GlobalPlayer({
 
     const detectedBpm = detectedBpmState.result.estimatedBpm;
     const rawDetectedBpm = detectedBpmState.result.rawDetectedBpm;
+    const perceivedBpm = Math.round(detectedBpm * playbackRate);
     const diff = Math.abs(currentTrack.bpm - detectedBpm);
     const compatibility = getBpmCompatibility(currentTrack.bpm, detectedBpm);
 
     return {
       detectedBpm,
       rawDetectedBpm,
+      perceivedBpm,
       diff,
       confidencePercent: Math.round(detectedBpmState.result.confidence * 100),
       compatibility,
       resolvedByReference: detectedBpmState.result.resolvedByReference,
     };
-  }, [currentTrack, detectedBpmState]);
+  }, [currentTrack, detectedBpmState, playbackRate]);
   const transitionMeta = useMemo(() => {
     if (!currentTrack || !nextTrack) {
       return null;
@@ -575,7 +602,10 @@ export function GlobalPlayer({
                   </span>
                   {detectedBpmMeta ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      偵 {detectedBpmMeta.detectedBpm} / {detectedBpmMeta.confidencePercent}%
+                      {playbackRate !== 1
+                        ? `${detectedBpmMeta.perceivedBpm} (${playbackRate}×)`
+                        : `${detectedBpmMeta.detectedBpm}`}
+                      / {detectedBpmMeta.confidencePercent}%
                     </span>
                   ) : detectedBpmState.status === "loading" ? (
                     <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">

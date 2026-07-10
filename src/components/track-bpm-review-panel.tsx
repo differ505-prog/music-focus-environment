@@ -163,9 +163,10 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
     const handleApplyCustom = () => {
       const parsed = Number.parseFloat(customBpmState?.draft ?? String(item.effectiveBpm));
       if (Number.isFinite(parsed) && parsed > 0) {
+        const rounded = Math.round(parsed);
         updateTrackReviewOverride(item.track.id, {
-          bpm: Math.round(parsed),
-          ignoreBpmMismatch: false,
+          bpm: rounded,
+          ignoreBpmMismatch: rounded === item.detection.detectedBpm,
         });
       }
       handleCloseCustom();
@@ -246,7 +247,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             onClick={() =>
               updateTrackReviewOverride(item.track.id, {
                 bpm: item.detection.detectedBpm,
-                ignoreBpmMismatch: false,
+                ignoreBpmMismatch: true,
               })
             }
             className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
@@ -257,7 +258,7 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             onResult={(bpm) =>
               updateTrackReviewOverride(item.track.id, {
                 bpm,
-                ignoreBpmMismatch: false,
+                ignoreBpmMismatch: bpm === item.detection.detectedBpm,
               })
             }
             currentBpm={item.effectiveBpm}
