@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Activity, Check, Crosshair, Loader2, X } from "lucide-react";
 
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
@@ -21,6 +21,13 @@ type Phase =
   | "applying";
 
 type ConfidenceTier = "high" | "medium" | "low";
+
+type BpmSample = {
+  bpm: number;
+  confidence: number;
+  laneSuggestion: number;
+  count: number;
+};
 
 function confidenceTier(confidence: number): ConfidenceTier {
   if (confidence >= 0.75) return "high";
@@ -63,11 +70,31 @@ type PlayheadBpmDetectorProps = {
 
 export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allowedBpms, onConfidenceTier }: PlayheadBpmDetectorProps) {
   const [isActive, setIsActive] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<PlayheadBpmResult | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [adoptedBpm, setAdoptedBpm] = useState<number | null>(null);
+  /** Accumulated samples for rolling weighted average (confidence-weighted) */
+  const [samples, setSamples] = useState<BpmSample[]>([]);
+  /** Show the detailed popover when user clicks the live estimate row */
+  const [showDetail, setShowDetail] = useState(false);
+
+  /** Weighted rolling average: confidence * count as weight, weighted by confidence */
+  const rollingEstimate = useMemo(() => {
+    if (samples.length === 0) return null;
+    const totalWeight = samples.reduce((sum, s) => sum + s.confidence * s.count, 0);
+    if (totalWeight === 0) return null;
+    const weightedBpm = samples.reduce((sum, s) => sum + s.bpm * s.confidence * s.count, 0) / totalWeight;
+    const avgConfidence = samples.reduce((sum, s) => sum + s.confidence * s.count, 0) / totalWeight;
+    const totalCount = samples.reduce((sum, s) => sum + s.count, 0);
+    return {
+      bpm: Math.round(weightedBpm),
+      confidence: avgConfidence,
+      count: totalCount,
+      // carry the most recent lane suggestion from the last sample
+      laneSuggestion: samples[samples.length - 1]?.laneSuggestion ?? null,
+    };
+  }, [samples]);
 
   const abortRef = useRef<AbortController | null>(null);
   const activeTrackIdRef = useRef<string | null>(null);
@@ -80,6 +107,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
       setResult(null);
       setErrorMsg(null);
       setAdoptedBpm(null);
+      setSamples([]);
+      setShowDetail(false);
       if (activeTrackIdRef.current && activeTrackIdRef.current !== track?.id) {
         clearPlayheadBpmCache();
       }
@@ -87,14 +116,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
     }
   }, [track?.id]);
 
-  // Auto-dismiss result popover after 8s
+  // Auto-dismiss after 8s when nothing happened
   useEffect(() => {
-    if (phase !== "result") return;
+    if (phase !== "idle") return;
     const timer = setTimeout(() => {
-      if (phase === "result") {
-        setPhase("idle");
-        setResult(null);
-        setIsActive(false);
+      if (phase === "idle") {
+        // keep state — only dismiss if still idle
       }
     }, 8_000);
     return () => clearTimeout(timer);
@@ -106,23 +133,18 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
     onSeekChange(playheadSeconds);
   }, [playheadSeconds, onSeekChange]);
 
-  // Detect drag start (when playheadSeconds changes while isActive)
+  // Detect drag end: fire analysis after 350ms of no movement
   const prevSecondsRef = useRef(playheadSeconds);
   useEffect(() => {
     if (!isActive || phase !== "idle") return;
-    if (playheadSeconds !== prevSecondsRef.current) {
-      prevSecondsRef.current = playheadSeconds;
-      // Dragging started or is in progress — pause any pending analysis
-      setIsDragging(true);
-    }
-  }, [isActive, phase, playheadSeconds]);
-
-  // Detect drag end: fire analysis after 350ms of no movement
-  useEffect(() => {
-    if (!isActive || phase !== "idle") return;
+    if (playheadSeconds === prevSecondsRef.current) return; // no change
+    prevSecondsRef.current = playheadSeconds;
     const timer = setTimeout(() => {
-      console.log(`[PlayheadBpm] settle → analyzing at ${playheadSeconds.toFixed(2)}s`);
-      void handleAnalyzeRef.current(playheadSeconds);
+      // settled — seconds have stopped changing
+      if (playheadSeconds === prevSecondsRef.current) {
+        console.log(`[PlayheadBpm] settle → analyzing at ${playheadSeconds.toFixed(2)}s`);
+        void handleAnalyzeRef.current(playheadSeconds);
+      }
     }, 350);
     return () => clearTimeout(timer);
   }, [isActive, phase, playheadSeconds]);
@@ -134,6 +156,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
     setResult(null);
     setErrorMsg(null);
     setAdoptedBpm(null);
+    setSamples([]);
+    setShowDetail(false);
   }, [track]);
 
   const handleAnalyze = useCallback(async (seekedPlayhead?: number) => {
@@ -159,8 +183,13 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
       );
       console.log(`[PlayheadBpm] analysis complete → bpm=${playheadResult.analysis.estimatedBpm}, confidence=${(playheadResult.analysis.confidence * 100).toFixed(0)}%, offset=${playheadResult.playheadSeconds?.toFixed(2)}s`);
 
-      setResult(playheadResult);
-      setPhase("result");
+      const newSample: BpmSample = {
+        bpm: playheadResult.analysis.estimatedBpm,
+        confidence: playheadResult.analysis.confidence,
+        laneSuggestion: playheadResult.analysis.laneSuggestion,
+        count: 1,
+      };
+      setSamples((prev) => [...prev.slice(-9), newSample]); // keep last 10
 
       const tier = confidenceTier(playheadResult.analysis.confidence);
       onConfidenceTier?.(tier, playheadResult.analysis);
@@ -190,8 +219,10 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
   handleAnalyzeRef.current = handleAnalyze;
 
   const handleApply = useCallback(() => {
-    if (!track || !result) return;
-    const bpm = result.analysis.estimatedBpm;
+    if (!track) return;
+    // Prefer rolling average over single result; fall back to current result
+    const bpm = rollingEstimate?.bpm ?? result?.analysis.estimatedBpm;
+    if (bpm == null) return;
     updateTrackReviewOverride(track.id, { bpm, ignoreBpmMismatch: false });
     setAdoptedBpm(bpm);
     setPhase("applying");
@@ -199,8 +230,10 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
       setPhase("idle");
       setResult(null);
       setIsActive(false);
+      setSamples([]);
+      setShowDetail(false);
     }, 1_500);
-  }, [track, result]);
+  }, [track, result, rollingEstimate]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -208,11 +241,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
     setResult(null);
     setErrorMsg(null);
     setIsActive(false);
+    setSamples([]);
+    setShowDetail(false);
   }, []);
 
   const isWorking = phase === "fetching" || phase === "analyzing";
-  const isResult = phase === "result";
-  const tier = result ? confidenceTier(result.analysis.confidence) : null;
+  const rollingTier = rollingEstimate ? confidenceTier(rollingEstimate.confidence) : null;
 
   if (!track) return null;
 
@@ -245,7 +279,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
       </button>
 
       {/* Drag hint — shown when active but not yet triggered */}
-      {isActive && phase === "idle" && (
+      {isActive && phase === "idle" && samples.length === 0 && (
         <span className="hidden text-[11px] text-white/36 md:block">
           拖曳進度條後放開，以分析 BPM
         </span>
@@ -264,10 +298,48 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
         </span>
       )}
 
-      {/* Result popover */}
-      {isResult && result && tier && (
+      {/* Live rolling estimate — click to open detail popover */}
+      {rollingEstimate && phase !== "applying" && (
+        <button
+          type="button"
+          onClick={() => setShowDetail((v) => !v)}
+          className="group inline-flex items-center gap-2 rounded-full border bg-black/40 px-3 py-1.5 text-xs backdrop-blur-sm transition hover:border-white/20"
+          title="點我看偵測詳情"
+        >
+          <Activity className="h-3 w-3 text-fuchsia-300/70" />
+          {isWorking ? (
+            <>
+              <span className="text-white/52">{rollingEstimate.bpm}</span>
+              <span className="text-white/32">BPM</span>
+              <span className="text-white/24 animate-pulse">·</span>
+            </>
+          ) : (
+            <>
+              <span className={`font-serif text-base font-semibold ${
+                rollingTier === "high"
+                  ? "text-emerald-200"
+                  : rollingTier === "medium"
+                    ? "text-amber-200"
+                    : "text-rose-200"
+              }`}>
+                {rollingEstimate.bpm}
+              </span>
+              <span className="text-white/32">BPM</span>
+              <span className="rounded-full border border-white/10 bg-white/6 px-1.5 py-0.5 text-[10px] text-white/40">
+                {rollingEstimate.count}次
+              </span>
+              <span className="text-white/20 text-[10px]">
+                {formatConfidence(rollingEstimate.confidence)}
+              </span>
+            </>
+          )}
+        </button>
+      )}
+
+      {/* Detail popover — left-anchored so it never clips off-screen */}
+      {showDetail && (
         <div
-          className="pointer-events-auto absolute bottom-full right-0 mb-2 w-72 rounded-[20px] border border-white/14 bg-[#0a0814]/95 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
+          className="pointer-events-auto absolute bottom-full left-0 mb-2 w-72 rounded-[20px] border border-white/14 bg-[#0a0814]/95 p-4 shadow-[0_16px_48px_rgba(0,0,0,0.6)] backdrop-blur-2xl"
           role="dialog"
           aria-label="BPM 偵測結果"
         >
@@ -288,9 +360,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
 
           {/* BPM display */}
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="font-serif text-4xl font-semibold text-white">{result.analysis.estimatedBpm}</span>
+            <span className="font-serif text-4xl font-semibold text-white">{result?.analysis.estimatedBpm ?? rollingEstimate?.bpm ?? "—"}</span>
             <span className="text-sm text-white/52">BPM</span>
-            {result.analysis.resolvedByReference && (
+            {result?.analysis.resolvedByReference && (
               <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-2 py-0.5 text-[10px] uppercase tracking-[0.12em] text-cyan-200/80">
                 參考值
               </span>
@@ -301,47 +373,49 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
           <div className="mt-3 flex flex-wrap gap-3">
             <div className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5">
               <span className="text-xs text-white/52">可信度 </span>
-              <span className="text-xs font-medium text-white">{formatConfidence(result.analysis.confidence)}</span>
+              <span className="text-xs font-medium text-white">{formatConfidence(result?.analysis.confidence ?? rollingEstimate?.confidence ?? 0)}</span>
             </div>
             <div className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5">
               <span className="text-xs text-white/52">原始 </span>
-              <span className="text-xs text-white">{result.analysis.rawDetectedBpm} BPM</span>
+              <span className="text-xs text-white">{result?.analysis.rawDetectedBpm ?? "—"} BPM</span>
             </div>
             {allowedBpms.length > 0 && (
               <div className="rounded-full border border-white/10 bg-black/30 px-3 py-1.5">
                 <span className="text-xs text-white/52">建議 </span>
-                <span className="text-xs font-medium text-cyan-200">{result.analysis.laneSuggestion} BPM</span>
+                <span className="text-xs font-medium text-cyan-200">{result?.analysis.laneSuggestion ?? rollingEstimate?.laneSuggestion ?? "—"} BPM</span>
               </div>
             )}
           </div>
 
           {/* Confidence-tier message */}
-          <div
-            className={`mt-3 rounded-[14px] border px-3 py-2.5 text-xs leading-5 ${
-              tier === "high"
-                ? "border-emerald-300/20 bg-emerald-300/8 text-emerald-100/84"
-                : tier === "medium"
-                  ? "border-amber-300/20 bg-amber-300/8 text-amber-100/84"
-                  : "border-rose-300/20 bg-rose-300/8 text-rose-100/84"
-            }`}
-          >
-            {tier === "high"
-              ? "偵測穩定，建議直接套用。"
-              : tier === "medium"
-                ? `候選 ${result.analysis.laneSuggestion} BPM，請確認後套用。`
-                : "偵測不穩定，建議使用 Tap BPM 人工確認。"}
-          </div>
+          {rollingTier && (
+            <div
+              className={`mt-3 rounded-[14px] border px-3 py-2.5 text-xs leading-5 ${
+                rollingTier === "high"
+                  ? "border-emerald-300/20 bg-emerald-300/8 text-emerald-100/84"
+                  : rollingTier === "medium"
+                    ? "border-amber-300/20 bg-amber-300/8 text-amber-100/84"
+                    : "border-rose-300/20 bg-rose-300/8 text-rose-100/84"
+              }`}
+            >
+              {rollingTier === "high"
+                ? "偵測穩定，建議直接套用。"
+                : rollingTier === "medium"
+                  ? `候選 ${rollingEstimate?.laneSuggestion ?? result?.analysis.laneSuggestion ?? "—"} BPM，請確認後套用。`
+                  : "偵測不穩定，建議使用 Tap BPM 人工確認。"}
+            </div>
+          )}
 
           {/* Actions */}
           <div className="mt-3 flex flex-wrap gap-2">
-            {tier !== "low" ? (
+            {rollingTier !== "low" ? (
               <button
                 type="button"
                 onClick={handleApply}
                 className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/14 px-3 py-2 text-xs font-medium text-emerald-100/92 transition hover:bg-emerald-300/22"
               >
                 <Check className="h-3.5 w-3.5" />
-                套用 {result.analysis.estimatedBpm} BPM
+                套用 {rollingEstimate?.bpm ?? result?.analysis.estimatedBpm} BPM
               </button>
             ) : null}
             <button
@@ -349,7 +423,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, allo
               onClick={handleCancel}
               className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/72 transition hover:border-white/18 hover:text-white"
             >
-              取消
+              清除
             </button>
           </div>
         </div>
