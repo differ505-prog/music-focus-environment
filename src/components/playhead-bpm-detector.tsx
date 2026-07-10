@@ -47,14 +47,17 @@ function formatRelativeTime(): string {
   });
 }
 
-/** Client-only time that avoids hydration mismatch by rendering same placeholder on SSR and first client render. */
+/** Client-only time. Renders nothing on server, actual time on client after hydration. */
 function ClientTime({ className }: { className?: string }) {
-  const [time, setTime] = useState<string>("--:--:--");
   const [mounted, setMounted] = useState(false);
+  const [time, setTime] = useState<string>("");
+
   useEffect(() => {
     setMounted(true);
     setTime(formatRelativeTime());
   }, []);
+
+  if (!mounted) return null;
   return <span className={className}>{time}</span>;
 }
 
