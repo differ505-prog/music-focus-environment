@@ -106,6 +106,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   const activeTrackIdRef = useRef<string | null>(null);
   /** Timestamp of last track change — used to skip auto-samples during the brief window before analysis resumes */
   const trackChangeMsRef = useRef<number>(0);
+  /** Consecutive sample count where BPM deviates > 15% from the rolling dominant — triggers auto-reset on beat change */
+  const consecutiveShiftRef = useRef(0);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -117,6 +119,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       setSamples([]);
       setShowDetail(false);
       trackChangeMsRef.current = Date.now();
+      consecutiveShiftRef.current = 0;
       if (activeTrackIdRef.current && activeTrackIdRef.current !== track?.id) {
         clearPlayheadBpmCache();
       }
@@ -218,6 +221,28 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         count: 1,
       };
       setSamples((prev) => [...prev.slice(-9), newSample]); // keep last 10
+
+      // BPM shift detection: check if new sample diverges from dominant BPM
+      const prevSamples = samples; // captured before setSamples
+      if (prevSamples.length >= 2 && detectorActive) {
+        const dominantBpm = prevSamples.reduce((best, s) =>
+          s.confidence * s.count > best.confidence * best.count ? s : best
+        ).bpm;
+        const deviation = Math.abs(playheadResult.analysis.estimatedBpm - dominantBpm) / dominantBpm;
+        if (deviation > 0.15) {
+          consecutiveShiftRef.current++;
+          console.log(`[PlayheadBpm] BPM shift candidate: new=${playheadResult.analysis.estimatedBpm}, dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(0)}%, consecutive=${consecutiveShiftRef.current}/3`);
+          if (consecutiveShiftRef.current >= 3) {
+            console.log(`[PlayheadBpm] BPM shift confirmed → auto-resetting detector`);
+            consecutiveShiftRef.current = 0;
+            setSamples([]);
+            void handleActivate();
+            return;
+          }
+        } else {
+          consecutiveShiftRef.current = 0;
+        }
+      }
 
       const tier = confidenceTier(playheadResult.analysis.confidence);
       onConfidenceTier?.(tier, playheadResult.analysis);
