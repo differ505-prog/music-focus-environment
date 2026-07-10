@@ -111,6 +111,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   /** Mirror of detectorActive for use inside closures (avoids stale closure in auto-sample interval) */
   const detectorActiveRef = useRef(detectorActive);
   useEffect(() => { detectorActiveRef.current = detectorActive; }, [detectorActive]);
+  /** Tracks whether an analysis is currently in-flight — ref to avoid stale closure vs phase state */
+  const isAnalyzingRef = useRef(false);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -150,7 +152,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   // Detect drag end: fire analysis after 350ms of no movement
   const prevSecondsRef = useRef(playheadSeconds);
   useEffect(() => {
-    if (!detectorActive || phase !== "idle") return;
+    if (!detectorActive || isAnalyzingRef.current) return;
     if (playheadSeconds === prevSecondsRef.current) return; // no change
     prevSecondsRef.current = playheadSeconds;
     const timer = setTimeout(() => {
@@ -161,13 +163,13 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [detectorActive, phase, playheadSeconds, playbackRate]);
+  }, [detectorActive, playheadSeconds, playbackRate]);
 
   // Auto-sample while playing: fire analysis every 4 seconds
   useEffect(() => {
     if (!detectorActive || !isPlaying) return;
-    // Don't fire during an in-flight request
-    if (phase === "fetching" || phase === "analyzing") return;
+    // Don't fire during an in-flight request — use ref to avoid stale phase closure
+    if (isAnalyzingRef.current) return;
 
     const interval = setInterval(() => {
       // Skip the first auto-sample after a track change to avoid stale audio-window analysis
@@ -180,11 +182,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       void handleAnalyzeRef.current(playheadSeconds);
     }, 4_000);
     return () => clearInterval(interval);
-  }, [detectorActive, isPlaying, phase]);
+  }, [detectorActive, isPlaying]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
     onDetectorActiveChange(!detectorActive);
+    isAnalyzingRef.current = false; // cancel any in-flight analysis
     setPhase("idle");
     setResult(null);
     setErrorMsg(null);
@@ -195,6 +198,13 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
 
   const handleAnalyze = useCallback(async (seekedPlayhead?: number) => {
     if (!track || !track.media.audioUrl) return;
+
+    // Guard: skip if already analyzing (use ref to avoid stale phase closure)
+    if (isAnalyzingRef.current) {
+      console.log(`[PlayheadBpm] handleAnalyze skipped (already analyzing)`);
+      return;
+    }
+    isAnalyzingRef.current = true;
 
     // Cancel any in-flight request
     abortRef.current?.abort();
@@ -277,6 +287,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       setErrorMsg(err instanceof Error ? err.message : "分析失敗");
       setPhase("idle");
       onDetectorActiveChange(false);
+    } finally {
+      isAnalyzingRef.current = false;
     }
   }, [track, allowedBpms, onConfidenceTier, playheadSeconds, playbackRate]);
 
