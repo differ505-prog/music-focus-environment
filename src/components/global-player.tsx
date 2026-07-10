@@ -10,6 +10,7 @@ import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import { PlayerProgressBar } from "@/components/player-progress-bar";
 import { PlayerTransportControls } from "@/components/player-transport-controls";
+import { PlayheadBpmDetector } from "@/components/playhead-bpm-detector";
 import { TapBpmButton } from "@/components/tap-bpm-button";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
@@ -90,6 +91,8 @@ export function GlobalPlayer({
 
   const playbackRateOptions = [0.75, 1, 1.25, 1.5] as const;
   const themeProgramMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
+  const currentProgram = currentTrack?.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null;
+  const allowedBpms = useMemo(() => extractAllowedBpms(currentProgram), [currentProgram]);
   const artworkSrc = useMemo(() => currentTrack?.media.coverImageUrl ?? "", [currentTrack?.media.coverImageUrl]);
   const {
     artworkContainerRef,
@@ -577,6 +580,12 @@ export function GlobalPlayer({
                     <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">
                       偵測中
                     </span>
+                  ) : null}
+                  {showAdminDetails ? (
+                    <PlayheadBpmDetector
+                      track={currentTrack}
+                      allowedBpms={allowedBpms}
+                    />
                   ) : null}
                   {showAdminDetails ? (
                     <TapBpmButton
