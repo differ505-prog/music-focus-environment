@@ -119,6 +119,16 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   /** Always reads the live playheadSeconds value inside setInterval callbacks */
   const playheadSecondsRef = useRef(playheadSeconds);
   useEffect(() => { playheadSecondsRef.current = playheadSeconds; }, [playheadSeconds]);
+  /** Previous playback rate — used to detect genuine rate changes vs initial mount */
+  const prevPlaybackRateRef = useRef(playbackRate);
+  useEffect(() => {
+    if (prevPlaybackRateRef.current !== playbackRate) {
+      console.log(`[PlayheadBpm] playbackRate changed ${prevPlaybackRateRef.current} → ${playbackRate} → clearing samples`);
+      setSamples([]);
+      consecutiveShiftRef.current = 0;
+      prevPlaybackRateRef.current = playbackRate;
+    }
+  }, [playbackRate]);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
