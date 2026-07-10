@@ -52,8 +52,8 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="zh-Hant">
-      <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`}>
+    <html lang="zh-Hant" suppressHydrationWarning>
+      <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`} suppressHydrationWarning>
         <ErrorBoundary>
           <PlaybackProvider>{children}</PlaybackProvider>
         </ErrorBoundary>

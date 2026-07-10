@@ -121,6 +121,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   /** Always reads the live playheadSeconds value inside setInterval callbacks */
   const playheadSecondsRef = useRef(playheadSeconds);
   useEffect(() => { playheadSecondsRef.current = playheadSeconds; }, [playheadSeconds]);
+  /** Tracks playback rate for rate-change detection in intervals */
+  const playbackRateRef = useRef(playbackRate);
+  useEffect(() => { playbackRateRef.current = playbackRate; }, [playbackRate]);
   /** Previous playback rate — used to detect genuine rate changes vs initial mount */
   const prevPlaybackRateRef = useRef(playbackRate);
   useEffect(() => {
@@ -196,6 +199,11 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       }
       if (isAnalyzingRef.current) {
         console.log(`[PlayheadBpm] interval → skipped (already analyzing)`);
+        return;
+      }
+      // Skip if playback rate changed (samples may be from different rate)
+      if (playbackRateRef.current !== prevPlaybackRateRef.current) {
+        console.log(`[PlayheadBpm] interval → skipped (playback rate changed, waiting for samples to clear)`);
         return;
       }
       const currentPlayhead = playheadSecondsRef.current;
