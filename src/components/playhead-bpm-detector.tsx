@@ -223,33 +223,38 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
         laneSuggestion: playheadResult.analysis.laneSuggestion,
         count: 1,
       };
-      setSamples((prev) => [...prev.slice(-9), newSample]); // keep last 10
-
-      // BPM shift detection: check if new sample diverges from dominant BPM
-      const prevSamples = samples; // captured before setSamples
-      console.log(`[PlayheadBpm] shift check → prevSamples=${prevSamples.length}, newBpm=${playheadResult.analysis.estimatedBpm}, detectorActiveRef=${detectorActiveRef.current}`);
-      if (prevSamples.length >= 2 && detectorActiveRef.current) {
-        const dominantBpm = prevSamples.reduce((best, s) =>
-          s.confidence * s.count > best.confidence * best.count ? s : best
-        ).bpm;
-        const deviation = Math.abs(playheadResult.analysis.estimatedBpm - dominantBpm) / dominantBpm;
-        console.log(`[PlayheadBpm] shift calc → dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(1)}%, consecutive=${consecutiveShiftRef.current}`);
-        if (deviation > 0.15) {
-          consecutiveShiftRef.current++;
-          console.log(`[PlayheadBpm] BPM shift candidate: new=${playheadResult.analysis.estimatedBpm}, dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(0)}%, consecutive=${consecutiveShiftRef.current}/3`);
-          if (consecutiveShiftRef.current >= 3) {
-            console.log(`[PlayheadBpm] BPM shift confirmed → auto-resetting detector`);
+      // Shift check must run inside the functional updater so `prev` is the state
+      // *before* the new sample is appended — otherwise it always sees the previous
+      // batch and never sees the dominant-vs-new deviation at the right moment.
+      setSamples((prev) => {
+        console.log(`[PlayheadBpm] shift check → prevSamples=${prev.length}, newBpm=${playheadResult.analysis.estimatedBpm}, detectorActiveRef=${detectorActiveRef.current}`);
+        if (prev.length >= 2 && detectorActiveRef.current) {
+          const dominantBpm = prev.reduce((best, s) =>
+            s.confidence * s.count > best.confidence * best.count ? s : best
+          ).bpm;
+          const deviation = Math.abs(playheadResult.analysis.estimatedBpm - dominantBpm) / dominantBpm;
+          console.log(`[PlayheadBpm] shift calc → dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(1)}%, consecutive=${consecutiveShiftRef.current}`);
+          if (deviation > 0.15) {
+            consecutiveShiftRef.current++;
+            console.log(`[PlayheadBpm] BPM shift candidate: new=${playheadResult.analysis.estimatedBpm}, dominant=${dominantBpm}, deviation=${(deviation * 100).toFixed(0)}%, consecutive=${consecutiveShiftRef.current}/3`);
+            if (consecutiveShiftRef.current >= 3) {
+              console.log(`[PlayheadBpm] BPM shift confirmed → auto-resetting detector`);
+              consecutiveShiftRef.current = 0;
+              // Defer the reset so setState can flush first
+              setTimeout(() => {
+                setSamples([]);
+                void handleActivate();
+              }, 0);
+              return prev; // don't add the anomalous sample to history
+            }
+          } else {
             consecutiveShiftRef.current = 0;
-            setSamples([]);
-            void handleActivate();
-            return;
           }
         } else {
-          consecutiveShiftRef.current = 0;
+          console.log(`[PlayheadBpm] shift check skipped → prevSamples.length=${prev.length}, detectorActiveRef=${detectorActiveRef.current}`);
         }
-      } else {
-        console.log(`[PlayheadBpm] shift check skipped → prevSamples.length=${prevSamples.length}, detectorActiveRef=${detectorActiveRef.current}`);
-      }
+        return [...prev.slice(-9), newSample]; // keep last 10
+      });
 
       const tier = confidenceTier(playheadResult.analysis.confidence);
       onConfidenceTier?.(tier, playheadResult.analysis);
