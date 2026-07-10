@@ -83,6 +83,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   /** Show the detailed popover when user clicks the live estimate row */
   const [showDetail, setShowDetail] = useState(false);
 
+  /** Track previous track ID to keep isActive alive across song changes */
+  const prevTrackIdRef = useRef<string | null>(null);
+
   /** Weighted rolling average: confidence * count as weight, weighted by confidence */
   const rollingEstimate = useMemo(() => {
     if (samples.length === 0) return null;
@@ -152,6 +155,24 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     }, 350);
     return () => clearTimeout(timer);
   }, [isActive, phase, playheadSeconds]);
+
+  // Keep isActive alive across track changes — only clear samples/result to restart analysis
+  useEffect(() => {
+    if (!isActive) {
+      prevTrackIdRef.current = track?.id ?? null;
+      return;
+    }
+    if (!track) return;
+    if (prevTrackIdRef.current !== null && prevTrackIdRef.current !== track.id) {
+      // Song changed while detector was active — reset analysis state but keep button lit
+      setSamples([]);
+      setResult(null);
+      setErrorMsg(null);
+      setAdoptedBpm(null);
+      setShowDetail(false);
+    }
+    prevTrackIdRef.current = track.id;
+  }, [track?.id, isActive]);
 
   // Auto-sample while playing: fire analysis every 4 seconds
   useEffect(() => {
