@@ -47,17 +47,15 @@ function formatRelativeTime(): string {
   });
 }
 
-/** Client-only time that won't cause hydration mismatch. Renders placeholder on server, actual time on client. */
+/** Client-only time that avoids hydration mismatch by rendering same placeholder on SSR and first client render. */
 function ClientTime({ className }: { className?: string }) {
-  const [time, setTime] = useState<string>("");
+  const [time, setTime] = useState<string>("--:--:--");
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
     setTime(formatRelativeTime());
   }, []);
-  // suppressHydrationWarning prevents #418 when SSR placeholder differs from client initial render
-  if (!mounted) return <span className={className} suppressHydrationWarning>--:--:--</span>;
-  return <span className={className} suppressHydrationWarning>{time}</span>;
+  return <span className={className}>{time}</span>;
 }
 
 type PlayheadBpmDetectorProps = {
