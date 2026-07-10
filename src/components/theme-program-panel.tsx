@@ -55,7 +55,7 @@ function getModuleOutputSlotCount(module: ThemeProgram['promptModules'][number])
   return Math.max(module.outputSlots ?? 1, 1);
 }
 
-function getModuleOutputSlotLabel(
+export function getModuleOutputSlotLabel(
   module: ThemeProgram['promptModules'][number],
   slotIndex: number,
   fallbackPrefix = '候選 Prompt',
@@ -68,7 +68,7 @@ function getModuleOutputSlotLabel(
   );
 }
 
-function combineModuleOutputs(
+export function combineModuleOutputs(
   programId: string,
   module: ThemeProgram['promptModules'][number],
   moduleOutputs: Record<string, string>,
@@ -89,7 +89,7 @@ function combineModuleOutputs(
   return outputs.join('\n\n');
 }
 
-function extractTemplateReferencedModuleIds(template: string) {
+export function extractTemplateReferencedModuleIds(template: string) {
   return Array.from(template.matchAll(/【貼上\s+(Module\s+\d+)\s+結果】/g)).map((match) => match[1]);
 }
 
@@ -153,7 +153,7 @@ function buildUpstreamPayload(
     .join('\n\n--------------------\n\n');
 }
 
-function buildWorkingPrompt(
+export function buildWorkingPrompt(
   program: ThemeProgram,
   moduleIndex: number,
   targetModule: ThemeProgram['promptModules'][number],
@@ -202,7 +202,7 @@ function buildTemplateSnapshotMap(programs: readonly ThemeProgram[]) {
   );
 }
 
-function buildLowInputAssembly(
+export function buildLowInputAssembly(
   program: ThemeProgram,
   moduleIndex: number,
   targetModule: ThemeProgram['promptModules'][number],

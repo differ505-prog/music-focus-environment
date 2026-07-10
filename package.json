@@ -9,7 +9,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
     "check": "npm run lint && npm run typecheck",
-    "test": "npm run check"
+    "test": "npm run check && vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "howler": "^2.2.4",
@@ -25,11 +26,13 @@
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
+    "@vitejs/plugin-react": "^6.0.3",
     "eslint": "^9.17.0",
     "eslint-config-next": "^16.2.10",
     "postcss": "^8.4.49",
     "tailwindcss": "^4.1.11",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.19.0"
+    "typescript-eslint": "^8.19.0",
+    "vitest": "^4.1.10"
   }
 }
