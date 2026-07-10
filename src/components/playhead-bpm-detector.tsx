@@ -134,6 +134,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       prevPlaybackRateRef.current = playbackRate;
     }
   }, [playbackRate]);
+  /** Last analyzed audio file position — used to detect large seek jumps */
+  const lastAnalyzedPositionRef = useRef<number>(0);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -247,6 +249,16 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       setPhase("analyzing");
       // Convert playback-time to audio-file-time (playbackRate 1.2x → playhead 80s = audio 66.7s)
       const audioFileSeconds = (typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds) / playbackRate;
+
+      // Detect large seek jump: if user jumped > 30s, clear old samples immediately
+      const positionDelta = Math.abs(audioFileSeconds - lastAnalyzedPositionRef.current);
+      if (lastAnalyzedPositionRef.current > 0 && positionDelta > 30) {
+        console.log(`[PlayheadBpm] seek jump detected → ${lastAnalyzedPositionRef.current.toFixed(1)}s → ${audioFileSeconds.toFixed(1)}s (${positionDelta.toFixed(1)}s), clearing samples`);
+        setSamples([]);
+        consecutiveShiftRef.current = 0;
+      }
+      lastAnalyzedPositionRef.current = audioFileSeconds;
+
       console.log(`[PlayheadBpm] handleAnalyze → phase=analyzing, playbackTime=${(typeof seekedPlayhead === "number" ? seekedPlayhead : playheadSeconds).toFixed(2)}s, audioFileSeconds=${audioFileSeconds.toFixed(2)}s, playbackRate=${playbackRate}, url=${track.media.audioUrl.slice(0, 40)}…`);
       const playheadResult = await analyzePlayheadBpmFromUrl(
         track.media.audioUrl,
