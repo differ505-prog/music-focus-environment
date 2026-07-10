@@ -879,10 +879,10 @@ const trackNarratives: TrackNarrativeSeed[] = [
     musicalKey: "E Minor",
     energyLevel: 7.1,
     moodTags: ["崖壁", "談判", "高張力", "執行力"],
-    descriptionZh: "高海拔崖壁視野與壁爐火光交織的 85 BPM 高張力執行節拍，適合談判前的最後準備、危機決策與高風險會議。",
-    descriptionEn: "An 85 BPM high-tension executive groove with cliffside altitude and fireplace warmth, designed for pre-negotiation preparation, crisis decisions, and high-stakes executive meetings.",
+    descriptionZh: "高海拔崖壁視野與壁爐火光交織的 105 BPM 高張力執行節拍，適合談判前的最後準備、危機決策與高風險會議。",
+    descriptionEn: "A 105 BPM high-tension executive groove with cliffside altitude and fireplace warmth, designed for pre-negotiation preparation, crisis decisions, and high-stakes executive meetings.",
     themeScenario: "在海拔最高的崖壁辦公室裡，談判桌旁只有壁爐火光與城市俯瞰，節奏在最緊繃的張力中維持冷靜，讓每一個高風險決策都在掌控之中完成。",
-    bpm: 85,
+    bpm: 105,
     durationSeconds: 310,
     media: {
       audioUrl: "/audio/cliffside-strategy-ii.mp3",
@@ -891,12 +891,12 @@ const trackNarratives: TrackNarrativeSeed[] = [
     },
     prompts: {
       musicPrompt:
-        "Instrumental deep focus electronic, high-tension cliffside atmosphere, 85 BPM exact tempo, steady low-pressure groove, warm fireplace texture, subtle altitude wind ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
+        "Instrumental deep focus electronic, high-tension cliffside atmosphere, 105 BPM exact tempo, steady low-pressure groove, warm fireplace texture, subtle altitude wind ambience, no vocals, loop-friendly, smooth equal-power crossfade ready, sophisticated, restrained and executive.",
       imagePrompt:
         "Photorealistic executive office perched at extreme cliffside altitude, floor-to-ceiling glass overlooking an endless night landscape below, warm fireplace in the background, dark executive desk, low-key cinematic lighting, premium dark mode aesthetic, calm, disciplined and high-stakes atmosphere.",
       videoPrompt: "",
       generationPrompt:
-        "情境：崖壁高點、落地窗外無盡夜色、壁爐火光、高風險談判準備、危機決策。BPM 固定 85，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與高張力執行聽感。",
+        "情境：崖壁高點、落地窗外無盡夜色、壁爐火光、高風險談判準備、危機決策。BPM 固定 105，不可漂移；需支援 long-loop、no vocals、equal-power crossfade 與高張力執行聽感。",
     },
     createdAt: "2026-07-10T23:00:00.000Z",
   },
