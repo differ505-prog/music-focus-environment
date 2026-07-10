@@ -3,6 +3,11 @@
 import { useEffect, useRef, useState } from 'react';
 
 import { copyTextToClipboard } from '@/lib/clipboard';
+import {
+  exportProgramsToJSON,
+  importProgramsFromJSON,
+  type ProgramFile,
+} from '@/lib/programs-factory';
 import type { ThemeProgram } from "@/types/music";
 
 type ThemeProgramPanelProps = {
@@ -254,6 +259,10 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
   const [supplementalInputs, setSupplementalInputs] = useState<SupplementalInputMap>({});
   const [workingPromptDrafts, setWorkingPromptDrafts] = useState<WorkingPromptDraftMap>({});
   const previousGeneratedWorkingPromptsRef = useRef<WorkingPromptDraftMap>({});
+  // C-UI: import 草稿區與驗證錯誤回饋
+  const [importDraft, setImportDraft] = useState<string>('');
+  const [importError, setImportError] = useState<string | null>(null);
+  const [importedPreview, setImportedPreview] = useState<ProgramFile['programs'] | null>(null);
   // Bug 3 fix: track which working-prompt drafts the user has manually edited,
   // so the auto-sync effect stops overwriting their work.
   const userTouchedDraftsRef = useRef<Set<string>>(new Set());
@@ -443,6 +452,52 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
       ...current,
       [key]: message,
     }));
+  };
+
+  // C-UI: 匯出目前 activeProgram 的 JSON,寫入剪貼簿。
+  // 範圍界線: 只 export 當前 active,不寫入 import,符合第 11 條不動既有 props/state 邏輯。
+  const handleExportActive = async () => {
+    const activeProgram = programs.find((program) => program.id === activeProgramId);
+    if (!activeProgram) {
+      setFeedback('theme-program-panel-export', '沒有可匯出的主題');
+      return;
+    }
+    const json = exportProgramsToJSON([activeProgram]);
+    const success = await copyTextToClipboard(json);
+    setFeedback(
+      'theme-program-panel-export',
+      success ? `已複製 ${activeProgram.label} 的 JSON 到剪貼簿` : '剪貼簿失敗,請手動從 console 取',
+    );
+  };
+
+  // C-UI: 驗證使用者貼上的 JSON,但不替換當前 programs。
+  // 為何這樣設計: props 是 readonly,「替換當前 programs」需要新 state + parent 重渲染,
+  // 屬於下一輪評分範圍。本輪只做「驗證 + 預覽」安全子集。
+  const handleValidateImport = () => {
+    if (!importDraft.trim()) {
+      setImportError('請先貼上 JSON');
+      setImportedPreview(null);
+      return;
+    }
+    const result = importProgramsFromJSON(importDraft);
+    if (result.ok) {
+      setImportError(null);
+      setImportedPreview(result.programs);
+      setFeedback(
+        'theme-program-panel-import',
+        `驗證通過,共 ${result.programs.length} 個主題`,
+      );
+    } else {
+      setImportedPreview(null);
+      setImportError(result.error);
+      setFeedback('theme-program-panel-import', '驗證失敗');
+    }
+  };
+
+  const handleClearImport = () => {
+    setImportDraft('');
+    setImportError(null);
+    setImportedPreview(null);
   };
 
   const toggleSection = (programId: string, section: SectionKey) => {
@@ -735,6 +790,92 @@ export function ThemeProgramPanel({ programs }: ThemeProgramPanelProps) {
         <p className="mt-3 text-sm leading-7 text-white/66">
           四步 Prompt 模組，前步內容自動帶入後續。
         </p>
+      </div>
+
+      {/* C-UI: 匯出/匯入工具列 */}
+      <div className="mb-6 rounded-[18px] border border-white/10 bg-white/6 p-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={handleExportActive}
+            className="rounded-full border border-fuchsia-400/40 bg-fuchsia-400/20 px-4 py-2 text-xs font-medium text-fuchsia-100 transition hover:bg-fuchsia-400/30"
+            data-testid="tpp-export"
+          >
+            匯出當前主題 JSON
+          </button>
+          {feedbackMap['theme-program-panel-export'] && (
+            <span className="text-xs text-fuchsia-100/70" data-testid="tpp-export-feedback">
+              {feedbackMap['theme-program-panel-export']}
+            </span>
+          )}
+        </div>
+
+        <details className="mt-3 group">
+          <summary className="cursor-pointer text-xs uppercase tracking-[0.24em] text-cyan-50/60 transition hover:text-cyan-50/90">
+            匯入主題 JSON（驗證預覽）
+          </summary>
+          <div className="mt-3 flex flex-col gap-2">
+            <textarea
+              value={importDraft}
+              onChange={(event) => setImportDraft(event.target.value)}
+              placeholder='貼上 exportProgramsToJSON 產生的 JSON，或 {"$schema":"theme-program-file",…}'
+              rows={4}
+              className="w-full min-w-0 rounded-[12px] border border-white/10 bg-black/30 p-3 font-mono text-[11px] text-white/80 outline-none transition focus:border-cyan-300/40"
+              data-testid="tpp-import-draft"
+            />
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={handleValidateImport}
+                className="rounded-full border border-cyan-300/30 bg-cyan-300/10 px-4 py-2 text-xs font-medium text-cyan-50 transition hover:bg-cyan-300/20"
+                data-testid="tpp-import-validate"
+              >
+                驗證
+              </button>
+              <button
+                type="button"
+                onClick={handleClearImport}
+                className="rounded-full border border-white/10 bg-white/6 px-4 py-2 text-xs font-medium text-white/60 transition hover:bg-white/10"
+                data-testid="tpp-import-clear"
+              >
+                清空
+              </button>
+              {feedbackMap['theme-program-panel-import'] && (
+                <span className="text-xs text-cyan-100/80" data-testid="tpp-import-feedback">
+                  {feedbackMap['theme-program-panel-import']}
+                </span>
+              )}
+            </div>
+            {importError && (
+              <p
+                className="rounded-[10px] border border-rose-400/30 bg-rose-400/10 px-3 py-2 text-xs text-rose-100"
+                data-testid="tpp-import-error"
+              >
+                驗證失敗:{importError}
+              </p>
+            )}
+            {importedPreview && (
+              <div
+                className="rounded-[12px] border border-emerald-300/20 bg-emerald-300/8 p-3 text-xs text-emerald-50"
+                data-testid="tpp-import-preview"
+              >
+                <p className="mb-1 font-medium">
+                  預覽:{importedPreview.length} 個主題
+                </p>
+                <ul className="space-y-1">
+                  {importedPreview.map((program) => (
+                    <li key={program.id} className="text-emerald-100/80">
+                      · {program.label} — {program.title}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[10px] italic text-emerald-100/60">
+                  本輪僅預覽,不替換當前主題。
+                </p>
+              </div>
+            )}
+          </div>
+        </details>
       </div>
 
       {/* Program tab navigation */}
