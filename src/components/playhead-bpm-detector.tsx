@@ -104,6 +104,8 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
 
   const abortRef = useRef<AbortController | null>(null);
   const activeTrackIdRef = useRef<string | null>(null);
+  /** Timestamp of last track change — used to skip auto-samples during the brief window before analysis resumes */
+  const trackChangeMsRef = useRef<number>(0);
 
   // Reset analysis state when track changes — but keep detectorActive (button stays lit)
   useEffect(() => {
@@ -114,6 +116,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       setAdoptedBpm(null);
       setSamples([]);
       setShowDetail(false);
+      trackChangeMsRef.current = Date.now();
       if (activeTrackIdRef.current && activeTrackIdRef.current !== track?.id) {
         clearPlayheadBpmCache();
       }
@@ -161,6 +164,12 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     if (phase === "fetching" || phase === "analyzing") return;
 
     const interval = setInterval(() => {
+      // Skip the first auto-sample after a track change to avoid stale audio-window analysis
+      const elapsed = Date.now() - trackChangeMsRef.current;
+      if (elapsed < 500) {
+        console.log(`[PlayheadBpm] interval → skipped (${elapsed}ms since track change)`);
+        return;
+      }
       console.log(`[PlayheadBpm] interval → analyzing at ${playheadSeconds.toFixed(2)}s`);
       void handleAnalyzeRef.current(playheadSeconds);
     }, 4_000);
