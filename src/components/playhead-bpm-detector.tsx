@@ -175,24 +175,30 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
     return () => clearTimeout(timer);
   }, [detectorActive, playheadSeconds, playbackRate]);
 
-  // Auto-sample while playing: fire analysis every 4 seconds
+  // Auto-sample while playing: fire analysis every 4 seconds.
+  // Adding isAnalyzingRef to deps means: when analysis finishes (ref → false),
+  // this effect re-runs and creates a fresh interval starting from the *current*
+  // playhead position — avoiding the 4s gap from when the last interval was set.
   useEffect(() => {
     if (!detectorActive || !isPlaying) return;
-    // Don't fire during an in-flight request — use ref to avoid stale phase closure
+    // Don't fire during an in-flight request
     if (isAnalyzingRef.current) return;
 
     const interval = setInterval(() => {
-      // Skip the first auto-sample after a track change to avoid stale audio-window analysis
       const elapsed = Date.now() - trackChangeMsRef.current;
       if (elapsed < 500) {
         console.log(`[PlayheadBpm] interval → skipped (${elapsed}ms since track change)`);
+        return;
+      }
+      if (isAnalyzingRef.current) {
+        console.log(`[PlayheadBpm] interval → skipped (already analyzing)`);
         return;
       }
       console.log(`[PlayheadBpm] interval → analyzing at ${playheadSeconds.toFixed(2)}s`);
       void handleAnalyzeRef.current(playheadSeconds);
     }, 4_000);
     return () => clearInterval(interval);
-  }, [detectorActive, isPlaying]);
+  }, [detectorActive, isPlaying, isAnalyzingRef]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
