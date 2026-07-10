@@ -91,8 +91,13 @@ export function GlobalPlayer({
   const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
-  const [playbackRate, setPlaybackRate] = useState(1);
+  const [playbackRate, setPlaybackRate] = useState(playback.playbackRate);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+
+  // Sync local playbackRate state with the controller's value from playback prop
+  useEffect(() => {
+    setPlaybackRate(playback.playbackRate);
+  }, [playback.playbackRate]);
 
   // When playback rate changes while the detector is active, auto-extinguish and re-ignite
   // so the detector clears its state and starts sampling fresh at the new rate.

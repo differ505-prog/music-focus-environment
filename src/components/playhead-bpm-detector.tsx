@@ -50,10 +50,13 @@ function formatRelativeTime(): string {
 /** Client-only time that won't cause hydration mismatch. Renders nothing on server. */
 function ClientTime({ className }: { className?: string }) {
   const [time, setTime] = useState<string>("");
+  const [mounted, setMounted] = useState(false);
   useEffect(() => {
+    setMounted(true);
     setTime(formatRelativeTime());
   }, []);
-  return time ? <span className={className}>{time}</span> : null;
+  if (!mounted) return <span className={className}>--:--:--</span>;
+  return <span className={className}>{time}</span>;
 }
 
 type PlayheadBpmDetectorProps = {
@@ -167,12 +170,10 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
   }, [detectorActive, playheadSeconds, playbackRate]);
 
   // Auto-sample while playing: fire analysis every 4 seconds.
-  // Adding isAnalyzingRef to deps means: when analysis finishes (ref → false),
-  // this effect re-runs and creates a fresh interval starting from the *current*
-  // playhead position — avoiding the 4s gap from when the last interval was set.
+  // NOTE: intentionally omit playheadSeconds from deps — we read it via ref inside the interval.
+  // Adding it would restart the interval on every tick, defeating the 4-second cadence.
   useEffect(() => {
     if (!detectorActive || !isPlaying) return;
-    // Don't fire during an in-flight request
     if (isAnalyzingRef.current) return;
 
     const interval = setInterval(() => {
@@ -190,7 +191,7 @@ export function PlayheadBpmDetector({ track, playheadSeconds, onSeekChange, isPl
       void handleAnalyzeRef.current(currentPlayhead);
     }, 4_000);
     return () => clearInterval(interval);
-  }, [detectorActive, isPlaying, isAnalyzingRef, playheadSeconds]);
+  }, [detectorActive, isPlaying, isAnalyzingRef]);
 
   const handleActivate = useCallback(() => {
     if (!track) return;
