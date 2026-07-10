@@ -97,9 +97,6 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
     return () => clearTimeout(timer);
   }, [phase]);
 
-  const handleAnalyzeRef = useRef(handleAnalyze);
-  handleAnalyzeRef.current = handleAnalyze;
-
   // Auto-trigger analysis when playhead changes and detector is active
   useEffect(() => {
     console.log(
@@ -175,6 +172,9 @@ export function PlayheadBpmDetector({ track, playheadSeconds, allowedBpms, onCon
       setIsActive(false);
     }
   }, [track, allowedBpms, onConfidenceTier, playheadSeconds]);
+
+  const handleAnalyzeRef = useRef(handleAnalyze);
+  handleAnalyzeRef.current = handleAnalyze;
 
   const handleApply = useCallback(() => {
     if (!track || !result) return;
