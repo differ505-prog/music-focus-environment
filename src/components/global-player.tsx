@@ -97,6 +97,9 @@ export function GlobalPlayer({
   } | null>(null);
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
+  /** Manual continuous BPM analysis toggle (admin only, off by default) */
+  const [continuousAnalysisEnabled, setContinuousAnalysisEnabled] = useState(false);
+  const continuousAnalysisRef = useRef(false);
   const [manualOverrideCount, setManualOverrideCount] = useState(0);
   const lastResultRef = useRef<BpmAnalysis | null>(null);
   const prevTrackRef = useRef<Track | null>(null);
@@ -305,6 +308,56 @@ export function GlobalPlayer({
       cancelled = true;
     };
   }, [currentTrack, themeProgramMap]);
+
+  // ── Continuous BPM Analysis (admin, manual toggle) ──
+  useEffect(() => {
+    if (!continuousAnalysisEnabled || !currentTrack) return;
+
+    const runAnalysis = async () => {
+      const allowedBpms = extractAllowedBpms(
+        currentTrack.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null,
+      );
+
+      while (continuousAnalysisRef.current) {
+        setAnalysisProgress({
+          currentSegment: 0,
+          totalSegments: 3,
+          currentBpm: null,
+          confidence: null,
+          results: [],
+        });
+
+        await detectTrackBpmMultiSegment(currentTrack.media.audioUrl, bpmOptions, {
+          metadataBpm: currentTrack.bpm,
+          allowedBpms,
+        }, undefined, (segmentIndex, totalSegments, segResult) => {
+          if (!continuousAnalysisRef.current) return;
+          setAnalysisProgress((prev) => {
+            if (!prev) return null;
+            const newResults = [...prev.results, {
+              startSeconds: segResult.startSeconds,
+              estimatedBpm: segResult.estimatedBpm,
+              confidence: segResult.confidence,
+            }];
+            return {
+              currentSegment: segmentIndex + 1,
+              totalSegments,
+              currentBpm: segResult.estimatedBpm,
+              confidence: segResult.confidence,
+              results: newResults,
+            };
+          });
+        });
+      }
+    };
+
+    continuousAnalysisRef.current = true;
+    void runAnalysis();
+
+    return () => {
+      continuousAnalysisRef.current = false;
+    };
+  }, [continuousAnalysisEnabled, currentTrack, themeProgramMap]);
 
   const detectedBpmMeta = useMemo(() => {
     if (!currentTrack || detectedBpmState.status !== "ready") {
@@ -738,6 +791,18 @@ export function GlobalPlayer({
                     >
                       ⚠ 信心不足 {detectedBpmState.message}
                     </span>
+                  ) : null}
+                  {showAdminDetails ? (
+                    <button
+                      onClick={() => setContinuousAnalysisEnabled((v) => !v)}
+                      className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                        continuousAnalysisEnabled
+                          ? "border-violet-400/48 bg-violet-400/24 text-violet-100"
+                          : "border-white/14 bg-white/8 text-white/52 hover:border-white/24 hover:text-white/72"
+                      }`}
+                    >
+                      {continuousAnalysisEnabled ? "■ 持續分析" : "▶ 持續分析"}
+                    </button>
                   ) : null}
                   {showAdminDetails ? (
                     <PlayheadBpmDetector
