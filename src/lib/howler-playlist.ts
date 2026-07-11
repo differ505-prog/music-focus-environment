@@ -50,6 +50,8 @@ export class HowlerPlaylistController {
   private playbackEngine: PlaybackSnapshot["engine"];
   private repeatEnabled = true;
   private mutedVolume: number | null = null;
+  private tickerInterval: ReturnType<typeof setInterval> | null = null;
+  private readonly TICKER_INTERVAL_MS = 250;
 
   constructor(options: PlaylistControllerOptions = {}) {
     this.onStateChange = options.onStateChange;
@@ -122,6 +124,7 @@ export class HowlerPlaylistController {
       }
       this.scheduleCrossfadeMonitor();
       this.emitState();
+      this.startTicker();
       return;
     }
 
@@ -147,6 +150,7 @@ export class HowlerPlaylistController {
     }
 
     this.clearCrossfadeMonitor();
+    this.stopTicker();
     this.currentHowl.pause();
     this.emitState();
   }
@@ -293,6 +297,7 @@ export class HowlerPlaylistController {
     howl.play();
     this.primeUpcomingTrack();
     this.emitState();
+    this.startTicker();
   }
 
   private createHowl(track: Track, volumeFactor: number, startAtSeconds = 0) {
@@ -614,6 +619,25 @@ export class HowlerPlaylistController {
 
   private isPlaying() {
     return Boolean(this.currentHowl?.playing() || this.nextHowl?.playing());
+  }
+
+  private startTicker() {
+    if (this.tickerInterval !== null) return;
+    this.tickerInterval = setInterval(() => {
+      if (this.isPlaying()) {
+        this.emitState();
+      } else if (this.tickerInterval !== null) {
+        clearInterval(this.tickerInterval);
+        this.tickerInterval = null;
+      }
+    }, this.TICKER_INTERVAL_MS);
+  }
+
+  private stopTicker() {
+    if (this.tickerInterval !== null) {
+      clearInterval(this.tickerInterval);
+      this.tickerInterval = null;
+    }
   }
 
   private getTargetGain(track: Track | null) {
