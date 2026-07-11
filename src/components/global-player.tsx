@@ -88,6 +88,13 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const [analysisProgress, setAnalysisProgress] = useState<{
+    currentSegment: number;
+    totalSegments: number;
+    currentBpm: number | null;
+    confidence: number | null;
+    results: { startSeconds: number; estimatedBpm: number; confidence: number }[];
+  } | null>(null);
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
   /** Manual continuous BPM analysis toggle (admin only, off by default) */
@@ -593,9 +600,11 @@ export function GlobalPlayer({
                   {currentTrack?.title ?? "尚未播放"}
                 </h3>
                 <p className="mt-1 truncate text-xs text-white/55">
-                  {nextTrack
-                        ? `下一首 ${nextTrack.title}`
-                        : "加入曲目即可播放"}
+                  {detectedBpmMeta
+                    ? `偵測 ${detectedBpmMeta.detectedBpm} BPM`
+                    : nextTrack
+                      ? `下一首 ${nextTrack.title}`
+                      : "加入曲目即可播放"}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                   <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-2.5 py-1 text-fuchsia-50/88">
@@ -754,6 +763,39 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
+                  {showAdminDetails && (analysisProgress || detectedBpmState.status === "loading") && (
+                    <div className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-violet-100/88">
+                      {analysisProgress ? (
+                        <>
+                          <span className="text-[11px] tracking-wide">
+                            分析中 {Math.min(analysisProgress.currentSegment + 1, analysisProgress.totalSegments)}/{analysisProgress.totalSegments}
+                          </span>
+                          {analysisProgress.results.map((r, i) => (
+                            <span
+                              key={i}
+                              className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
+                            >
+                              {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>{" "}
+                              <span className="text-violet-300/48">@{Math.round(r.startSeconds)}s</span>
+                            </span>
+                          ))}
+                          {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
+                            <span className="relative flex h-2 w-2">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-violet-200/54">完成</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+                        </span>
+                      )}
+                    </div>
+                  )}
                   {showAdminDetails && continuousAnalysisEnabled && continuousBestResult && (
                     <button
                       type="button"
@@ -761,7 +803,6 @@ export function GlobalPlayer({
                         if (!currentTrack) return;
                         updateTrackReviewOverride(currentTrack.id, { bpm: continuousBestResult.bpm });
                         setContinuousBestResult(null);
-                        setContinuousAnalysisEnabled(false);
                       }}
                       className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/14 px-3 py-1 text-[11px] text-emerald-100/92 transition hover:bg-emerald-300/22"
                     >
@@ -769,6 +810,18 @@ export function GlobalPlayer({
                       套用 {continuousBestResult.bpm} BPM
                     </button>
                   )}
+                  {showAdminDetails ? (
+                    <button
+                      onClick={() => setContinuousAnalysisEnabled((v) => !v)}
+                      className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
+                        continuousAnalysisEnabled
+                          ? "border-violet-400/48 bg-violet-400/24 text-violet-100"
+                          : "border-white/14 bg-white/8 text-white/52 hover:border-white/24 hover:text-white/72"
+                      }`}
+                    >
+                      {continuousAnalysisEnabled ? "■ 持續分析" : "▶ 持續分析"}
+                    </button>
+                  ) : null}
                   {showAdminDetails ? (
                     <PlayheadBpmDetector
                       track={currentTrack}
