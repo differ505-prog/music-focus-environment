@@ -15,6 +15,7 @@ import { TapBpmButton } from "@/components/tap-bpm-button";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
 import { detectTrackBpmFromUrl, detectTrackBpmMultiSegment } from "@/lib/track-bpm-detection";
+import type { BpmSegmentResult } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
 import { getUserBpmMapping } from "@/lib/bpm-user-mappings";
@@ -87,6 +88,13 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  const [analysisProgress, setAnalysisProgress] = useState<{
+    currentSegment: number;
+    totalSegments: number;
+    currentBpm: number | null;
+    confidence: number | null;
+    results: { startSeconds: number; estimatedBpm: number; confidence: number }[];
+  } | null>(null);
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
   const [manualOverrideCount, setManualOverrideCount] = useState(0);
@@ -154,6 +162,7 @@ export function GlobalPlayer({
     let cancelled = false;
 
     async function detectTrackBpm(track: Track) {
+      setAnalysisProgress({ currentSegment: 0, totalSegments: 3, currentBpm: null, confidence: null, results: [] });
       if (typeof window === "undefined" || !window.AudioContext) {
         setDetectedBpmState({ status: "error", message: "目前環境不支援 BPM 偵測" });
         return;
@@ -200,6 +209,19 @@ export function GlobalPlayer({
         const result = await detectTrackBpmMultiSegment(track.media.audioUrl, bpmOptions, {
           metadataBpm: track.bpm,
           allowedBpms,
+        }, undefined, (segmentIndex, totalSegments, segResult) => {
+          setAnalysisProgress((prev) => {
+            const newResults = prev
+              ? [...prev.results, { startSeconds: segResult.startSeconds, estimatedBpm: segResult.estimatedBpm, confidence: segResult.confidence }]
+              : [{ startSeconds: segResult.startSeconds, estimatedBpm: segResult.estimatedBpm, confidence: segResult.confidence }];
+            return {
+              currentSegment: segmentIndex + 1,
+              totalSegments,
+              currentBpm: segResult.estimatedBpm,
+              confidence: segResult.confidence,
+              results: newResults,
+            };
+          });
         });
 
         if (result.confidence >= confidenceFloor) {
@@ -223,6 +245,7 @@ export function GlobalPlayer({
           detectedAt: new Date().toISOString(),
           resolvedByReference: result.resolvedByReference,
         });
+        setAnalysisProgress(null);
 
         if (!cancelled) {
           lastResultRef.current = result;
@@ -666,6 +689,24 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
+                  {showAdminDetails && analysisProgress && (
+                    <div className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-violet-100/88">
+                      <span className="text-[11px] tracking-wide">
+                        分析中 {analysisProgress.currentSegment}/{analysisProgress.totalSegments}
+                      </span>
+                      {analysisProgress.results.map((r, i) => (
+                        <span
+                          key={i}
+                          className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
+                        >
+                          {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>
+                        </span>
+                      ))}
+                      {analysisProgress.currentBpm != null && analysisProgress.currentSegment < analysisProgress.totalSegments ? (
+                        <span className="text-[11px] text-violet-200/54">→ {analysisProgress.currentBpm} …</span>
+                      ) : null}
+                    </div>
+                  )}
                   {detectedBpmMeta ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
                       {playbackRate !== 1

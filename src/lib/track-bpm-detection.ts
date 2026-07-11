@@ -13,6 +13,8 @@ type SegmentConfig = {
   startSeconds: number;
 };
 
+type SegmentProgressCallback = (segmentIndex: number, totalSegments: number, result: BpmSegmentResult) => void;
+
 const DEFAULT_SEGMENTS: SegmentConfig[] = [
   { startSeconds: 0 },
   { startSeconds: 60 },
@@ -128,6 +130,7 @@ export async function detectTrackBpmMultiSegment(
   laneOptions: readonly number[],
   options: TrackBpmDetectionOptions = {},
   segments: SegmentConfig[] = DEFAULT_SEGMENTS,
+  onSegment?: SegmentProgressCallback,
 ): Promise<MultiSegmentBpmResult> {
   const segmentResults: BpmSegmentResult[] = [];
   const allCandidates: BpmAnalysis["candidates"][] = [];
@@ -135,8 +138,16 @@ export async function detectTrackBpmMultiSegment(
   let totalPeakCount = 0;
   let resolvedByReference = false;
 
+  let segmentIndex = 0;
   for (const segment of segments) {
     const result = await detectTrackBpmFromUrl(audioUrl, laneOptions, options, segment.startSeconds);
+    onSegment?.(segmentIndex, segments.length, {
+      startSeconds: segment.startSeconds,
+      estimatedBpm: result.estimatedBpm,
+      rawDetectedBpm: result.rawDetectedBpm,
+      confidence: result.confidence,
+      laneSuggestion: result.laneSuggestion,
+    });
     segmentResults.push({
       startSeconds: segment.startSeconds,
       estimatedBpm: result.estimatedBpm,
@@ -148,6 +159,7 @@ export async function detectTrackBpmMultiSegment(
     totalSampleSeconds += result.sampleDurationSeconds;
     totalPeakCount += result.peakCount;
     if (result.resolvedByReference) resolvedByReference = true;
+    segmentIndex++;
   }
 
   // Count how many segments land in the same lane group as the dominant result
