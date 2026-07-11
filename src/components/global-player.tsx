@@ -866,23 +866,20 @@ export function GlobalPlayer({
           </div>
 
           {showAdminDetails && sessionPlan ? (
-            <div className="mt-4 grid gap-3 md:grid-cols-3">
-              <div className="rounded-[22px] border border-fuchsia-300/16 bg-fuchsia-300/8 p-4">
-                <p className="text-[11px] uppercase tracking-[0.26em] text-fuchsia-100/58">現在階段</p>
-                <p className="mt-3 font-serif text-xl text-white">{sessionPlan.currentPhaseLabel}</p>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              <div className="rounded-[18px] border border-fuchsia-300/16 bg-fuchsia-300/8 px-4 py-2.5">
+                <p className="text-[10px] uppercase tracking-[0.26em] text-fuchsia-100/58">現在階段</p>
+                <p className="mt-1 truncate font-medium text-white">{sessionPlan.currentPhaseLabel}</p>
               </div>
-              <div className="rounded-[22px] border border-cyan-300/16 bg-cyan-300/8 p-4">
-                <p className="text-[11px] uppercase tracking-[0.26em] text-cyan-100/58">接歌策略</p>
-                <p className="mt-3 font-serif text-xl text-white">{sessionPlan.laneLabel}</p>
-                {playback.transitionStrategyLabel ? (
-                  <p className="mt-3 text-sm leading-6 text-cyan-100/82">
-                    {playback.transitionStrategyLabel}
-                  </p>
-                ) : null}
+              <div className="rounded-[18px] border border-cyan-300/16 bg-cyan-300/8 px-4 py-2.5">
+                <p className="text-[10px] uppercase tracking-[0.26em] text-cyan-100/58">接歌策略</p>
+                <p className="mt-1 truncate font-medium text-white">
+                  {playback.transitionStrategyLabel ?? sessionPlan.laneLabel}
+                </p>
               </div>
-              <div className="rounded-[22px] border border-white/10 bg-white/6 p-4">
-                <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">下一步</p>
-                <p className="mt-3 font-serif text-xl text-white">
+              <div className="rounded-[18px] border border-white/10 bg-white/6 px-4 py-2.5">
+                <p className="text-[10px] uppercase tracking-[0.26em] text-white/42">下一步</p>
+                <p className="mt-1 truncate font-medium text-white">
                   {nextTrackPlan?.phaseLabel ?? (nextTrack ? "下一首待命" : "本輪即將結束")}
                 </p>
               </div>
