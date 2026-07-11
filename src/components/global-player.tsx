@@ -10,7 +10,6 @@ import { PlayerHeaderBar } from "@/components/player-header-bar";
 import { PlayerPlaylistStrip } from "@/components/player-playlist-strip";
 import { PlayerProgressBar } from "@/components/player-progress-bar";
 import { PlayerTransportControls } from "@/components/player-transport-controls";
-import { PlayheadBpmDetector } from "@/components/playhead-bpm-detector";
 import { TapBpmButton } from "@/components/tap-bpm-button";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
@@ -765,11 +764,6 @@ export function GlobalPlayer({
               {currentTrack ? (
                 <div className="mt-3 flex flex-wrap items-center gap-2">
                   {showAdminDetails && sessionPlan ? (
-                    <span className="rounded-full border border-fuchsia-300/24 bg-fuchsia-300/12 px-3 py-1 text-fuchsia-50">
-                      {sessionPlan.currentPhaseLabel}
-                    </span>
-                  ) : null}
-                  {showAdminDetails && sessionPlan ? (
                     <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
                       {sessionPlan.laneLabel}
                     </span>
@@ -779,14 +773,6 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
-                  {detectedBpmMeta ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      {playbackRate !== 1
-                        ? `${detectedBpmMeta.perceivedBpm} (${playbackRate}×)`
-                        : `${detectedBpmMeta.detectedBpm}`}
-                      / {detectedBpmMeta.confidencePercent}%
-                    </span>
-                  ) : null}
                   {showAdminDetails && continuousAnalysisEnabled && analysisProgress && analysisProgress.results.length > 0 && (
                     <div
                       className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-[11px] text-violet-100/88"
@@ -834,20 +820,6 @@ export function GlobalPlayer({
                     >
                       {continuousAnalysisEnabled ? "■ 持續分析" : "▶ 持續分析"}
                     </button>
-                  ) : null}
-                  {showAdminDetails ? (
-                    <PlayheadBpmDetector
-                      track={currentTrack}
-                      playheadSeconds={playback.currentTime}
-                      onSeekChange={(seconds) => {
-                        setLiveSeekSeconds(seconds);
-                      }}
-                      isPlaying={playback.isPlaying}
-                      playbackRate={playback.playbackRate}
-                      allowedBpms={allowedBpms}
-                      detectorActive={detectorActive}
-                      onDetectorActiveChange={setDetectorActive}
-                    />
                   ) : null}
                   {showAdminDetails ? (
                     <TapBpmButton
