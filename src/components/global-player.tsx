@@ -245,7 +245,6 @@ export function GlobalPlayer({
           detectedAt: new Date().toISOString(),
           resolvedByReference: result.resolvedByReference,
         });
-        setAnalysisProgress(null);
 
         if (!cancelled) {
           lastResultRef.current = result;
