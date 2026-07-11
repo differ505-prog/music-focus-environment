@@ -36,7 +36,7 @@ function summarizeOverrideCount(trackId: string | null): number {
 }
 
 export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps) {
-  const { currentTrack, playback } = usePlayback();
+  const { currentTrack, playback, playTrack } = usePlayback();
   const refreshTick = useTrackReviewSync();
   const [activeTab, setActiveTab] = useState<TabId>("summary");
 
@@ -116,7 +116,7 @@ export function AdminPlaybackWorkbench({ programs }: AdminPlaybackWorkbenchProps
                   </p>
                 </div>
               )}
-              <LiveBpmOverrideCard currentTrack={currentTrack} programs={programs} />
+              <LiveBpmOverrideCard currentTrack={currentTrack} programs={programs} onPlayTrack={playTrack} />
             </div>
           ) : null}
 
