@@ -25,11 +25,23 @@ export type StoredTrackMixInSuggestion = {
   analyzedAt: string;
 };
 
+export type StoredTrackMixOutSuggestion = {
+  trackId: string;
+  audioUrl: string;
+  suggestedMixOutSeconds: number;
+  confidence: number;
+  analysisWindowSeconds: number;
+  beatAligned: boolean;
+  summary: string;
+  analyzedAt: string;
+};
+
 export type TrackReviewOverride = {
   bpm?: number;
   themeProgramId?: string;
   ignoreBpmMismatch?: boolean;
   mixInPointSeconds?: number;
+  mixOutPointSeconds?: number;
   reviewedAt?: string;
 };
 
@@ -58,6 +70,10 @@ export type TrackTransitionReviewItem = {
   baseMixInPointSeconds: number;
   suggestion: StoredTrackMixInSuggestion;
   diffSeconds: number;
+  effectiveMixOutPointSeconds: number;
+  baseMixOutPointSeconds: number;
+  mixOutSuggestion: StoredTrackMixOutSuggestion | null;
+  mixOutDiffSeconds: number;
 };
 
 export type TrackOverrideHistoryItem = {
@@ -73,6 +89,9 @@ export type TrackOverrideHistoryItem = {
   mixInChanged: boolean;
   baseMixInPointSeconds: number;
   effectiveMixInPointSeconds: number;
+  mixOutChanged: boolean;
+  baseMixOutPointSeconds: number;
+  effectiveMixOutPointSeconds: number;
   reviewedAt: string | null;
 };
 
@@ -120,6 +139,9 @@ export function buildTrackOverrideHistoryItems(
         mixInChanged: override.mixInPointSeconds != null && override.mixInPointSeconds !== baseTrack.transition.mixInPointSeconds,
         baseMixInPointSeconds: baseTrack.transition.mixInPointSeconds,
         effectiveMixInPointSeconds: override.mixInPointSeconds ?? track.transition.mixInPointSeconds,
+        mixOutChanged: override.mixOutPointSeconds != null && override.mixOutPointSeconds !== baseTrack.transition.mixOutPointSeconds,
+        baseMixOutPointSeconds: baseTrack.transition.mixOutPointSeconds,
+        effectiveMixOutPointSeconds: override.mixOutPointSeconds ?? track.transition.mixOutPointSeconds,
         reviewedAt: override.reviewedAt ?? null,
       };
     })
@@ -138,6 +160,7 @@ export function buildTrackOverrideHistoryItems(
 
 const TRACK_BPM_DETECTIONS_STORAGE_KEY = "track-bpm-detections-v1";
 const TRACK_MIX_IN_SUGGESTIONS_STORAGE_KEY = "track-mix-in-suggestions-v1";
+const TRACK_MIX_OUT_SUGGESTIONS_STORAGE_KEY = "track-mix-out-suggestions-v1";
 const TRACK_REVIEW_OVERRIDES_STORAGE_KEY = "track-review-overrides-v1";
 const TRACK_REVIEW_STORAGE_EVENT = "track-review-storage-updated";
 
@@ -200,6 +223,10 @@ function normalizeTrackReviewOverride(override: TrackReviewOverride) {
     delete nextOverride.mixInPointSeconds;
   }
 
+  if (nextOverride.mixOutPointSeconds == null) {
+    delete nextOverride.mixOutPointSeconds;
+  }
+
   return nextOverride;
 }
 
@@ -208,7 +235,8 @@ function hasEffectiveTrackReviewOverride(override: TrackReviewOverride) {
     override.bpm != null ||
     override.themeProgramId != null ||
     override.ignoreBpmMismatch != null ||
-    override.mixInPointSeconds != null
+    override.mixInPointSeconds != null ||
+    override.mixOutPointSeconds != null
   );
 }
 
@@ -240,6 +268,19 @@ export function saveTrackMixInSuggestion(suggestion: StoredTrackMixInSuggestion)
   };
 
   writeJsonRecord(TRACK_MIX_IN_SUGGESTIONS_STORAGE_KEY, nextSuggestions);
+}
+
+export function readTrackMixOutSuggestions() {
+  return readJsonRecord<StoredTrackMixOutSuggestion>(TRACK_MIX_OUT_SUGGESTIONS_STORAGE_KEY);
+}
+
+export function saveTrackMixOutSuggestion(suggestion: StoredTrackMixOutSuggestion) {
+  const nextSuggestions = {
+    ...readTrackMixOutSuggestions(),
+    [suggestion.trackId]: suggestion,
+  };
+
+  writeJsonRecord(TRACK_MIX_OUT_SUGGESTIONS_STORAGE_KEY, nextSuggestions);
 }
 
 export function readTrackReviewOverrides() {
@@ -320,6 +361,7 @@ export function buildRuntimeTracks(
       transition: {
         ...track.transition,
         mixInPointSeconds: override.mixInPointSeconds ?? track.transition.mixInPointSeconds,
+        mixOutPointSeconds: override.mixOutPointSeconds ?? track.transition.mixOutPointSeconds,
       },
     };
   });
@@ -404,14 +446,19 @@ export function buildTrackTransitionReviewItems(
   trackList: readonly Track[] = baseTracks,
   overrides: Record<string, TrackReviewOverride> = readTrackReviewOverrides(),
   suggestions: Record<string, StoredTrackMixInSuggestion> = readTrackMixInSuggestions(),
+  mixOutSuggestions: Record<string, StoredTrackMixOutSuggestion> = readTrackMixOutSuggestions(),
 ) {
   const baseTrackMap = new Map(baseTracks.map((track) => [track.id, track] as const));
 
   return trackList
     .map((track): TrackTransitionReviewItem | null => {
       const suggestion = suggestions[track.id];
+      const mixOutSuggestion = mixOutSuggestions[track.id] ?? null;
 
-      if (!suggestion || suggestion.audioUrl !== track.media.audioUrl) {
+      if (
+        (!suggestion || suggestion.audioUrl !== track.media.audioUrl) &&
+        (!mixOutSuggestion || mixOutSuggestion.audioUrl !== track.media.audioUrl)
+      ) {
         return null;
       }
 
@@ -419,6 +466,33 @@ export function buildTrackTransitionReviewItems(
       const override = overrides[track.id];
       const effectiveMixInPointSeconds = override?.mixInPointSeconds ?? track.transition.mixInPointSeconds;
       const baseMixInPointSeconds = baseTrack.transition.mixInPointSeconds;
+      const effectiveMixOutPointSeconds = override?.mixOutPointSeconds ?? track.transition.mixOutPointSeconds;
+      const baseMixOutPointSeconds = baseTrack.transition.mixOutPointSeconds;
+
+      if (!suggestion) {
+        return {
+          track,
+          baseTrack,
+          effectiveMixInPointSeconds,
+          baseMixInPointSeconds,
+          suggestion: {
+            trackId: track.id,
+            audioUrl: track.media.audioUrl,
+            suggestedMixInSeconds: effectiveMixInPointSeconds,
+            confidence: 0,
+            analysisWindowSeconds: 0,
+            beatAligned: false,
+            summary: "尚未產生 Mix In 建議",
+            analyzedAt: new Date(0).toISOString(),
+          },
+          diffSeconds: 0,
+          effectiveMixOutPointSeconds,
+          baseMixOutPointSeconds,
+          mixOutSuggestion,
+          mixOutDiffSeconds: mixOutSuggestion ? Math.abs(effectiveMixOutPointSeconds - mixOutSuggestion.suggestedMixOutSeconds) : 0,
+        };
+      }
+
       const diffSeconds = Math.abs(effectiveMixInPointSeconds - suggestion.suggestedMixInSeconds);
 
       return {
@@ -428,12 +502,19 @@ export function buildTrackTransitionReviewItems(
         baseMixInPointSeconds,
         suggestion,
         diffSeconds,
+        effectiveMixOutPointSeconds,
+        baseMixOutPointSeconds,
+        mixOutSuggestion,
+        mixOutDiffSeconds: mixOutSuggestion ? Math.abs(effectiveMixOutPointSeconds - mixOutSuggestion.suggestedMixOutSeconds) : 0,
       };
     })
     .filter(isPresent)
     .sort((left, right) => {
-      if (right.diffSeconds !== left.diffSeconds) {
-        return right.diffSeconds - left.diffSeconds;
+      const leftScore = left.diffSeconds + left.mixOutDiffSeconds;
+      const rightScore = right.diffSeconds + right.mixOutDiffSeconds;
+
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
       }
 
       return left.track.title.localeCompare(right.track.title);

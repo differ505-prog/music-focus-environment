@@ -609,3 +609,359 @@ export async function detectTrackMixInSuggestionFromUrl(
     void audioContext.close().catch(() => {});
   }
 }
+
+export type MixOutSuggestionAnalysis = {
+  suggestedMixOutSeconds: number;
+  confidence: number;
+  analysisWindowSeconds: number;
+  beatAligned: boolean;
+  summary: string;
+};
+
+type MixOutTailProfile = {
+  second: number;
+  energySlope: number;
+  spectralFlux: number;
+  onsetDepletion: number;
+  decayConsistency: number;
+  residual: number;
+  score: number;
+};
+
+function buildHighBandEnergies(signal: Float32Array, frameSize: number) {
+  // one-pole high-pass at ~1.6 kHz: y[n] = x[n] - x[n-1] + R * y[n-1], R ≈ 0.94
+  const filtered = new Float32Array(signal.length);
+  const r = 0.94;
+  let previousInput = 0;
+  let previousOutput = 0;
+
+  for (let sampleIndex = 0; sampleIndex < signal.length; sampleIndex += 1) {
+    const input = signal[sampleIndex] ?? 0;
+    const output = input - previousInput + r * previousOutput;
+    filtered[sampleIndex] = output;
+    previousInput = input;
+    previousOutput = output;
+  }
+
+  return buildFrameEnergies(filtered, frameSize);
+}
+
+function calculateDecayConsistency(values: readonly number[]) {
+  if (values.length < 4) {
+    return 0;
+  }
+
+  let dropCount = 0;
+  let totalDelta = 0;
+
+  for (let index = 1; index < values.length; index += 1) {
+    const delta = (values[index - 1] ?? 0) - (values[index] ?? 0);
+    totalDelta += delta;
+
+    if (delta >= 0) {
+      dropCount += 1;
+    }
+  }
+
+  const dropRatio = dropCount / Math.max(values.length - 1, 1);
+  const averageDrop = totalDelta / Math.max(values.length - 1, 1);
+  return clamp(dropRatio * 0.65 + clamp(averageDrop / Math.max(values[0] ?? 0.001, 0.001) * 0.35 + 0.35, 0, 1) * 0.35, 0, 1);
+}
+
+function calculateEnergySlope(values: readonly number[]) {
+  if (values.length < 2) {
+    return 0;
+  }
+
+  let totalDelta = 0;
+
+  for (let index = 1; index < values.length; index += 1) {
+    totalDelta += ((values[index - 1] ?? 0) - (values[index] ?? 0)) / Math.max(values[index - 1] ?? 0.001, 0.001);
+  }
+
+  return totalDelta / Math.max(values.length - 1, 1);
+}
+
+function calculateSpectralFlux(values: readonly number[]) {
+  if (values.length < 2) {
+    return 0;
+  }
+
+  let flux = 0;
+
+  for (let index = 1; index < values.length; index += 1) {
+    flux += Math.max(((values[index - 1] ?? 0) - (values[index] ?? 0)) / Math.max(values[index - 1] ?? 0.001, 0.001), 0);
+  }
+
+  return flux / Math.max(values.length - 1, 1);
+}
+
+function calculateOnsetDepletion(onsetValues: readonly number[]) {
+  if (onsetValues.length < 2) {
+    return 0;
+  }
+
+  const headHalf = onsetValues.slice(0, Math.max(1, Math.floor(onsetValues.length / 2)));
+  const tailHalf = onsetValues.slice(Math.floor(onsetValues.length / 2));
+  const headMean = average(headHalf);
+  const tailMean = average(tailHalf);
+
+  return clamp((headMean - tailMean) / Math.max(headMean, 0.001), 0, 1);
+}
+
+export function analyzeAudioBufferForMixOutSuggestion(
+  audioBuffer: AudioBuffer,
+  options: TrackTransitionDetectionOptions = {},
+): MixOutSuggestionAnalysis {
+  const mono = buildMonoPcm(audioBuffer);
+  const transientSignal = buildTransientSignal(mono);
+  const sampleRate = audioBuffer.sampleRate;
+  const frameDurationSeconds = 0.05;
+  const frameSize = Math.max(1024, Math.floor(sampleRate * frameDurationSeconds));
+  const energies = buildFrameEnergies(mono, frameSize);
+  const transientEnergies = buildFrameEnergies(transientSignal, frameSize);
+  const highBandEnergies = buildHighBandEnergies(mono, frameSize);
+
+  const smoothedEnergies = energies.map((_, index) => {
+    const slice = energies.slice(Math.max(index - 2, 0), Math.min(index + 3, energies.length));
+    return average(slice);
+  });
+  const smoothedHighBandEnergies = highBandEnergies.map((_, index) => {
+    const slice = highBandEnergies.slice(Math.max(index - 2, 0), Math.min(index + 3, highBandEnergies.length));
+    return average(slice);
+  });
+  const maxEnergy = Math.max(...smoothedEnergies, 0.0001);
+  const maxHighBandEnergy = Math.max(...smoothedHighBandEnergies, 0.0001);
+  const normalizedEnergies = smoothedEnergies.map((value) => value / maxEnergy);
+  const normalizedHighBandEnergies = smoothedHighBandEnergies.map((value) => value / maxHighBandEnergy);
+  const onsetStrength = transientEnergies.map((value, index) =>
+    Math.max(value - (transientEnergies[index - 1] ?? value), 0),
+  );
+
+  const beatDurationSeconds = options.metadataBpm ? 60 / options.metadataBpm : null;
+  const beatFrameSpan = beatDurationSeconds ? beatDurationSeconds / frameDurationSeconds : null;
+  const trackDurationSeconds = audioBuffer.duration;
+  const maxSearchWindowSeconds = Math.min(
+    Math.max(trackDurationSeconds - (options.introCueSeconds ?? 0.5) - 0.25, 8),
+    48,
+  );
+  const searchStartSeconds = Math.max(trackDurationSeconds - maxSearchWindowSeconds, (options.introCueSeconds ?? 0.5) + 0.5);
+  const searchEndSeconds = Math.max(trackDurationSeconds - 0.5, searchStartSeconds + 0.5);
+  const candidateWindowSeconds = beatDurationSeconds ? Math.max(beatDurationSeconds * 4, 1.5) : 2;
+  const trailingWindowSeconds = beatDurationSeconds ? Math.max(beatDurationSeconds * 2, 0.75) : 1;
+  const candidateFrameCount = Math.max(4, Math.round(candidateWindowSeconds / frameDurationSeconds));
+  const trailingFrameCount = Math.max(2, Math.round(trailingWindowSeconds / frameDurationSeconds));
+  const strideFrameCount = beatDurationSeconds ? Math.max(1, Math.round(beatDurationSeconds / frameDurationSeconds / 2)) : 2;
+
+  let bestCandidate: MixOutTailProfile | null = null;
+
+  for (
+    let frameIndex = Math.floor(searchStartSeconds / frameDurationSeconds);
+    frameIndex <= Math.floor((searchEndSeconds - candidateWindowSeconds) / frameDurationSeconds);
+    frameIndex += strideFrameCount
+  ) {
+    const candidateWindowEnd = frameIndex + candidateFrameCount;
+    const trailingWindowEnd = candidateWindowEnd + trailingFrameCount;
+    const headEnd = frameIndex + trailingFrameCount;
+
+    if (trailingWindowEnd > normalizedEnergies.length || headEnd > normalizedEnergies.length) {
+      break;
+    }
+
+    const headEnergySlice = normalizedEnergies.slice(frameIndex, headEnd);
+    const candidateEnergySlice = normalizedEnergies.slice(frameIndex, candidateWindowEnd);
+    const trailingEnergySlice = normalizedEnergies.slice(candidateWindowEnd, trailingWindowEnd);
+    const candidateHighBandSlice = normalizedHighBandEnergies.slice(frameIndex, candidateWindowEnd);
+    const trailingHighBandSlice = normalizedHighBandEnergies.slice(candidateWindowEnd, trailingWindowEnd);
+    const candidateOnsetSlice = onsetStrength.slice(frameIndex, candidateWindowEnd);
+    const trailingOnsetSlice = onsetStrength.slice(candidateWindowEnd, trailingWindowEnd);
+
+    if (
+      headEnergySlice.length === 0 ||
+      candidateEnergySlice.length === 0 ||
+      trailingEnergySlice.length === 0 ||
+      candidateHighBandSlice.length === 0 ||
+      trailingHighBandSlice.length === 0
+    ) {
+      continue;
+    }
+
+    const energySlope = calculateEnergySlope(candidateEnergySlice);
+    const spectralFlux = calculateSpectralFlux(candidateHighBandSlice);
+    const onsetDepletion = calculateOnsetDepletion(candidateOnsetSlice);
+    const decayConsistency = calculateDecayConsistency(candidateEnergySlice);
+    const headEnergy = average(headEnergySlice);
+    const trailingEnergy = average(trailingEnergySlice);
+    const trailingHighBand = average(trailingHighBandSlice);
+    const trailingOnset = average(trailingOnsetSlice);
+    const residualEnergyRatio = trailingEnergy / Math.max(headEnergy, 0.001);
+    const residualHighBandRatio = trailingHighBand / Math.max(average(candidateHighBandSlice), 0.001);
+    const residualOnsetRatio = trailingOnset / Math.max(average(candidateOnsetSlice), 0.001);
+
+    const residual = clamp(
+      0.45 * clamp(residualEnergyRatio, 0, 1.2) +
+        0.3 * clamp(residualHighBandRatio, 0, 1.2) +
+        0.25 * clamp(residualOnsetRatio, 0, 1.2),
+      0,
+      1.2,
+    );
+
+    const candidateSecond = frameIndex * frameDurationSeconds;
+    const fadeBufferRemaining = trackDurationSeconds - candidateSecond - candidateWindowSeconds;
+    const fadeBufferFit = clamp(fadeBufferRemaining / Math.max(candidateWindowSeconds * 1.5, 1), 0, 1);
+
+    const score =
+      clamp(energySlope, 0, 1.5) * 0.22 +
+      clamp(spectralFlux, 0, 1.5) * 0.22 +
+      onsetDepletion * 0.18 +
+      decayConsistency * 0.18 +
+      clamp(1 - residual, 0, 1) * 0.12 +
+      fadeBufferFit * 0.08;
+
+    const candidate: MixOutTailProfile = {
+      second: candidateSecond,
+      energySlope,
+      spectralFlux,
+      onsetDepletion,
+      decayConsistency,
+      residual,
+      score,
+    };
+
+    if (!bestCandidate || candidate.score > bestCandidate.score) {
+      bestCandidate = candidate;
+    }
+  }
+
+  if (!bestCandidate) {
+    // Fallback: use outroMixWindowSeconds-style estimate
+    const fallbackSeconds = Math.max(trackDurationSeconds - Math.min(maxSearchWindowSeconds, 16), (options.introCueSeconds ?? 0.5) + 0.5);
+    return {
+      suggestedMixOutSeconds: Number(fallbackSeconds.toFixed(2)),
+      confidence: 0.35,
+      analysisWindowSeconds: Number(maxSearchWindowSeconds.toFixed(2)),
+      beatAligned: Boolean(beatDurationSeconds),
+      summary: "未偵測到尾段衰減訊號，已退回時間倒推建議。",
+    };
+  }
+
+  let suggestedMixOutSeconds = clamp(bestCandidate.second, searchStartSeconds, Math.max(searchEndSeconds - 0.25, searchStartSeconds));
+
+  if (beatDurationSeconds && Number.isFinite(beatDurationSeconds) && beatDurationSeconds > 0) {
+    const snappedSeconds =
+      Math.round(suggestedMixOutSeconds / beatDurationSeconds) * beatDurationSeconds;
+    suggestedMixOutSeconds = clamp(Number(snappedSeconds.toFixed(2)), searchStartSeconds, Math.max(searchEndSeconds - 0.25, searchStartSeconds));
+  } else {
+    suggestedMixOutSeconds = Number(suggestedMixOutSeconds.toFixed(2));
+  }
+
+  // Backtrack to find the earliest frame that still qualifies as "stable decay start"
+  if (beatFrameSpan && beatFrameSpan >= 2 && bestCandidate.score > 0) {
+    const backtrackFrameLimit = Math.max(1, Math.round(beatFrameSpan * 4));
+    let backtrackedSeconds = suggestedMixOutSeconds;
+
+    for (let frameIndex = Math.floor(suggestedMixOutSeconds / frameDurationSeconds); frameIndex >= 0; frameIndex -= 1) {
+      if (Math.floor(suggestedMixOutSeconds / frameDurationSeconds) - frameIndex > backtrackFrameLimit) {
+        break;
+      }
+
+      const candidateWindowEnd = frameIndex + candidateFrameCount;
+      const trailingWindowEnd = candidateWindowEnd + trailingFrameCount;
+
+      if (candidateWindowEnd > normalizedEnergies.length || trailingWindowEnd > normalizedEnergies.length) {
+        continue;
+      }
+
+      const candidateEnergySlice = normalizedEnergies.slice(frameIndex, candidateWindowEnd);
+      const candidateHighBandSlice = normalizedHighBandEnergies.slice(frameIndex, candidateWindowEnd);
+      const candidateOnsetSlice = onsetStrength.slice(frameIndex, candidateWindowEnd);
+
+      if (candidateEnergySlice.length === 0) {
+        continue;
+      }
+
+      const energySlope = calculateEnergySlope(candidateEnergySlice);
+      const spectralFlux = calculateSpectralFlux(candidateHighBandSlice);
+      const onsetDepletion = calculateOnsetDepletion(candidateOnsetSlice);
+      const decayConsistency = calculateDecayConsistency(candidateEnergySlice);
+      const stillQualifies =
+        energySlope >= Math.max(bestCandidate.energySlope * 0.55, 0.05) &&
+        spectralFlux >= Math.max(bestCandidate.spectralFlux * 0.55, 0.05) &&
+        onsetDepletion >= Math.max(bestCandidate.onsetDepletion * 0.7, 0.05) &&
+        decayConsistency >= Math.max(bestCandidate.decayConsistency * 0.75, 0.25);
+
+      if (stillQualifies) {
+        backtrackedSeconds = frameIndex * frameDurationSeconds;
+        continue;
+      }
+
+      break;
+    }
+
+    suggestedMixOutSeconds = backtrackedSeconds;
+
+    if (beatDurationSeconds && Number.isFinite(beatDurationSeconds) && beatDurationSeconds > 0) {
+      const snappedSeconds =
+        Math.round(suggestedMixOutSeconds / beatDurationSeconds) * beatDurationSeconds;
+      suggestedMixOutSeconds = clamp(Number(snappedSeconds.toFixed(2)), searchStartSeconds, Math.max(searchEndSeconds - 0.25, searchStartSeconds));
+    }
+  }
+
+  const confidence = clamp(
+    clamp(bestCandidate.energySlope, 0, 1.5) * 0.25 +
+      clamp(bestCandidate.spectralFlux, 0, 1.5) * 0.22 +
+      bestCandidate.onsetDepletion * 0.18 +
+      bestCandidate.decayConsistency * 0.18 +
+      clamp(1 - bestCandidate.residual, 0, 1) * 0.12 +
+      0.05,
+    0.25,
+    0.96,
+  );
+
+  const summary =
+    bestCandidate.onsetDepletion > 0.18 && bestCandidate.energySlope > 0.08
+      ? "已鎖定尾段穩定衰減區段，可作為進場無痕覆蓋點。"
+      : bestCandidate.decayConsistency > 0.45
+        ? "已找到尾段單調下降區段，建議作為 mix-out 起點。"
+        : "未偵測到明顯衰減訊號，已使用較保守的時間倒推建議。";
+
+  return {
+    suggestedMixOutSeconds: Number(suggestedMixOutSeconds.toFixed(2)),
+    confidence: Number(confidence.toFixed(2)),
+    analysisWindowSeconds: Number(maxSearchWindowSeconds.toFixed(2)),
+    beatAligned: Boolean(beatDurationSeconds),
+    summary,
+  };
+}
+
+export async function detectTrackMixOutSuggestionFromUrl(
+  audioUrl: string,
+  options: TrackTransitionDetectionOptions = {},
+) {
+  const AudioContextConstructor = getAudioContextConstructor();
+
+  if (!AudioContextConstructor) {
+    throw new Error("目前環境不支援接歌出點分析");
+  }
+
+  const audioContext = new AudioContextConstructor();
+
+  try {
+    if (audioContext.state === "suspended") {
+      await audioContext.resume().catch(() => {});
+    }
+
+    const response = await fetch(audioUrl);
+
+    if (!response.ok) {
+      throw new Error("音檔載入失敗");
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+
+    return analyzeAudioBufferForMixOutSuggestion(audioBuffer, options);
+  } finally {
+    void audioContext.close().catch(() => {});
+  }
+}

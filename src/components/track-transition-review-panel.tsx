@@ -4,13 +4,18 @@ import { useMemo, useState } from "react";
 import { Loader2, Waves } from "lucide-react";
 
 import { tracks as baseTracks } from "@/data/music-assets";
-import { detectTrackMixInSuggestionFromUrl } from "@/lib/track-transition-detection";
+import {
+  detectTrackMixInSuggestionFromUrl,
+  detectTrackMixOutSuggestionFromUrl,
+} from "@/lib/track-transition-detection";
 import {
   buildTrackTransitionReviewItems,
   clearTrackReviewOverride,
   readTrackMixInSuggestions,
+  readTrackMixOutSuggestions,
   readTrackReviewOverrides,
   saveTrackMixInSuggestion,
+  saveTrackMixOutSuggestion,
   updateTrackReviewOverride,
   updateTrackReviewOverrides,
 } from "@/lib/track-review-store";
@@ -35,18 +40,24 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
   const refreshTick = useTrackReviewSync();
   const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
 
-  const suggestions = useMemo(() => readTrackMixInSuggestions(), [refreshTick]);
+  const mixInSuggestions = useMemo(() => readTrackMixInSuggestions(), [refreshTick]);
+  const mixOutSuggestions = useMemo(() => readTrackMixOutSuggestions(), [refreshTick]);
   const overrides = useMemo(() => readTrackReviewOverrides(), [refreshTick]);
   const reviewItems = useMemo(
-    () => buildTrackTransitionReviewItems(tracks, overrides, suggestions),
-    [overrides, refreshTick, suggestions, tracks],
+    () => buildTrackTransitionReviewItems(tracks, overrides, mixInSuggestions, mixOutSuggestions),
+    [overrides, refreshTick, mixInSuggestions, mixOutSuggestions, tracks],
   );
   const pendingApplyItems = useMemo(
-    () => reviewItems.filter((item) => item.diffSeconds >= 0.01),
+    () => reviewItems.filter((item) => item.diffSeconds >= 0.01 || item.mixOutDiffSeconds >= 0.01),
     [reviewItems],
   );
   const pendingRestoreItems = useMemo(
-    () => reviewItems.filter((item) => overrides[item.track.id]?.mixInPointSeconds != null),
+    () =>
+      reviewItems.filter(
+        (item) =>
+          overrides[item.track.id]?.mixInPointSeconds != null ||
+          overrides[item.track.id]?.mixOutPointSeconds != null,
+      ),
     [overrides, reviewItems],
   );
 
@@ -57,7 +68,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
 
     setIsScanning(true);
     setScanNotice(null);
-    setScanProgressLabel(`分析 ${tracks.length} 首曲目的接歌進點`);
+    setScanProgressLabel(`分析 ${tracks.length} 首曲目的接歌進點與出點`);
 
     try {
       await new Promise<void>((resolve) => {
@@ -76,33 +87,59 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
         setScanProgressLabel(`${index + 1} / ${tracks.length} · ${track.title}`);
 
         try {
-          const result = await detectTrackMixInSuggestionFromUrl(track.media.audioUrl, {
-            metadataBpm: track.bpm,
-            introCueSeconds: baseTrack.transition.introCueSeconds,
-          });
+          const [mixInResult, mixOutResult] = await Promise.all([
+            detectTrackMixInSuggestionFromUrl(track.media.audioUrl, {
+              metadataBpm: track.bpm,
+              introCueSeconds: baseTrack.transition.introCueSeconds,
+            }).catch((error: unknown) => {
+              const message = error instanceof Error ? error.message : "未知錯誤";
+              throw new Error(`Mix In 分析失敗：${message}`);
+            }),
+            detectTrackMixOutSuggestionFromUrl(track.media.audioUrl, {
+              metadataBpm: track.bpm,
+              introCueSeconds: baseTrack.transition.introCueSeconds,
+            }).catch((error: unknown) => {
+              const message = error instanceof Error ? error.message : "未知錯誤";
+              throw new Error(`Mix Out 分析失敗：${message}`);
+            }),
+          ]);
+
+          const analyzedAt = new Date().toISOString();
 
           saveTrackMixInSuggestion({
             trackId: track.id,
             audioUrl: track.media.audioUrl,
-            suggestedMixInSeconds: result.suggestedMixInSeconds,
-            confidence: result.confidence,
-            analysisWindowSeconds: result.analysisWindowSeconds,
-            beatAligned: result.beatAligned,
-            summary: result.summary,
-            analyzedAt: new Date().toISOString(),
+            suggestedMixInSeconds: mixInResult.suggestedMixInSeconds,
+            confidence: mixInResult.confidence,
+            analysisWindowSeconds: mixInResult.analysisWindowSeconds,
+            beatAligned: mixInResult.beatAligned,
+            summary: mixInResult.summary,
+            analyzedAt,
           });
+
+          saveTrackMixOutSuggestion({
+            trackId: track.id,
+            audioUrl: track.media.audioUrl,
+            suggestedMixOutSeconds: mixOutResult.suggestedMixOutSeconds,
+            confidence: mixOutResult.confidence,
+            analysisWindowSeconds: mixOutResult.analysisWindowSeconds,
+            beatAligned: mixOutResult.beatAligned,
+            summary: mixOutResult.summary,
+            analyzedAt,
+          });
+
           successCount += 1;
         } catch (error) {
           failedCount += 1;
           const message = error instanceof Error ? error.message : "未知錯誤";
-          setScanNotice(`「${track.title}」接歌進點分析失敗：${message}`);
+          setScanNotice(`「${track.title}」接歌分析失敗：${message}`);
         }
       }
 
       setScanProgressLabel(`分析完成 · ${successCount} 首成功${failedCount > 0 ? ` / ${failedCount} 首失敗` : ""}`);
 
       if (failedCount === 0) {
-        setScanNotice("全部曲目的建議進點已完成分析");
+        setScanNotice("全部曲目的建議進點與出點已完成分析");
       }
     } finally {
       setIsScanning(false);
@@ -114,16 +151,31 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       return;
     }
 
-    updateTrackReviewOverrides(
-      pendingApplyItems.map((item) => ({
-        trackId: item.track.id,
-        patch: {
-          mixInPointSeconds: item.suggestion.suggestedMixInSeconds,
-        },
-      })),
-    );
+    const patches: Array<{ trackId: string; patch: Parameters<typeof updateTrackReviewOverride>[1] }> = [];
 
-    setScanNotice(`已一鍵採用 ${pendingApplyItems.length} 首曲目的建議 Mix In`);
+    for (const item of pendingApplyItems) {
+      const patch: Parameters<typeof updateTrackReviewOverride>[1] = {};
+
+      if (item.diffSeconds >= 0.01) {
+        patch.mixInPointSeconds = item.suggestion.suggestedMixInSeconds;
+      }
+
+      if (item.mixOutSuggestion && item.mixOutDiffSeconds >= 0.01) {
+        patch.mixOutPointSeconds = item.mixOutSuggestion.suggestedMixOutSeconds;
+      }
+
+      if (Object.keys(patch).length > 0) {
+        patches.push({ trackId: item.track.id, patch });
+      }
+    }
+
+    if (patches.length === 0) {
+      return;
+    }
+
+    updateTrackReviewOverrides(patches);
+
+    setScanNotice(`已一鍵採用 ${patches.length} 首曲目的接歌建議`);
   };
 
   const handleRestoreAllMixIns = () => {
@@ -136,18 +188,19 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
         trackId: item.track.id,
         patch: {
           mixInPointSeconds: undefined,
+          mixOutPointSeconds: undefined,
         },
       })),
     );
 
-    setScanNotice(`已一鍵還原 ${pendingRestoreItems.length} 首曲目的 Base Mix In`);
+    setScanNotice(`已一鍵還原 ${pendingRestoreItems.length} 首曲目的 Base 進點與出點`);
   };
 
   return (
     <ReviewPanelShell
-      eyebrow="接歌進點建議"
-      title="抓最有節拍感的進場位置"
-      description="分析前段 onset 能量，對照 metadata 決定是否採用。"
+      eyebrow="接歌進點與出點建議"
+      title="抓最有節拍感的進場與最佳出場位置"
+      description="分析前段 onset 與尾段能量衰減，對照 metadata 決定是否採用。"
       accentColor="cyan"
       actions={
         <div className="flex flex-wrap justify-end gap-3">
@@ -176,7 +229,7 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
             className="inline-flex items-center gap-3 rounded-full border border-cyan-300/24 bg-cyan-300/10 px-4 py-3 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
           >
             {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Waves className="h-4 w-4" />}
-            {isScanning ? "分析中..." : "掃描接歌進點"}
+            {isScanning ? "分析中..." : "掃描進點與出點"}
           </button>
         </div>
       }
@@ -201,19 +254,23 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
       emptyLabel="掃描後顯示建議"
     >
       {reviewItems.length > 0 && reviewItems.map((item) => {
-            const confidencePercent = Math.round(item.suggestion.confidence * 100);
+            const mixInConfidencePercent = Math.round(item.suggestion.confidence * 100);
+            const mixOutConfidencePercent = item.mixOutSuggestion
+              ? Math.round(item.mixOutSuggestion.confidence * 100)
+              : null;
+            const maxDiffSeconds = Math.max(item.diffSeconds, item.mixOutDiffSeconds);
 
             return (
               <ReviewItemShell key={`${item.track.id}-${item.suggestion.analyzedAt}`} accentColor="cyan">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
                     <p className="text-[11px] uppercase tracking-[0.24em] text-white/42">
-                      {item.track.bpm} BPM · Base {formatSeconds(item.baseMixInPointSeconds)}
+                      {item.track.bpm} BPM · Base In {formatSeconds(item.baseMixInPointSeconds)} · Base Out {formatSeconds(item.baseMixOutPointSeconds)}
                     </p>
                     <h3 className="mt-2 text-lg font-medium text-white">{item.track.title}</h3>
                   </div>
-                  <Chip variant={item.diffSeconds <= 1 ? "emerald" : item.diffSeconds <= 3 ? "amber" : "rose"}>
-                    差 {formatSeconds(item.diffSeconds)}
+                  <Chip variant={maxDiffSeconds <= 1 ? "emerald" : maxDiffSeconds <= 3 ? "amber" : "rose"}>
+                    差 {formatSeconds(maxDiffSeconds)}
                   </Chip>
                 </div>
 
@@ -221,13 +278,13 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                   <StatCard label="目前 Mix In">
                     <p className="text-2xl font-semibold text-white">{formatSeconds(item.effectiveMixInPointSeconds)}</p>
                   </StatCard>
-                  <StatCard label="系統建議">
+                  <StatCard label="系統建議 In">
                     <p className="text-2xl font-semibold text-white">{formatSeconds(item.suggestion.suggestedMixInSeconds)}</p>
                   </StatCard>
-                  <StatCard label="可信度">
-                    <p className="text-2xl font-semibold text-white">{confidencePercent}%</p>
+                  <StatCard label="進點可信度">
+                    <p className="text-2xl font-semibold text-white">{mixInConfidencePercent}%</p>
                   </StatCard>
-                  <StatCard label="特性">
+                  <StatCard label="進點特性">
                     <p className="text-sm font-medium text-white">
                       {item.suggestion.beatAligned ? "已對齊節拍格" : "未對齊節拍格"}
                     </p>
@@ -235,8 +292,44 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                   </StatCard>
                 </StatGrid>
 
-                <div className="mt-4 rounded-[18px] border border-white/8 bg-black/24 p-3 text-sm leading-6 text-white/68">
+                <div className="mt-3 rounded-[18px] border border-white/8 bg-black/24 p-3 text-sm leading-6 text-white/68">
                   {item.suggestion.summary}
+                </div>
+
+                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+                  <StatGrid>
+                    <StatCard label="目前 Mix Out">
+                      <p className="text-2xl font-semibold text-white">{formatSeconds(item.effectiveMixOutPointSeconds)}</p>
+                    </StatCard>
+                    <StatCard label="系統建議 Out">
+                      <p className="text-2xl font-semibold text-white">
+                        {item.mixOutSuggestion ? formatSeconds(item.mixOutSuggestion.suggestedMixOutSeconds) : "—"}
+                      </p>
+                    </StatCard>
+                    <StatCard label="出點可信度">
+                      <p className="text-2xl font-semibold text-white">
+                        {mixOutConfidencePercent != null ? `${mixOutConfidencePercent}%` : "—"}
+                      </p>
+                    </StatCard>
+                    <StatCard label="出點特性">
+                      <p className="text-sm font-medium text-white">
+                        {item.mixOutSuggestion
+                          ? item.mixOutSuggestion.beatAligned
+                            ? "已對齊節拍格"
+                            : "未對齊節拍格"
+                          : "尚未分析"}
+                      </p>
+                      <p className="mt-1 text-xs text-white/48">
+                        {item.mixOutSuggestion
+                          ? `分析窗 ${formatSeconds(item.mixOutSuggestion.analysisWindowSeconds)}`
+                          : "—"}
+                      </p>
+                    </StatCard>
+                  </StatGrid>
+
+                  <div className="rounded-[18px] border border-white/8 bg-black/24 p-3 text-sm leading-6 text-white/68">
+                    {item.mixOutSuggestion?.summary ?? "尚未產生 Mix Out 建議，先按「掃描進點與出點」取得尾段偵測。"}
+                  </div>
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
@@ -245,17 +338,21 @@ export function TrackTransitionReviewPanel({ tracks }: TrackTransitionReviewPane
                     onClick={() =>
                       updateTrackReviewOverride(item.track.id, {
                         mixInPointSeconds: item.suggestion.suggestedMixInSeconds,
+                        ...(item.mixOutSuggestion
+                          ? { mixOutPointSeconds: item.mixOutSuggestion.suggestedMixOutSeconds }
+                          : {}),
                       })
                     }
                     className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
                   >
-                    採用 {formatSeconds(item.suggestion.suggestedMixInSeconds)}
+                    採用建議
                   </button>
                   <button
                     type="button"
                     onClick={() =>
                       updateTrackReviewOverride(item.track.id, {
                         mixInPointSeconds: undefined,
+                        mixOutPointSeconds: undefined,
                       })
                     }
                     className="rounded-full border border-white/10 bg-white/8 px-3 py-2 text-xs text-white/74 transition hover:bg-white/12"
