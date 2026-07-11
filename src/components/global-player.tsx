@@ -100,6 +100,9 @@ export function GlobalPlayer({
   /** Manual continuous BPM analysis toggle (admin only, off by default) */
   const [continuousAnalysisEnabled, setContinuousAnalysisEnabled] = useState(false);
   const continuousAnalysisRef = useRef(false);
+  /** Non-reactive snapshot for use inside async loops (avoids effect restart on every tick) */
+  const playheadRef = useRef(playback.currentTime);
+  const durationRef = useRef(playback.duration);
   const [manualOverrideCount, setManualOverrideCount] = useState(0);
   const lastResultRef = useRef<BpmAnalysis | null>(null);
   const prevTrackRef = useRef<Track | null>(null);
@@ -309,6 +312,12 @@ export function GlobalPlayer({
     };
   }, [currentTrack, themeProgramMap]);
 
+  // Keep playhead/duration refs in sync with playback state (no re-renders for the async loop)
+  useEffect(() => {
+    playheadRef.current = playback.currentTime;
+    durationRef.current = playback.duration;
+  }, [playback.currentTime, playback.duration]);
+
   // ── Continuous BPM Analysis (admin, manual toggle) ──
   useEffect(() => {
     if (!continuousAnalysisEnabled || !currentTrack) return;
@@ -333,7 +342,7 @@ export function GlobalPlayer({
       };
 
       while (continuousAnalysisRef.current) {
-        const playheadSeconds = playback.currentTime;
+        const playheadSeconds = playheadRef.current;
         const segments = buildSegments(playheadSeconds);
 
         setAnalysisProgress({
@@ -374,7 +383,7 @@ export function GlobalPlayer({
     return () => {
       continuousAnalysisRef.current = false;
     };
-  }, [continuousAnalysisEnabled, currentTrack, playback.currentTime, playback.duration, themeProgramMap]);
+  }, [continuousAnalysisEnabled, currentTrack, themeProgramMap]);
 
   const detectedBpmMeta = useMemo(() => {
     if (!currentTrack || detectedBpmState.status !== "ready") {
