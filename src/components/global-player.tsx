@@ -688,22 +688,36 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
-                  {showAdminDetails && analysisProgress && (
+                  {showAdminDetails && (analysisProgress || detectedBpmState.status === "loading") && (
                     <div className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-violet-100/88">
-                      <span className="text-[11px] tracking-wide">
-                        分析中 {analysisProgress.currentSegment}/{analysisProgress.totalSegments}
-                      </span>
-                      {analysisProgress.results.map((r, i) => (
-                        <span
-                          key={i}
-                          className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
-                        >
-                          {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>
+                      {analysisProgress ? (
+                        <>
+                          <span className="text-[11px] tracking-wide">
+                            分析中 {Math.min(analysisProgress.currentSegment + 1, analysisProgress.totalSegments)}/{analysisProgress.totalSegments}
+                          </span>
+                          {analysisProgress.results.map((r, i) => (
+                            <span
+                              key={i}
+                              className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
+                            >
+                              {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>
+                            </span>
+                          ))}
+                          {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
+                            <span className="relative flex h-2 w-2">
+                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+                              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+                            </span>
+                          ) : (
+                            <span className="text-[11px] text-violet-200/54">完成</span>
+                          )}
+                        </>
+                      ) : (
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
                         </span>
-                      ))}
-                      {analysisProgress.currentBpm != null && analysisProgress.currentSegment < analysisProgress.totalSegments ? (
-                        <span className="text-[11px] text-violet-200/54">→ {analysisProgress.currentBpm} …</span>
-                      ) : null}
+                      )}
                     </div>
                   )}
                   {detectedBpmMeta ? (
