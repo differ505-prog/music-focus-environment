@@ -18,6 +18,7 @@ import type { BpmSegmentResult } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
 import { getUserBpmMapping } from "@/lib/bpm-user-mappings";
+import { getUpcomingFadeOutAnchor } from "@/lib/transition-planning";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -156,13 +157,6 @@ export function GlobalPlayer({
   } = useArtworkProjection({
     enabled: Boolean(currentTrack && artworkSrc),
   });
-  const currentTrackPlan = useMemo(() => {
-    if (!sessionPlan || !currentTrack) {
-      return null;
-    }
-
-    return sessionPlan.trackPlans.find((plan) => plan.trackId === currentTrack.id) ?? null;
-  }, [currentTrack, sessionPlan]);
   const nextTrackPlan = useMemo(() => {
     if (!sessionPlan || !nextTrack) {
       return null;
@@ -419,6 +413,18 @@ export function GlobalPlayer({
       resolvedByReference: detectedBpmState.result.resolvedByReference,
     };
   }, [currentTrack, detectedBpmState, playbackRate]);
+  const upcomingFadeOutAnchor = useMemo(() => {
+    if (!currentTrack || !nextTrack) {
+      return null;
+    }
+
+    return getUpcomingFadeOutAnchor(
+      liveSeekSeconds ?? playback.currentTime,
+      currentTrack,
+      nextTrack,
+      playback.duration > 0 ? playback.duration : currentTrack.durationSeconds,
+    );
+  }, [currentTrack, nextTrack, playback.currentTime, playback.duration, liveSeekSeconds]);
   const transitionMeta = useMemo(() => {
     if (!currentTrack || !nextTrack) {
       return null;
@@ -433,7 +439,7 @@ export function GlobalPlayer({
     };
   }, [currentTrack, nextTrack, playback]);
   const progressMarkers = useMemo(() => {
-    if (!showAdminDetails || !transitionMeta || playback.crossfadeOutStartSeconds == null) {
+    if (playback.crossfadeOutStartSeconds == null) {
       return [];
     }
 
@@ -442,16 +448,12 @@ export function GlobalPlayer({
         seconds: playback.crossfadeOutStartSeconds,
         label: "Mix Out",
         tone: "fuchsia" as const,
+        secondsUntil: upcomingFadeOutAnchor?.secondsUntilFadeOut,
       },
     ];
-  }, [showAdminDetails, transitionMeta, playback.crossfadeOutStartSeconds]);
+  }, [playback.crossfadeOutStartSeconds, upcomingFadeOutAnchor?.secondsUntilFadeOut]);
   const progressRanges = useMemo(() => {
-    if (
-      !showAdminDetails ||
-      !transitionMeta ||
-      playback.crossfadeOutStartSeconds == null ||
-      playback.duration <= 0
-    ) {
+    if (!transitionMeta || playback.crossfadeOutStartSeconds == null || playback.duration <= 0) {
       return [];
     }
 
@@ -459,67 +461,11 @@ export function GlobalPlayer({
       {
         startSeconds: playback.crossfadeOutStartSeconds,
         endSeconds: playback.duration,
-        label: playback.isCrossfading ? "進行中 Crossfade" : "預定 Crossfade",
+        label: playback.isCrossfading ? "Crossfade 中" : "即將 Crossfade",
         tone: "fuchsia" as const,
       },
     ];
-  }, [showAdminDetails, transitionMeta, playback.crossfadeOutStartSeconds, playback.duration, playback.isCrossfading]);
-  const nextTrackProgressMarkers = useMemo(() => {
-    if (
-      !showAdminDetails ||
-      !transitionMeta ||
-      nextTrack == null ||
-      playback.crossfadeInStartSeconds == null ||
-      playback.crossfadeTargetMixInSeconds == null
-    ) {
-      return [];
-    }
-
-    return [
-      {
-        seconds: playback.crossfadeInStartSeconds,
-        label: "Next In",
-        tone: "cyan" as const,
-      },
-      {
-        seconds: playback.crossfadeTargetMixInSeconds,
-        label: "Target Mix In",
-        tone: "amber" as const,
-      },
-    ];
-  }, [
-    showAdminDetails,
-    transitionMeta,
-    nextTrack,
-    playback.crossfadeInStartSeconds,
-    playback.crossfadeTargetMixInSeconds,
-  ]);
-  const nextTrackProgressRanges = useMemo(() => {
-    if (
-      !showAdminDetails ||
-      !transitionMeta ||
-      nextTrack == null ||
-      playback.crossfadeInStartSeconds == null ||
-      playback.crossfadeTargetMixInSeconds == null
-    ) {
-      return [];
-    }
-
-    return [
-      {
-        startSeconds: playback.crossfadeInStartSeconds,
-        endSeconds: playback.crossfadeTargetMixInSeconds,
-        label: "Next Crossfade Zone",
-        tone: "cyan" as const,
-      },
-    ];
-  }, [
-    showAdminDetails,
-    transitionMeta,
-    nextTrack,
-    playback.crossfadeInStartSeconds,
-    playback.crossfadeTargetMixInSeconds,
-  ]);
+  }, [transitionMeta, playback.crossfadeOutStartSeconds, playback.duration, playback.isCrossfading]);
   const transitionDeltaToneClass = useMemo(() => {
     const bpmDelta = playback.transitionBpmDelta;
 
@@ -548,13 +494,9 @@ export function GlobalPlayer({
     : "";
   const artworkFooterLabel = showAdminDetails && sessionPlan
     ? `${sessionPlan.currentPhaseLabel} · ${sessionPlan.laneLabel}`
-    : nextTrack
-      ? `下一首 ${nextTrack.title}`
-      : isProjectionMode
-        ? "封面"
-        : "雙擊全螢幕";
-  const playerStateLabel = playback.isCrossfading ? "連續流動" : playback.isPlaying ? "穩定播放" : "待命";
-  const engineLabel = playback.prefersBackgroundPlayback ? "背景模式" : "精準轉場";
+    : isProjectionMode
+      ? "封面"
+      : "雙擊全螢幕";
 
   const artworkStage = currentTrack && artworkSrc ? (
     <PlayerArtworkStage
@@ -623,10 +565,7 @@ export function GlobalPlayer({
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                   <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-2.5 py-1 text-fuchsia-50/88">
-                    {playerStateLabel}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-white/8 px-2.5 py-1 text-white/70">
-                    {engineLabel}
+                    {playback.isCrossfading ? "Crossfade 中" : `${playlist.length} 首待命`}
                   </span>
                 </div>
               </div>
@@ -741,23 +680,13 @@ export function GlobalPlayer({
                       {currentTrack?.title ?? "尚未播放"}
                     </h3>
                     <p className="mt-1 truncate text-sm text-white/62">
-                      {showAdminDetails && sessionPlan
-                        ? sessionPlan.nextTransitionSummary
-                        : nextTrack
-                          ? `下一首 ${nextTrack.title}`
-                          : "加入曲目開始播放"}
+                      {nextTrack ? `下一首 ${nextTrack.title}` : "加入曲目開始播放"}
                     </p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs">
                   <span className="rounded-full border border-fuchsia-300/20 bg-fuchsia-300/10 px-3 py-1 text-fuchsia-50">
-                    {playerStateLabel}
-                  </span>
-                  <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/72">
-                    {playlist.length} 首{playback.repeatEnabled ? " · 循環" : ""}
-                  </span>
-                  <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                    {engineLabel}
+                    {playback.isCrossfading ? "Crossfade 中" : "穩定播放"}
                   </span>
                 </div>
               </div>
@@ -928,24 +857,17 @@ export function GlobalPlayer({
           </div>
 
           {showAdminDetails && sessionPlan ? (
-            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
               <div className="rounded-[22px] border border-fuchsia-300/16 bg-fuchsia-300/8 p-4">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-fuchsia-100/58">現在階段</p>
                 <p className="mt-3 font-serif text-xl text-white">{sessionPlan.currentPhaseLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-white/68">
-                  {currentTrackPlan?.phaseDescription ?? sessionPlan.currentPhaseDescription}
-                </p>
               </div>
               <div className="rounded-[22px] border border-cyan-300/16 bg-cyan-300/8 p-4">
                 <p className="text-[11px] uppercase tracking-[0.26em] text-cyan-100/58">接歌策略</p>
                 <p className="mt-3 font-serif text-xl text-white">{sessionPlan.laneLabel}</p>
-                <p className="mt-2 text-sm leading-6 text-white/68">{sessionPlan.strategySummary}</p>
                 {playback.transitionStrategyLabel ? (
                   <p className="mt-3 text-sm leading-6 text-cyan-100/82">
                     {playback.transitionStrategyLabel}
-                    {transitionMeta
-                      ? ` · Mix Out ${transitionMeta.outStartLabel ?? "--:--"} / Next In ${transitionMeta.inStartLabel ?? "--:--"} / Target ${transitionMeta.targetMixInLabel ?? "--:--"}`
-                      : ""}
                   </p>
                 ) : null}
               </div>
@@ -953,11 +875,6 @@ export function GlobalPlayer({
                 <p className="text-[11px] uppercase tracking-[0.26em] text-white/42">下一步</p>
                 <p className="mt-3 font-serif text-xl text-white">
                   {nextTrackPlan?.phaseLabel ?? (nextTrack ? "下一首待命" : "本輪即將結束")}
-                </p>
-                <p className="mt-2 text-sm leading-6 text-white/68">
-                  {nextTrack
-                    ? `${nextTrack.title} · ${nextTrackPlan?.transitionSummary ?? `${nextTrack.bpm} BPM 待命`}`
-                    : sessionPlan.nextTransitionSummary}
                 </p>
               </div>
             </div>
@@ -971,10 +888,6 @@ export function GlobalPlayer({
             formatTime={formatTime}
             markers={progressMarkers}
             ranges={progressRanges}
-            secondaryDuration={showAdminDetails && nextTrack ? nextTrack.durationSeconds : undefined}
-            secondaryLabel={nextTrack ? `下一首進點 · ${nextTrack.title}` : undefined}
-            secondaryMarkers={nextTrackProgressMarkers}
-            secondaryRanges={nextTrackProgressRanges}
           />
 
           <PlayerPlaylistStrip

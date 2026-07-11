@@ -129,3 +129,45 @@ export function buildCrossfadePlan(
     bpmDelta,
   };
 }
+
+export type UpcomingFadeOutAnchor = {
+  /** Current track absolute time (in seconds) when fade-out will begin. */
+  absoluteFadeOutSeconds: number;
+  /** Seconds remaining from `currentTime` until fade-out begins. */
+  secondsUntilFadeOut: number;
+  /** Estimated fade duration in seconds (from the crossfade plan). */
+  fadeDurationSeconds: number;
+  /** Whether the fade-out is in the future (false when already started/past). */
+  isPending: boolean;
+};
+
+export function getUpcomingFadeOutAnchor(
+  currentTime: number,
+  currentTrack: Track,
+  nextTrack: Track | null,
+  currentDurationSeconds: number,
+): UpcomingFadeOutAnchor | null {
+  if (!nextTrack) {
+    return null;
+  }
+
+  const safeCurrentDuration = Number.isFinite(currentDurationSeconds)
+    ? currentDurationSeconds
+    : currentTrack.durationSeconds;
+
+  const plan = buildCrossfadePlan(currentTrack, nextTrack, safeCurrentDuration);
+  const absoluteFadeOutSeconds = clamp(
+    plan.outgoingStartSeconds,
+    0,
+    Math.max(safeCurrentDuration, 0),
+  );
+  const secondsUntilFadeOut = Math.max(absoluteFadeOutSeconds - currentTime, 0);
+  const isPending = absoluteFadeOutSeconds > currentTime;
+
+  return {
+    absoluteFadeOutSeconds,
+    secondsUntilFadeOut,
+    fadeDurationSeconds: plan.fadeDurationSeconds,
+    isPending,
+  };
+}
