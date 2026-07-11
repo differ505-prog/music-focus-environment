@@ -41,14 +41,26 @@
 
 11. 修改紀律與退場機制： 進行局部 UI 優化時，嚴禁擅自修改現有的 State、API 呼叫或核心商業邏輯。執行大範圍重構前，必須提醒我確認 Git Commit 狀態。
 
-12. 視覺驗收紀律 (UAT Readiness)： 在完成任何程式碼生成或修改任務、準備結束對話前，必須確認本地開發伺服器已啟動，並**自動偵測當前實際 port**（禁止寫死 3000）。自動偵測 SOP：
-    - **啟動驗證**：先確認 dev server 已啟動（用 `lsof -ti :3000-3010 -P 2>/dev/null` 或讀 dev server stdout 中 `Local:` 後的 URL）
-    - **Fallback 鏈**：若所有 3000-3010 port 都無 process，提示「請先啟動 dev server」並給 `npm run dev` 命令
+12. 視覺驗收紀律 (UAT Readiness)： 在完成任何程式碼生成或修改任務、準備結束對話前，必須確認本地開發伺服器已啟動，並**自動偵測當前實際 port**（禁止寫死 3000）。
+    - **強制使用的工具**：`bash scripts/detect-dev-port.sh --first`（已內建，提供表格 / JSON / 單一 URL 三種模式）
+    - **npm script 配套**：
+      - `npm run dev:fixed` — 強制 port 3000（**推薦日常使用，徹底終結 port 漂移**）
+      - `npm run dev:url` — 套用偵測腳本，輸出當前 UAT 網址
+      - `npm run dev:status` — 套用偵測腳本，表格化查看所有 listen 的 port
+    - **port 漂移規範**：
+      - 若 `npm run dev:url` 連續 3 次 commit 回傳不同 port → 必須在 commit message 警告「port 漂移，建議改用 `npm run dev:fixed`」
+      - 若使用者已用 `dev:fixed`，仍報「port 漂移」→ 環境變數需檢查 PORT 是否被覆寫
     - **UAT 輸出格式**（每個 commit 結尾必帶）：
       ```
-      UAT：<自動偵測網址>
+      UAT：http://localhost:3000
       ```
-    - **port 衝突規範**：若連續 3 個 commit 都需重新指定 port，視為 port 漂移，必須在 commit message 警告「port 漂移，請固定 PORT 環境變數」
+      （網址取自 `npm run dev:url` 實際輸出）
+
+    - **Fallback 鏈**（若偵測腳本失敗）：
+      1. 確認 dev server 已啟動
+      2. 看 dev server stdout 中 `Local:` 後的 URL
+      3. 確認 `lsof -ti :3000` 是否有 process
+      4. 若全部失敗，提示請執行 `npm run dev:fixed`
 
 ---
 
