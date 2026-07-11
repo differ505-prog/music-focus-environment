@@ -14,6 +14,7 @@ import {
   readTrackReviewOverrides,
   updateTrackReviewOverride,
 } from "@/lib/track-review-store";
+import { setUserBpmMapping, removeUserBpmMapping } from "@/lib/bpm-user-mappings";
 import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
 import { extractAllowedBpms } from "@/lib/track-review-store";
 
@@ -181,6 +182,12 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
       bpm: detectedBpm,
       ignoreBpmMismatch: false,
     });
+    setUserBpmMapping({
+      trackId: currentTrack.id,
+      audioUrl: currentTrack.media.audioUrl,
+      confirmedBpm: detectedBpm,
+      matchesDetectedBpm: true,
+    });
   }, [currentTrack, detectedBpm]);
 
   const handleApplyTap = useCallback(() => {
@@ -192,8 +199,14 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
       bpm: tapBpm,
       ignoreBpmMismatch: false,
     });
+    setUserBpmMapping({
+      trackId: currentTrack.id,
+      audioUrl: currentTrack.media.audioUrl,
+      confirmedBpm: tapBpm,
+      matchesDetectedBpm: detectedBpm != null && Math.abs(tapBpm - detectedBpm) < 3,
+    });
     resetTaps();
-  }, [currentTrack, resetTaps, tapBpm]);
+  }, [currentTrack, resetTaps, tapBpm, detectedBpm]);
 
   const handleApplyCustom = useCallback(() => {
     if (!currentTrack) {
@@ -207,13 +220,20 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
       return;
     }
 
+    const confirmedBpm = Math.round(parsed * 10) / 10;
     updateTrackReviewOverride(currentTrack.id, {
-      bpm: Math.round(parsed * 10) / 10,
+      bpm: confirmedBpm,
       ignoreBpmMismatch: false,
+    });
+    setUserBpmMapping({
+      trackId: currentTrack.id,
+      audioUrl: currentTrack.media.audioUrl,
+      confirmedBpm,
+      matchesDetectedBpm: detectedBpm != null && Math.abs(confirmedBpm - detectedBpm) < 3,
     });
     setCustomDraft("");
     setCustomError(null);
-  }, [currentTrack, customDraft]);
+  }, [currentTrack, customDraft, detectedBpm]);
 
   const handleIgnore = useCallback(() => {
     if (!currentTrack) {
@@ -234,6 +254,7 @@ export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideC
       bpm: undefined,
       ignoreBpmMismatch: false,
     });
+    removeUserBpmMapping(currentTrack.id, currentTrack.media.audioUrl);
   }, [currentTrack]);
 
   const handleMoveLane = useCallback(

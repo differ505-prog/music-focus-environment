@@ -17,6 +17,7 @@ import type { BpmAnalysis } from "@/lib/bpm-analyzer";
 import { detectTrackBpmFromUrl, detectTrackBpmMultiSegment } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
+import { getUserBpmMapping } from "@/lib/bpm-user-mappings";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -159,6 +160,29 @@ export function GlobalPlayer({
       }
 
       const cacheKey = `${track.id}:${track.media.audioUrl}`;
+
+      // ── Feedback Loop ──
+      // User-confirmed BPM has highest priority: skip analysis and use it directly.
+      const userMapping = getUserBpmMapping(track.id, track.media.audioUrl);
+      if (userMapping) {
+        // Cast: user-confirmed BPM bypasses system analysis, segments/candidates are not applicable.
+        const confirmedResult = {
+          estimatedBpm: userMapping.confirmedBpm,
+          rawDetectedBpm: userMapping.confirmedBpm,
+          normalizedBpm: userMapping.confirmedBpm,
+          confidence: 1,
+          laneSuggestion: 0,
+          peakCount: 0,
+          candidates: [],
+          sampleDurationSeconds: 0,
+          resolvedByReference: true,
+        } as BpmAnalysis;
+        detectedBpmCache.set(cacheKey, confirmedResult);
+        lastResultRef.current = confirmedResult;
+        setDetectedBpmState({ status: "ready", result: confirmedResult });
+        return;
+      }
+
       const cached = detectedBpmCache.get(cacheKey);
 
       if (cached) {
