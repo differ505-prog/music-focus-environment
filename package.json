@@ -4,6 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:fixed": "next dev --port 3000",
+    "dev:url": "bash scripts/detect-dev-port.sh --first",
+    "dev:status": "bash scripts/detect-dev-port.sh",
     "build": "next build",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
