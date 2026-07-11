@@ -773,17 +773,22 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
-                  {showAdminDetails && continuousAnalysisEnabled && analysisProgress && analysisProgress.results.length > 0 && (
+                  {showAdminDetails && continuousAnalysisEnabled && analysisProgress && (analysisProgress.currentBpm != null || analysisProgress.results.length > 0) && (
                     <div
                       className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-[11px] text-violet-100/88"
-                      data-debug-continuous-bpm={`latest=${Math.round((analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm) * playbackRate)}|confidence=${Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}%`}
+                      data-debug-continuous-bpm={`latest=${analysisProgress.currentBpm != null ? Math.round(analysisProgress.currentBpm * playbackRate) : Math.round(analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm * playbackRate)}|confidence=${analysisProgress.currentBpm != null ? Math.round((analysisProgress.confidence ?? 0) * 100) : Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}%`}
                     >
                       <span className="font-serif text-base font-semibold text-violet-50">
-                        {Math.round((analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm) * playbackRate)}
+                        {analysisProgress.currentBpm != null
+                          ? Math.round(analysisProgress.currentBpm * playbackRate)
+                          : Math.round(analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm * playbackRate)}
                       </span>
                       <span className="text-violet-200/72">BPM</span>
                       <span className="text-violet-300/54">
-                        {Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}%
+                        {analysisProgress.currentBpm != null
+                          ? Math.round((analysisProgress.confidence ?? 0) * 100)
+                          : Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}
+                        %
                       </span>
                       {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
                         <span className="relative flex h-2 w-2">
