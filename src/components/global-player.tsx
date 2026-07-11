@@ -318,10 +318,27 @@ export function GlobalPlayer({
         currentTrack.themeProgramId ? (themeProgramMap.get(currentTrack.themeProgramId) ?? null) : null,
       );
 
+      const SEGMENT_WINDOW = 30; // seconds before/after playhead
+      const SEGMENT_DURATION = 32; // seconds per analysis slice (from bpm-analyzer.ts)
+      const AUDIO_BUFFER_SECONDS = 120; // how many seconds analyzeAudioBufferForBpm reads from startSeconds
+
+      const buildSegments = (playheadSeconds: number): { startSeconds: number }[] => {
+        const half = SEGMENT_WINDOW / 2;
+        const raw = [
+          playheadSeconds - half,
+          playheadSeconds,
+          playheadSeconds + half,
+        ];
+        return raw.map((s) => ({ startSeconds: Math.max(0, s) }));
+      };
+
       while (continuousAnalysisRef.current) {
+        const playheadSeconds = playback.currentTime;
+        const segments = buildSegments(playheadSeconds);
+
         setAnalysisProgress({
           currentSegment: 0,
-          totalSegments: 3,
+          totalSegments: segments.length,
           currentBpm: null,
           confidence: null,
           results: [],
@@ -330,7 +347,7 @@ export function GlobalPlayer({
         await detectTrackBpmMultiSegment(currentTrack.media.audioUrl, bpmOptions, {
           metadataBpm: currentTrack.bpm,
           allowedBpms,
-        }, undefined, (segmentIndex, totalSegments, segResult) => {
+        }, segments, (segmentIndex, totalSegments, segResult) => {
           if (!continuousAnalysisRef.current) return;
           setAnalysisProgress((prev) => {
             if (!prev) return null;
@@ -357,7 +374,7 @@ export function GlobalPlayer({
     return () => {
       continuousAnalysisRef.current = false;
     };
-  }, [continuousAnalysisEnabled, currentTrack, themeProgramMap]);
+  }, [continuousAnalysisEnabled, currentTrack, playback.currentTime, playback.duration, themeProgramMap]);
 
   const detectedBpmMeta = useMemo(() => {
     if (!currentTrack || detectedBpmState.status !== "ready") {
@@ -753,7 +770,8 @@ export function GlobalPlayer({
                               key={i}
                               className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
                             >
-                              {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>
+                              {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>{" "}
+                              <span className="text-violet-300/48">@{Math.round(r.startSeconds)}s</span>
                             </span>
                           ))}
                           {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
