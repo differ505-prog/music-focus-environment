@@ -46,6 +46,26 @@
   --radius-md: 20px;
   --radius-lg: 28px;
   --radius-xl: 36px;
+
+  /* === Motion Tokens (CONSTITUTION Rule #4: 高級微互動) === */
+  /* Apple-style ease-out cubic-bezier */
+  --ease-apple-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-apple-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Duration scale (Apple HIG reference) */
+  --duration-micro: 120ms;   /* icon swap / 文字閃爍 */
+  --duration-fast: 200ms;    /* hover, active, button feedback */
+  --duration-base: 320ms;    /* panel slide, card expand */
+  --duration-slow: 480ms;    /* page transition, modal enter */
+
+  /* Hover transform presets（極小幅度，避免喧賓奪主）*/
+  --hover-lift: translateY(-1px);
+  --hover-scale: scale(1.01);
+  --hover-tap: scale(0.985);
+
+  /* Reduce-motion fallback (accessibility) */
+  --duration-fast-sr: 1ms;   /* user-set "prefers-reduced-motion" */
 }
 
 [data-theme="light"] {
@@ -207,4 +227,15 @@ img {
   background:
     radial-gradient(circle at center, transparent 38%, rgba(2, 4, 10, 0.18) 62%, rgba(2, 4, 10, 0.62) 100%),
     linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent 18%, transparent 82%, rgba(0, 0, 0, 0.12));
+}
+
+/* Accessibility: respect user preference */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: var(--duration-fast-sr) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--duration-fast-sr) !important;
+  }
 }

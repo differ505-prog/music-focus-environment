@@ -8,7 +8,12 @@
 
 3. 色彩紀律鎖定 (Color Memory Lock)： 絕對禁止每次生成不同色碼。必須將確認的品牌色定義為 Tailwind 配置 (如 bg-brand) 或 CSS 變數，並嚴格覆用。僅在 CTA 按鈕或關鍵狀態使用品牌色，嚴禁大面積塗抹。
 
-4. 高級微互動： 所有 hover, active 狀態必須有平滑過渡動畫 (如輕微上浮、微縮放)，流暢且不喧賓奪主。
+4. 高級微互動： 所有 hover, active 狀態必須有平滑過渡動畫。**強制使用 `globals.css` 已定義的 motion tokens（不允許任意寫 `duration-*` / `ease-*` Tailwind class）**：
+    - 時長（duration）：只許用 `var(--duration-micro)` / `--duration-fast` / `--duration-base` / `--duration-slow`
+    - 緩動（easing）：只許用 `var(--ease-apple-out)` / `--ease-apple-in-out` / `--ease-spring-soft`
+    - 位移幅度（transform）：hover 上浮用 `var(--hover-lift)`，點擊用 `var(--hover-tap)`，禁止超過 `translateY(-2px)` 或 `scale(1.02)`
+    - **例外快速通道**：一次性 toast / loading spinner 可不用 token，但 duration 必須 ≥ 200ms 避免突兀
+    - **可達性**：自動套用 `prefers-reduced-motion: reduce`（已在 globals.css 全域覆蓋）
 
 5. 智慧佔位圖 (Smart Placeholders)： 在尚未提供真實圖片的開發初期，所有圖片缺口必須生成「智慧佔位圖」。利用 https://placehold.co/寬度x高度/背景色/文字色?text=圖片編號\n[AI生圖提示詞] 的格式，將預計要使用的情境描述（Prompt）直接顯示在佔位圖上，方便後續直接複製去給 Midjourney 算圖。
 
@@ -16,7 +21,17 @@
 
 6. DRY 原則與模組化 (Vercel 架構)： 生成任何新區塊前，必須先掃描 Codebase 尋找可複用的元件。嚴禁創造功能重疊的冗餘區塊。
 
-7. 效能、語意與 SEO (Google 標準)： 嚴格使用語意化 HTML 標籤。頁面必須具備嚴謹的標題階層 (H1 只能有一個，依序使用 H2, H3)，且所有圖片強制加上有意義的 alt 屬性以利爬蟲抓取。
+7. 效能、語意與 SEO (Google 標準)： 嚴格使用語意化 HTML 標籤。頁面必須具備嚴謹的標題階層 (H1 只能有一個，依序使用 H2, H3)，且所有圖片強制加上有意義的 alt 屬性以利爬蟲抓取。**Web Vitals 預算（強制執行）**：
+    - **FCP (First Contentful Paint)**: ≤ 1.2s（dev: ≤ 1.5s）
+    - **LCP (Largest Contentful Paint)**: ≤ 2.5s（dev: ≤ 3.0s）
+    - **TBT (Total Blocking Time)**: ≤ 200ms（dev: ≤ 300ms）
+    - **CLS (Cumulative Layout Shift)**: ≤ 0.1（dev: ≤ 0.15）
+    - **TTFB (Time To First Byte)**: ≤ 600ms（dev: ≤ 1.0s）
+    - **測量方式**：dev 用 Chrome DevTools Performance panel；預覽網址在第 12 條規範內取
+    - **超標處置**：
+      - 輕微（超 ≤ 30%）：在 commit message 標 `PERF-WARN`
+      - 嚴重（超 > 30%）：必須在 commit 前最佳化，或在 commit message 寫明技術債理由
+    - **測量寫入規則**：每次 commit 前在 UAT URL 跑一次，截圖指標；若跳過測量必須寫「未測量效能，跳過原因：...」
 
 8. 防禦性 UI 與排版溢出防堵： 必須預判並處理「文字過長截斷」、「圖片載入失敗 Fallback」、「無資料狀態」。強制使用流體排版 (max-w-full, min-w-0)。針對多個並排元素（如標籤、按鈕列），必須強制加上 flex-wrap 換行，或設計為局部橫向滑動 (overflow-x-auto 配隱藏捲軸)，嚴禁讓元素超出邊界被生硬截斷 (Clipping)。 全域絕對不允許出現橫向捲動軸。
 
@@ -26,7 +41,14 @@
 
 11. 修改紀律與退場機制： 進行局部 UI 優化時，嚴禁擅自修改現有的 State、API 呼叫或核心商業邏輯。執行大範圍重構前，必須提醒我確認 Git Commit 狀態。
 
-12. 視覺驗收紀律 (UAT Readiness)： 在完成任何程式碼生成或修改任務、準備結束對話前，必須確認本地開發伺服器已啟動，並明確列出本地預覽網址 (如 http://localhost:3000) 供我點擊驗收。
+12. 視覺驗收紀律 (UAT Readiness)： 在完成任何程式碼生成或修改任務、準備結束對話前，必須確認本地開發伺服器已啟動，並**自動偵測當前實際 port**（禁止寫死 3000）。自動偵測 SOP：
+    - **啟動驗證**：先確認 dev server 已啟動（用 `lsof -ti :3000-3010 -P 2>/dev/null` 或讀 dev server stdout 中 `Local:` 後的 URL）
+    - **Fallback 鏈**：若所有 3000-3010 port 都無 process，提示「請先啟動 dev server」並給 `npm run dev` 命令
+    - **UAT 輸出格式**（每個 commit 結尾必帶）：
+      ```
+      UAT：<自動偵測網址>
+      ```
+    - **port 衝突規範**：若連續 3 個 commit 都需重新指定 port，視為 port 漂移，必須在 commit message 警告「port 漂移，請固定 PORT 環境變數」
 
 ---
 
@@ -144,6 +166,13 @@
   - 使用者目前的限制（技術債、時間、已知前提）是否被完整考慮？
   - 這個問題是否是一類問題的代表，未來會不會重現？
 - **呈現方式**: 將「更高分選項」列為候選方案之一，納入第 14 條的評分表。明確標記為「💡 更高分選項」，說明它為何比使用者提出的方案更好（填補了什麼盲點）。
+    - **強制欄位（缺則扣分）**：每次評分表必須包含一欄「使用者原始方案（含原文）」，避免 AI「事後才想起更高分選項」的偽反思
+    - **判斷流程（強制依序）**：
+      1. 先列出使用者原始方案，標記分數
+      2. 再主動探索「是否有更高分選項」（包含「💡 更高分選項」標記）
+      3. 若有，列入候選；若無，明確寫「已探索，無更高分選項，原因：...」
+      4. 最終推薦 = 最高分選項（不一定是使用者原始方案）
+    - **違規處置**：若評分表缺「使用者原始方案」欄 → 第 22 條違規處置 + 評分表本身扣 0.5 分
 - **與第 13、14 條關係**: 本條的「提出更高分選項」屬於第 14 條「執行前置評分」的前置探索步驟——在列出候選方案時，AI 應已內部完成這個更高分選項的發現，而非事後才想起。
 
 ---
