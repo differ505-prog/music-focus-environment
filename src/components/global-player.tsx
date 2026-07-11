@@ -124,6 +124,13 @@ export function GlobalPlayer({
     setPlaybackRate(playback.playbackRate);
   }, [playback.playbackRate]);
 
+  // Reset transient progress UI state on track switch — otherwise dragging the
+  // slider near the end of track A leaves `liveSeekSeconds` stuck on A's tail,
+  // making the new track B's progress bar visually sit at the tail percent.
+  useEffect(() => {
+    setLiveSeekSeconds(null);
+  }, [currentTrack?.id]);
+
   // When playback rate changes while the detector is active, auto-extinguish and re-ignite
   // so the detector clears its state and starts sampling fresh at the new rate.
   useEffect(() => {
@@ -680,7 +687,9 @@ export function GlobalPlayer({
                       {currentTrack?.title ?? "尚未播放"}
                     </h3>
                     <p className="mt-1 truncate text-sm text-white/62">
-                      {nextTrack ? `下一首 ${nextTrack.title}` : "加入曲目開始播放"}
+                      {currentTrack
+                        ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey ?? "—"}`
+                        : "加入曲目開始播放"}
                     </p>
                   </div>
                 </div>
