@@ -14,7 +14,7 @@ import { PlayheadBpmDetector } from "@/components/playhead-bpm-detector";
 import { TapBpmButton } from "@/components/tap-bpm-button";
 import { useArtworkProjection } from "@/hooks/use-artwork-projection";
 import type { BpmAnalysis } from "@/lib/bpm-analyzer";
-import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
+import { detectTrackBpmFromUrl, detectTrackBpmMultiSegment } from "@/lib/track-bpm-detection";
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
@@ -173,7 +173,7 @@ export function GlobalPlayer({
         const allowedBpms = extractAllowedBpms(
           track.themeProgramId ? (themeProgramMap.get(track.themeProgramId) ?? null) : null,
         );
-        const result = await detectTrackBpmFromUrl(track.media.audioUrl, bpmOptions, {
+        const result = await detectTrackBpmMultiSegment(track.media.audioUrl, bpmOptions, {
           metadataBpm: track.bpm,
           allowedBpms,
         });
@@ -184,7 +184,7 @@ export function GlobalPlayer({
         } else {
           inspectionLog.set(cacheKey, "rejected");
           console.warn(
-            `[Player] BPM detection rejected (confidence ${result.confidence.toFixed(2)} < ${confidenceFloor}) for "${track.title}" → raw ${result.rawDetectedBpm} BPM`,
+            `[Player] BPM multi-segment detection rejected (confidence ${result.confidence.toFixed(2)} < ${confidenceFloor}) for "${track.title}" → ${result.estimatedBpm} BPM (${result.agreeingSegments}/${result.segments.length} segments agreed)`,
           );
         }
         saveTrackBpmDetection({
@@ -207,7 +207,7 @@ export function GlobalPlayer({
               ? { status: "ready", result }
               : {
                   status: "error",
-                  message: `信心 ${Math.round(result.confidence * 100)}% · 待多段交叉驗證`,
+                  message: `共識失敗 ${result.agreeingSegments}/${result.segments.length} 段`,
                 },
           );
         }
