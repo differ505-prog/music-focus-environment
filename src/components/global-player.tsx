@@ -88,6 +88,14 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
+  /** Floating visual histogram for continuous-analysis segments (shows "live BPM changing as you drag") */
+  const [analysisProgress, setAnalysisProgress] = useState<{
+    currentSegment: number;
+    totalSegments: number;
+    currentBpm: number | null;
+    confidence: number | null;
+    results: { startSeconds: number; estimatedBpm: number; confidence: number }[];
+  } | null>(null);
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
   /** Manual continuous BPM analysis toggle (admin only, off by default) */
@@ -213,6 +221,8 @@ export function GlobalPlayer({
         const result = await detectTrackBpmMultiSegment(track.media.audioUrl, bpmOptions, {
           metadataBpm: track.bpm,
           allowedBpms,
+        }, undefined, (_segmentIndex, _totalSegments, _segResult) => {
+          // No-op for initial track analysis — UI histograms are only shown during continuous mode
         });
 
         if (result.confidence >= confidenceFloor) {
@@ -316,9 +326,6 @@ export function GlobalPlayer({
       );
 
       const SEGMENT_WINDOW = 30; // seconds before/after playhead
-      const SEGMENT_DURATION = 32; // seconds per analysis slice (from bpm-analyzer.ts)
-      const AUDIO_BUFFER_SECONDS = 120; // how many seconds analyzeAudioBufferForBpm reads from startSeconds
-
       const buildSegments = (playheadSeconds: number): { startSeconds: number }[] => {
         const half = SEGMENT_WINDOW / 2;
         const raw = [
@@ -334,6 +341,16 @@ export function GlobalPlayer({
         const segments = buildSegments(playheadSeconds);
         let bestSegment: { startSeconds: number; estimatedBpm: number; confidence: number } | null = null;
 
+        // Reset progress for this round so UI shows "analyzing N/3" and results accumulate live
+        console.log(`[Continuous] runAnalysis iteration → playhead=${playheadSeconds.toFixed(2)}s, segments=${segments.map(s => s.startSeconds.toFixed(0)).join(',')}, continuousRef=${continuousAnalysisRef.current}`);
+        setAnalysisProgress({
+          currentSegment: 0,
+          totalSegments: segments.length,
+          currentBpm: null,
+          confidence: null,
+          results: [],
+        });
+
         await detectTrackBpmMultiSegment(currentTrack.media.audioUrl, bpmOptions, {
           metadataBpm: currentTrack.bpm,
           allowedBpms,
@@ -346,6 +363,26 @@ export function GlobalPlayer({
               confidence: segResult.confidence,
             };
           }
+          setAnalysisProgress((prev) => {
+            const newResults = prev
+              ? [...prev.results, {
+                  startSeconds: segResult.startSeconds,
+                  estimatedBpm: segResult.estimatedBpm,
+                  confidence: segResult.confidence,
+                }]
+              : [{
+                  startSeconds: segResult.startSeconds,
+                  estimatedBpm: segResult.estimatedBpm,
+                  confidence: segResult.confidence,
+                }];
+            return {
+              currentSegment: _segmentIndex + 1,
+              totalSegments: segments.length,
+              currentBpm: segResult.estimatedBpm,
+              confidence: segResult.confidence,
+              results: newResults,
+            };
+          });
         });
 
         if (bestSegment) {
@@ -749,18 +786,29 @@ export function GlobalPlayer({
                         : `${detectedBpmMeta.detectedBpm}`}
                       / {detectedBpmMeta.confidencePercent}%
                     </span>
-                  ) : detectedBpmState.status === "loading" ? (
-                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">
-                      偵測中
-                    </span>
-                  ) : detectedBpmState.status === "error" ? (
-                    <span
-                      className="rounded-full border border-amber-300/24 bg-amber-300/8 px-3 py-1 text-amber-100/84"
-                      title="信心低於門檻 60%，結果未寫入 cache"
-                    >
-                      ⚠ 信心不足 {detectedBpmState.message}
-                    </span>
                   ) : null}
+                  {showAdminDetails && continuousAnalysisEnabled && analysisProgress && analysisProgress.results.length > 0 && (
+                    <div
+                      className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-[11px] text-violet-100/88"
+                      data-debug-continuous-bpm={`latest=${Math.round((analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm) * playbackRate)}|confidence=${Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}%`}
+                    >
+                      <span className="font-serif text-base font-semibold text-violet-50">
+                        {Math.round((analysisProgress.results[analysisProgress.results.length - 1].estimatedBpm) * playbackRate)}
+                      </span>
+                      <span className="text-violet-200/72">BPM</span>
+                      <span className="text-violet-300/54">
+                        {Math.round(analysisProgress.results[analysisProgress.results.length - 1].confidence * 100)}%
+                      </span>
+                      {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
+                        <span className="relative flex h-2 w-2">
+                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
+                          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
+                        </span>
+                      ) : (
+                        <span className="text-violet-300/48">· 第{analysisProgress.results.length}/{analysisProgress.totalSegments}段</span>
+                      )}
+                    </div>
+                  )}
                   {showAdminDetails && continuousAnalysisEnabled && continuousBestResult && (
                     <button
                       type="button"
