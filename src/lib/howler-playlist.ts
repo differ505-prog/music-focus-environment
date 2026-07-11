@@ -2,6 +2,7 @@ import { Howl } from "howler";
 
 import { buildCrossfadePlan } from "@/lib/transition-planning";
 import type { CrossfadePlan } from "@/lib/transition-planning";
+import { getEffectiveBpm } from "@/lib/bpm-user-mappings";
 import type { PlaybackSnapshot, Track } from "@/types/music";
 
 const PLAYBACK_POLL_MS = 200;
@@ -401,7 +402,9 @@ export class HowlerPlaylistController {
         return;
       }
 
-      const crossfadePlan = buildCrossfadePlan(currentTrack, nextTrack, duration);
+      const currentTrackEffective = this.withEffectiveBpm(currentTrack);
+      const nextTrackEffective = this.withEffectiveBpm(nextTrack);
+      const crossfadePlan = buildCrossfadePlan(currentTrackEffective, nextTrackEffective, duration);
       const remainingSecondsUntilCrossfade = crossfadePlan.outgoingStartSeconds - seek;
       const remainingMsUntilCrossfade = remainingSecondsUntilCrossfade * 1000;
       const crossfadeKey = `${currentTrack.id}:${nextTrack.id}:${crossfadePlan.outgoingStartSeconds.toFixed(3)}`;
@@ -445,7 +448,15 @@ export class HowlerPlaylistController {
 
     const crossfadePlan =
       crossfadePlanOverride ??
-      buildCrossfadePlan(currentTrack, nextTrack, currentHowl.duration() || currentTrack.durationSeconds);
+      (() => {
+        const currentTrackEffective = this.withEffectiveBpm(currentTrack);
+        const nextTrackEffective = this.withEffectiveBpm(nextTrack);
+        return buildCrossfadePlan(
+          currentTrackEffective,
+          nextTrackEffective,
+          currentHowl.duration() || currentTrack.durationSeconds,
+        );
+      })();
     const fadeDurationMs = crossfadePlan.fadeDurationSeconds * 1000;
     const resolvedCurrentSeekSeconds = currentSeekSeconds ?? Number(currentHowl.seek() || 0);
     const lateStartSeconds = Math.max(resolvedCurrentSeekSeconds - crossfadePlan.outgoingStartSeconds, 0);
@@ -579,6 +590,15 @@ export class HowlerPlaylistController {
     return this.playlist[this.currentIndex] ?? null;
   }
 
+  /**
+   * 套用「校正後 BPM」到 Track，避免修改原物件（imm 原則）。
+   * 用於 `buildCrossfadePlan` 等需要 fresh BPM 數值的地方。
+   */
+  private withEffectiveBpm(track: Track): Track {
+    const effectiveBpm = getEffectiveBpm(track);
+    return effectiveBpm === track.bpm ? track : { ...track, bpm: effectiveBpm };
+  }
+
   private getNextTrack() {
     const nextIndex = this.getNextTrackIndex();
     return nextIndex === null ? null : this.playlist[nextIndex] ?? null;
@@ -703,9 +723,11 @@ export class HowlerPlaylistController {
         return;
       }
 
+      const currentTrackEffective = this.withEffectiveBpm(currentTrack);
+      const nextTrackEffective = this.withEffectiveBpm(nextTrack);
       const refreshedPlan = buildCrossfadePlan(
-        currentTrack,
-        nextTrack,
+        currentTrackEffective,
+        nextTrackEffective,
         currentHowl.duration() || currentTrack.durationSeconds,
       );
       const seek = Number(currentHowl.seek() || 0);
@@ -733,7 +755,11 @@ export class HowlerPlaylistController {
 
     const currentTrack = this.getCurrentTrack();
     const previewCrossfadePlan = currentTrack
-      ? buildCrossfadePlan(currentTrack, nextTrack, currentTrack.durationSeconds)
+      ? buildCrossfadePlan(
+          this.withEffectiveBpm(currentTrack),
+          this.withEffectiveBpm(nextTrack),
+          currentTrack.durationSeconds,
+        )
       : null;
 
     this.cleanupPreparedNextHowl();
@@ -766,8 +792,8 @@ export class HowlerPlaylistController {
     const activeCrossfadePlan =
       !this.prefersBackgroundPlayback && currentTrack && activeNextTrack
         ? buildCrossfadePlan(
-            currentTrack,
-            activeNextTrack,
+            this.withEffectiveBpm(currentTrack),
+            this.withEffectiveBpm(activeNextTrack),
             currentHowl?.duration() || currentTrack.durationSeconds,
           )
         : null;

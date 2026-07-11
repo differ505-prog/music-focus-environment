@@ -19,6 +19,7 @@ import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { extractAllowedBpms, updateTrackReviewOverride, saveTrackBpmDetection } from "@/lib/track-review-store";
 import { getUserBpmMapping } from "@/lib/bpm-user-mappings";
 import { getUpcomingFadeOutAnchor } from "@/lib/transition-planning";
+import { getEffectiveBpm } from "@/lib/bpm-user-mappings";
 import type { AutoDjSessionPlan, PlaybackSnapshot, Track } from "@/types/music";
 
 type GlobalPlayerProps = {
@@ -118,8 +119,12 @@ export function GlobalPlayer({
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
   const [playbackRate, setPlaybackRate] = useState(playback.playbackRate);
   const [showSpeedMenu, setShowSpeedMenu] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Sync local playbackRate state with the controller's value from playback prop
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   useEffect(() => {
     setPlaybackRate(playback.playbackRate);
   }, [playback.playbackRate]);
@@ -421,17 +426,17 @@ export function GlobalPlayer({
     };
   }, [currentTrack, detectedBpmState, playbackRate]);
   const upcomingFadeOutAnchor = useMemo(() => {
-    if (!currentTrack || !nextTrack) {
+    if (!isMounted || !currentTrack || !nextTrack) {
       return null;
     }
 
     return getUpcomingFadeOutAnchor(
       liveSeekSeconds ?? playback.currentTime,
-      currentTrack,
-      nextTrack,
+      { ...currentTrack, bpm: getEffectiveBpm(currentTrack) },
+      { ...nextTrack, bpm: getEffectiveBpm(nextTrack) },
       playback.duration > 0 ? playback.duration : currentTrack.durationSeconds,
     );
-  }, [currentTrack, nextTrack, playback.currentTime, playback.duration, liveSeekSeconds]);
+  }, [isMounted, currentTrack, nextTrack, playback.currentTime, playback.duration, liveSeekSeconds]);
   const transitionMeta = useMemo(() => {
     if (!currentTrack || !nextTrack) {
       return null;

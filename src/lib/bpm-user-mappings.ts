@@ -95,3 +95,47 @@ export function removeUserBpmMapping(trackId: string, audioUrl: string): void {
 export function readAllUserBpmMappings(): BpmUserMapping[] {
   return Object.values(readMappings());
 }
+
+/**
+ * 取得曲目的「校正後」BPM（effective BPM）。
+ *
+ * 優先順序：
+ *   1. user-confirmed BPM（`bpm-user-mappings-v1`，最高優先級）
+ *   2. track.metadata bpm（fallback）
+ *
+ * SSR / 預渲染：localStorage 不可用時直接回傳 metadata，不會 throw。
+ */
+export type TrackEffectiveBpmInput = {
+  id: string;
+  bpm: number;
+  media?: { audioUrl?: string };
+};
+
+export function getEffectiveBpm(track: TrackEffectiveBpmInput): number {
+  const audioUrl = track.media?.audioUrl;
+  if (audioUrl) {
+    const mapping = getUserBpmMapping(track.id, audioUrl);
+    if (mapping) {
+      return mapping.confirmedBpm;
+    }
+  }
+  return track.bpm;
+}
+
+/**
+ * 批次：對 playlist 中所有曲目套用 effective BPM。
+ * 回傳新陣列（不修改原 track 物件，遵守「資料-視圖分離」）。
+ */
+export function applyEffectiveBpmToPlaylist<T extends TrackEffectiveBpmInput>(tracks: T[]): T[] {
+  return tracks.map((track) => {
+    const audioUrl = track.media?.audioUrl;
+    if (!audioUrl) {
+      return track;
+    }
+    const mapping = getUserBpmMapping(track.id, audioUrl);
+    if (mapping) {
+      return { ...track, bpm: mapping.confirmedBpm };
+    }
+    return track;
+  });
+}

@@ -1,5 +1,6 @@
 import { getBpmCompatibility } from "@/lib/bpm-lanes";
 import { buildCrossfadePlan } from "@/lib/transition-planning";
+import { applyEffectiveBpmToPlaylist } from "@/lib/bpm-user-mappings";
 import type { AutoDjPhase, AutoDjSessionPlan, AutoDjTrackPlan, Track } from "@/types/music";
 
 const phaseCurve = [0.18, 0.42, 0.68, 0.36] as const;
@@ -492,10 +493,10 @@ function pickOpener(tracks: Track[], minEnergy: number, maxEnergy: number) {
 
 export function buildAutoDjQueue(playlist: Track[], initialTrackId?: string) {
   if (playlist.length <= 1) {
-    return playlist.map((track) => track.id);
+    return applyEffectiveBpmToPlaylist(playlist).map((track) => track.id);
   }
 
-  const pool = [...playlist];
+  const pool = applyEffectiveBpmToPlaylist([...playlist]);
   const ordered: Track[] = [];
   const minEnergy = Math.min(...pool.map((track) => track.energyLevel));
   const maxEnergy = Math.max(...pool.map((track) => track.energyLevel));
@@ -563,14 +564,15 @@ export function createAutoDjSessionPlan(
     return null;
   }
 
-  const laneSet = Array.from(new Set(playlist.map((track) => track.bpm))).sort((left, right) => left - right);
+  const effectivePlaylist = applyEffectiveBpmToPlaylist(playlist);
+  const laneSet = Array.from(new Set(effectivePlaylist.map((track) => track.bpm))).sort((left, right) => left - right);
   const laneLabel =
     laneSet.length === 1 ? `${laneSet[0]} BPM 主車道` : `${laneSet[0]}-${laneSet[laneSet.length - 1]} BPM 鄰近車道`;
-  const currentTrackIndex = currentTrackId ? playlist.findIndex((track) => track.id === currentTrackId) : -1;
+  const currentTrackIndex = currentTrackId ? effectivePlaylist.findIndex((track) => track.id === currentTrackId) : -1;
   const activeIndex = currentTrackIndex >= 0 ? currentTrackIndex : 0;
-  const trackPlans = playlist.map((track, index) => {
-    const phaseMeta = getPhaseMeta(index, playlist.length);
-    const previousTrack = index > 0 ? playlist[index - 1] : null;
+  const trackPlans = effectivePlaylist.map((track, index) => {
+    const phaseMeta = getPhaseMeta(index, effectivePlaylist.length);
+    const previousTrack = index > 0 ? effectivePlaylist[index - 1] : null;
     const transitionSummary = previousTrack
       ? `${previousTrack.bpm} -> ${track.bpm} BPM，Energy ${previousTrack.energyLevel.toFixed(1)} -> ${track.energyLevel.toFixed(1)}，${getContinuityLabel(previousTrack, track)}`
       : `以 ${track.bpm} BPM 與 Energy ${track.energyLevel.toFixed(1)} 穩定開場`;
@@ -597,7 +599,7 @@ export function createAutoDjSessionPlan(
     : "本輪已到清單尾端，可直接循環或換下一條內容線。";
 
   return {
-    orderedTrackIds: playlist.map((track) => track.id),
+    orderedTrackIds: effectivePlaylist.map((track) => track.id),
     laneLabel,
     strategySummary:
       laneSet.length === 1
