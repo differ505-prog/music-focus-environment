@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { Volume2, VolumeX, Waves } from "lucide-react";
+import { Check, Volume2, VolumeX, Waves } from "lucide-react";
 
 import { bpmOptions, themePrograms } from "@/data/music-assets";
 import { PlayerArtworkStage } from "@/components/player-artwork-stage";
@@ -88,13 +88,6 @@ export function GlobalPlayer({
 }: GlobalPlayerProps) {
   const showAdminDetails = mode === "admin";
   const [detectedBpmState, setDetectedBpmState] = useState<TrackBpmDetectionState>({ status: "idle" });
-  const [analysisProgress, setAnalysisProgress] = useState<{
-    currentSegment: number;
-    totalSegments: number;
-    currentBpm: number | null;
-    confidence: number | null;
-    results: { startSeconds: number; estimatedBpm: number; confidence: number }[];
-  } | null>(null);
   /** Controls PlayheadBpmDetector activation across track changes (avoids local state reset on unmount) */
   const [detectorActive, setDetectorActive] = useState(false);
   /** Manual continuous BPM analysis toggle (admin only, off by default) */
@@ -106,6 +99,12 @@ export function GlobalPlayer({
   const [manualOverrideCount, setManualOverrideCount] = useState(0);
   const lastResultRef = useRef<BpmAnalysis | null>(null);
   const prevTrackRef = useRef<Track | null>(null);
+  /** Best result from continuous analysis (high-confidence only, for one-click apply) */
+  const [continuousBestResult, setContinuousBestResult] = useState<{
+    bpm: number;
+    confidence: number;
+    startSeconds: number;
+  } | null>(null);
   const [liveSeekSeconds, setLiveSeekSeconds] = useState<number | null>(null);
   const [volume, setVolume] = useState(1);
   const [showVolumeSlider, setShowVolumeSlider] = useState(false);
@@ -295,8 +294,10 @@ export function GlobalPlayer({
       if (cached && inspection === "passed") {
         lastResultRef.current = cached;
         setDetectedBpmState({ status: "ready", result: cached });
+        setContinuousBestResult(null);
       } else if (lastResultRef.current && lastResultRef.current.confidence >= confidenceFloor) {
         setDetectedBpmState({ status: "ready", result: lastResultRef.current });
+        setContinuousBestResult(null);
       }
       prevTrackRef.current = currentTrack;
       return () => {
@@ -305,6 +306,7 @@ export function GlobalPlayer({
     }
 
     prevTrackRef.current = currentTrack;
+    setContinuousBestResult(null);
     void detectTrackBpm(currentTrack);
 
     return () => {
@@ -344,36 +346,25 @@ export function GlobalPlayer({
       while (continuousAnalysisRef.current) {
         const playheadSeconds = playheadRef.current;
         const segments = buildSegments(playheadSeconds);
-
-        setAnalysisProgress({
-          currentSegment: 0,
-          totalSegments: segments.length,
-          currentBpm: null,
-          confidence: null,
-          results: [],
-        });
+        let bestSegment: { startSeconds: number; estimatedBpm: number; confidence: number } | null = null;
 
         await detectTrackBpmMultiSegment(currentTrack.media.audioUrl, bpmOptions, {
           metadataBpm: currentTrack.bpm,
           allowedBpms,
-        }, segments, (segmentIndex, totalSegments, segResult) => {
+        }, segments, (_segmentIndex, _totalSegments, segResult) => {
           if (!continuousAnalysisRef.current) return;
-          setAnalysisProgress((prev) => {
-            if (!prev) return null;
-            const newResults = [...prev.results, {
+          if (!bestSegment || segResult.confidence > bestSegment.confidence) {
+            bestSegment = {
               startSeconds: segResult.startSeconds,
               estimatedBpm: segResult.estimatedBpm,
               confidence: segResult.confidence,
-            }];
-            return {
-              currentSegment: segmentIndex + 1,
-              totalSegments,
-              currentBpm: segResult.estimatedBpm,
-              confidence: segResult.confidence,
-              results: newResults,
             };
-          });
+          }
         });
+
+        if (bestSegment) {
+          setContinuousBestResult(bestSegment);
+        }
       }
     };
 
@@ -602,11 +593,7 @@ export function GlobalPlayer({
                   {currentTrack?.title ?? "尚未播放"}
                 </h3>
                 <p className="mt-1 truncate text-xs text-white/55">
-                  {detectedBpmMeta
-                    ? `偵測 ${detectedBpmMeta.detectedBpm} BPM${detectedBpmMeta.rawDetectedBpm !== detectedBpmMeta.detectedBpm ? ` · 原始 ${detectedBpmMeta.rawDetectedBpm}` : detectedBpmMeta.diff > 0 ? ` · 差 ${detectedBpmMeta.diff} BPM` : ""}`
-                    : detectedBpmState.status === "loading"
-                      ? "BPM 偵測中..."
-                      : nextTrack
+                  {nextTrack
                         ? `下一首 ${nextTrack.title}`
                         : "加入曲目即可播放"}
                 </p>
@@ -767,70 +754,21 @@ export function GlobalPlayer({
                       ? `${currentTrack.bpm} BPM · ${currentTrack.musicalKey}`
                       : publicTrackSummary}
                   </span>
-                  {showAdminDetails && (analysisProgress || detectedBpmState.status === "loading") && (
-                    <div className="flex items-center gap-2 rounded-full border border-violet-300/28 bg-violet-300/12 px-3 py-1.5 text-violet-100/88">
-                      {analysisProgress ? (
-                        <>
-                          <span className="text-[11px] tracking-wide">
-                            分析中 {Math.min(analysisProgress.currentSegment + 1, analysisProgress.totalSegments)}/{analysisProgress.totalSegments}
-                          </span>
-                          {analysisProgress.results.map((r, i) => (
-                            <span
-                              key={i}
-                              className="rounded border border-violet-300/32 bg-violet-400/16 px-1.5 py-0.5 text-[11px]"
-                            >
-                              {r.estimatedBpm} <span className="text-violet-200/54">({Math.round(r.confidence * 100)}%)</span>{" "}
-                              <span className="text-violet-300/48">@{Math.round(r.startSeconds)}s</span>
-                            </span>
-                          ))}
-                          {analysisProgress.currentSegment < analysisProgress.totalSegments ? (
-                            <span className="relative flex h-2 w-2">
-                              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
-                              <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
-                            </span>
-                          ) : (
-                            <span className="text-[11px] text-violet-200/54">完成</span>
-                          )}
-                        </>
-                      ) : (
-                        <span className="relative flex h-2 w-2">
-                          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
-                          <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-400" />
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {detectedBpmMeta ? (
-                    <span className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-1 text-cyan-100/85">
-                      {playbackRate !== 1
-                        ? `${detectedBpmMeta.perceivedBpm} (${playbackRate}×)`
-                        : `${detectedBpmMeta.detectedBpm}`}
-                      / {detectedBpmMeta.confidencePercent}%
-                    </span>
-                  ) : detectedBpmState.status === "loading" ? (
-                    <span className="rounded-full border border-white/10 bg-white/8 px-3 py-1 text-white/52">
-                      偵測中
-                    </span>
-                  ) : detectedBpmState.status === "error" ? (
-                    <span
-                      className="rounded-full border border-amber-300/24 bg-amber-300/8 px-3 py-1 text-amber-100/84"
-                      title="信心低於門檻 60%，結果未寫入 cache；多長度交叉驗證是下一輪待辦"
-                    >
-                      ⚠ 信心不足 {detectedBpmState.message}
-                    </span>
-                  ) : null}
-                  {showAdminDetails ? (
+                  {showAdminDetails && continuousAnalysisEnabled && continuousBestResult && (
                     <button
-                      onClick={() => setContinuousAnalysisEnabled((v) => !v)}
-                      className={`rounded-full border px-3 py-1 text-[11px] transition-colors ${
-                        continuousAnalysisEnabled
-                          ? "border-violet-400/48 bg-violet-400/24 text-violet-100"
-                          : "border-white/14 bg-white/8 text-white/52 hover:border-white/24 hover:text-white/72"
-                      }`}
+                      type="button"
+                      onClick={() => {
+                        if (!currentTrack) return;
+                        updateTrackReviewOverride(currentTrack.id, { bpm: continuousBestResult.bpm });
+                        setContinuousBestResult(null);
+                        setContinuousAnalysisEnabled(false);
+                      }}
+                      className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300/30 bg-emerald-300/14 px-3 py-1 text-[11px] text-emerald-100/92 transition hover:bg-emerald-300/22"
                     >
-                      {continuousAnalysisEnabled ? "■ 持續分析" : "▶ 持續分析"}
+                      <Check className="h-3 w-3" />
+                      套用 {continuousBestResult.bpm} BPM
                     </button>
-                  ) : null}
+                  )}
                   {showAdminDetails ? (
                     <PlayheadBpmDetector
                       track={currentTrack}
