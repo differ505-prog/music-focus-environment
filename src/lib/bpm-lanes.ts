@@ -85,11 +85,40 @@ export function classifyLane(bpm: number): number | null {
 }
 
 /**
- * Returns the label shown on a lane chip: "85 BPM" or "± 5 BPM" for uncategorised.
+ * Non-overlapping BPM range boundaries for each canonical lane pivot.
+ * Uses midpoint分段: 80–90 for pivot 85, 91–97 for pivot 90, etc.
+ * This is ONLY for display — classifyLane() unchanged (still uses ±5 overlap).
+ */
+export const BPM_RANGE_MAP: Record<number, { min: number; max: number }> = {
+  85:  { min: 80, max: 90 },
+  90:  { min: 91, max: 97 },
+  95:  { min: 98, max: 102 },
+  100: { min: 103, max: 110 },
+  105: { min: 111, max: 117 },
+  115: { min: 118, max: 125 },
+  120: { min: 126, max: 132 },
+  125: { min: 133, max: 145 },
+  180: { min: 155, max: 200 },
+};
+
+/**
+ * Builds a non-overlapping range label like "80–90" for a given lane pivot.
+ * Falls back to "± 5 BPM" for null/unrecognised lanes.
+ */
+export function buildBpmRangeLabel(lane: number | null): string {
+  if (lane === null) return "± 5 BPM";
+  const range = BPM_RANGE_MAP[lane];
+  if (!range) return `${lane} BPM`;
+  return `${range.min}–${range.max}`;
+}
+
+/**
+ * Returns the label shown on a lane chip: "80–90 BPM" or "± 5 BPM" for uncategorised.
  */
 export function labelForLane(lane: number | null): string {
-  if (lane === null) return "± 5 BPM";
-  return `${lane} BPM`;
+  const range = buildBpmRangeLabel(lane);
+  if (lane === null) return range;
+  return `${range}`;
 }
 
 export type MergedBpmGroup = {
