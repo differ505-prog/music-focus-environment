@@ -1,27 +1,28 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Check, Crosshair, HandMetal, Megaphone, Play, RotateCcw, Timer } from "lucide-react";
+import { Check, Crosshair, HandMetal, Megaphone, RotateCcw, Timer } from "lucide-react";
 
-import type { ThemeProgram } from "@/types/music";
-import type { Track } from "@/types/music";
+import type { ThemeProgram } from '@/types/music';
+import type { Track } from '@/types/music';
 
-import { Chip } from "@/components/ui-system";
-import { ReviewItemShell, StatCard, StatGrid } from "@/components/review-panel-shell";
-import { MoreMenu } from "@/components/more-menu";
+import { Chip } from '@/components/ui-system';
+import { ReviewItemShell, StatCard, StatGrid } from '@/components/review-panel-shell';
+import { MoreMenu } from '@/components/more-menu';
+import { PlayBpmButton } from '@/components/play-bpm-button';
 import {
   readTrackBpmDetections,
   readTrackReviewOverrides,
   updateTrackReviewOverride,
-} from "@/lib/track-review-store";
-import { setUserBpmMapping, removeUserBpmMapping } from "@/lib/bpm-user-mappings";
-import { useTrackReviewSync } from "@/hooks/use-track-review-sync";
-import { extractAllowedBpms } from "@/lib/track-review-store";
+} from '@/lib/track-review-store';
+import { setUserBpmMapping, removeUserBpmMapping } from '@/lib/bpm-user-mappings';
+import { useTrackReviewSync } from '@/hooks/use-track-review-sync';
+import { extractAllowedBpms } from '@/lib/track-review-store';
+import { usePlayback } from '@/components/playback-provider';
 
 type LiveBpmOverrideCardProps = {
   currentTrack: Track | null;
   programs: ThemeProgram[];
-  onPlayTrack?: (assetId: string) => void;
 };
 
 type TapBpmSnapshot = {
@@ -56,7 +57,8 @@ function ClientRelativeTime({ date, className }: { date: Date; className?: strin
   return <span className={className}>{formatRelativeLocalTime(date)}</span>;
 }
 
-export function LiveBpmOverrideCard({ currentTrack, programs, onPlayTrack }: LiveBpmOverrideCardProps) {
+export function LiveBpmOverrideCard({ currentTrack, programs }: LiveBpmOverrideCardProps) {
+  const { playback, playTrack } = usePlayback();
   const refreshTick = useTrackReviewSync();
   const [showLaneMenu, setShowLaneMenu] = useState(false);
   const [customDraft, setCustomDraft] = useState<string>("");
@@ -258,13 +260,6 @@ export function LiveBpmOverrideCard({ currentTrack, programs, onPlayTrack }: Liv
     removeUserBpmMapping(currentTrack.id, currentTrack.media.audioUrl);
   }, [currentTrack]);
 
-  const handlePlay = useCallback(() => {
-    if (!currentTrack || !onPlayTrack) {
-      return;
-    }
-    onPlayTrack(currentTrack.id);
-  }, [currentTrack, onPlayTrack]);
-
   const handleMoveLane = useCallback(
     (laneId: string) => {
       if (!currentTrack) {
@@ -390,17 +385,12 @@ export function LiveBpmOverrideCard({ currentTrack, programs, onPlayTrack }: Liv
           </button>
         ) : null}
 
-        {onPlayTrack ? (
-          <button
-            type="button"
-            onClick={handlePlay}
-            aria-label={`播放 ${currentTrack.title}`}
-            className="rounded-full border border-emerald-300/40 bg-emerald-300/14 px-3 py-2 text-xs text-emerald-50/90 transition hover:bg-emerald-300/22"
-          >
-            <Play className="mr-1.5 inline h-3.5 w-3.5 align-middle" />
-            播放
-          </button>
-        ) : null}
+        <PlayBpmButton
+          trackId={currentTrack.id}
+          trackTitle={currentTrack.title}
+          onPlay={playTrack}
+          currentTrackId={playback.currentTrackId}
+        />
 
         <MoreMenu
           items={[

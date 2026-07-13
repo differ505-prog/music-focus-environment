@@ -21,9 +21,12 @@ import { ReviewItemShell, ReviewPanelShell, StatCard, StatGrid } from "@/compone
 import { Chip } from "@/components/ui-system";
 import { TapBpmButton } from "@/components/tap-bpm-button";
 import { MoreMenu } from "@/components/more-menu";
+import { PlayBpmButton } from "@/components/play-bpm-button";
+import { usePlayback } from "@/components/playback-provider";
 
 type TrackBpmReviewPanelProps = {
   tracks: Track[];
+  onPlayTrack?: (trackId: string) => void;
 };
 
 type CustomBpmInputState = {
@@ -32,7 +35,9 @@ type CustomBpmInputState = {
   showConfirm: boolean;
 };
 
-export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
+export function TrackBpmReviewPanel({ tracks, onPlayTrack }: TrackBpmReviewPanelProps) {
+  const { playback, playTrack: contextPlayTrack } = usePlayback();
+  const activePlayTrack = onPlayTrack ?? contextPlayTrack;
   const refreshTick = useTrackReviewSync();
   const baseTrackMap = useMemo(() => new Map(baseTracks.map((track) => [track.id, track] as const)), []);
   const programMap = useMemo(() => new Map(themePrograms.map((program) => [program.id, program] as const)), []);
@@ -263,6 +268,13 @@ export function TrackBpmReviewPanel({ tracks }: TrackBpmReviewPanelProps) {
             }
             currentBpm={item.effectiveBpm}
             allowedBpms={item.allowedBpms}
+          />
+
+          <PlayBpmButton
+            trackId={item.track.id}
+            trackTitle={item.track.title}
+            onPlay={activePlayTrack}
+            currentTrackId={playback.currentTrackId}
           />
 
           <MoreMenu
