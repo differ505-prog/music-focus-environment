@@ -1202,7 +1202,7 @@ export const themePrograms: ThemeProgram[] = [
     id: "ceo-focus-lanes",
     label: "專注心流",
     title: "深度專注心流",
-    bpmDisplay: "深度心流",
+    bpmDisplay: "85 / 105 / 120 BPM",
     summary:
       "穩定推進的深度專注節奏，適合決策、深度工作與長時間專注。",
     audience: "深度工作、策略規劃、長時間沉浸專注",
@@ -1430,7 +1430,7 @@ Brief：
     id: "slow-jog-180",
     label: "慢跑步頻",
     title: "180 慢跑節奏",
-    bpmDisplay: "超慢跑節奏",
+    bpmDisplay: "180 BPM",
     summary:
       "鎖定步頻的慢跑節奏，適合夜跑、跑步機與耐力訓練。",
     audience: "慢跑、跑步機、夜跑暖身、低壓耐力訓練",
@@ -1665,7 +1665,7 @@ Brief：
     id: "beach-bar-dj",
     label: "海灘酒吧",
     title: "海灘露天酒吧",
-    bpmDisplay: "快閃 DJ",
+    bpmDisplay: "115 / 120 BPM",
     summary:
       "適合戶外派對與輕鬆社交。",
     audience: "海灘酒吧、露天派對、黃昏酒精社交、開放式 lounge 與微舞池情境",
@@ -1884,7 +1884,7 @@ Brief：
     id: "city-pop-cruise",
     label: "城市夜色",
     title: "城市夜色 City Pop",
-    bpmDisplay: "都會心流",
+    bpmDisplay: "100 / 105 BPM",
     summary:
       "適合夜駕、散步與輕鬆工作。",
     audience: "夜間開車、都會微醺、晚間散步、城市夜讀與帶復古感的輕鬆工作場景",
@@ -2101,7 +2101,7 @@ Brief：
     id: "exhibition-sonic-space",
     label: "展場聲景",
     title: "沉浸式展場聲景",
-    bpmDisplay: "展場聲景",
+    bpmDisplay: "90 / 95 BPM",
     summary:
       "適合展覽、快閃與 showroom。",
     audience: "藝術展覽、品牌快閃、策展空間、設計展間、showroom 與沉浸式展示場域",
