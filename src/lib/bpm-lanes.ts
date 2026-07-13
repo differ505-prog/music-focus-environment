@@ -3,8 +3,8 @@ import type { Track } from "@/types/music";
 /** Canonical BPM lane pivots. */
 export const bpmLaneOptions = [85, 90, 95, 100, 105, 115, 120, 125, 180] as const;
 
-/** ±2 BPM tolerance around each pivot defines a lane. */
-export const LANE_TOLERANCE = 2;
+/** ±5 BPM tolerance around each pivot defines a lane. */
+export const LANE_TOLERANCE = 5;
 
 /** All canonical BPM lane pivots. */
 export const ALL_LANES: readonly number[] = bpmLaneOptions;
@@ -85,10 +85,10 @@ export function classifyLane(bpm: number): number | null {
 }
 
 /**
- * Returns the label shown on a lane chip: "85 BPM" or "± 2 BPM" for uncategorised.
+ * Returns the label shown on a lane chip: "85 BPM" or "± 5 BPM" for uncategorised.
  */
 export function labelForLane(lane: number | null): string {
-  if (lane === null) return "± 2 BPM";
+  if (lane === null) return "± 5 BPM";
   return `${lane} BPM`;
 }
 
