@@ -314,6 +314,23 @@ export function clearTrackReviewOverride(trackId: string) {
   writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, currentOverrides);
 }
 
+export function clearAllReviewOverrides() {
+  writeJsonRecord(TRACK_REVIEW_OVERRIDES_STORAGE_KEY, {});
+}
+
+export function applyAllDetectedBpms(
+  detections: Record<string, StoredTrackBpmDetection> = readTrackBpmDetections(),
+) {
+  const patches = Object.values(detections).map((detection) => ({
+    trackId: detection.trackId,
+    patch: {
+      bpm: detection.detectedBpm,
+      ignoreBpmMismatch: true,
+    },
+  }));
+  updateTrackReviewOverrides(patches);
+}
+
 export function updateTrackReviewOverrides(patches: Array<{ trackId: string; patch: Partial<TrackReviewOverride> }>) {
   if (patches.length === 0) {
     return;

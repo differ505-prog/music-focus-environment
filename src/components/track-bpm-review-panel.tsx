@@ -1,12 +1,14 @@
 'use client';
 
 import { useCallback, useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Radar, ShieldAlert } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Radar, ShieldAlert, Trash2, Zap } from "lucide-react";
 
 import { bpmOptions, themePrograms, tracks as baseTracks } from "@/data/music-assets";
 import { detectTrackBpmFromUrl } from "@/lib/track-bpm-detection";
 import {
+  applyAllDetectedBpms,
   buildTrackBpmReviewItems,
+  clearAllReviewOverrides,
   clearTrackReviewOverride,
   extractAllowedBpms,
   readTrackBpmDetections,
@@ -58,6 +60,31 @@ export function TrackBpmReviewPanel({ tracks, onPlayTrack }: TrackBpmReviewPanel
   const [scanNotice, setScanNotice] = useState<string | null>(null);
   const [customBpmState, setCustomBpmState] = useState<CustomBpmInputState | null>(null);
   const [tapCorrectedCollapsed, setTapCorrectedCollapsed] = useState(true);
+
+  const hasAnyOverrides = Object.keys(overrides).length > 0;
+  const hasAnyDetections = Object.keys(detections).length > 0;
+
+  const handleApplyAllDetectedBpms = useCallback(() => {
+    const count = Object.keys(detections).length;
+    if (count === 0) {
+      return;
+    }
+    if (!window.confirm(`確定要一次套用全部 ${count} 首的偵測 BPM 嗎？`)) {
+      return;
+    }
+    applyAllDetectedBpms(detections);
+  }, [detections]);
+
+  const handleClearAllOverrides = useCallback(() => {
+    if (!hasAnyOverrides) {
+      return;
+    }
+    const count = Object.keys(overrides).length;
+    if (!window.confirm(`確定要清除全部 ${count} 個覆核紀錄嗎？`)) {
+      return;
+    }
+    clearAllReviewOverrides();
+  }, [hasAnyOverrides, overrides]);
 
   const handleScanAllTracks = useCallback(async () => {
     if (isScanning) {
@@ -249,12 +276,18 @@ export function TrackBpmReviewPanel({ tracks, onPlayTrack }: TrackBpmReviewPanel
           </button>
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const confirmed = window.confirm(
+                `將「${item.track.title}」的 BPM 設為 ${Math.round(item.detection.detectedBpm)}，並標記為已確認？`,
+              );
+              if (!confirmed) {
+                return;
+              }
               updateTrackReviewOverride(item.track.id, {
                 bpm: item.detection.detectedBpm,
                 ignoreBpmMismatch: true,
-              })
-            }
+              });
+            }}
             className="rounded-full border border-cyan-300/20 bg-cyan-300/10 px-3 py-2 text-xs text-cyan-100/84 transition hover:bg-cyan-300/16"
           >
             採用 {Math.round(item.detection.detectedBpm)}
@@ -354,15 +387,39 @@ export function TrackBpmReviewPanel({ tracks, onPlayTrack }: TrackBpmReviewPanel
       description="比對偵測 BPM 與 metadata，逐首確認路線歸屬。"
       accentColor="rose"
       actions={
-        <button
-          type="button"
-          onClick={() => void handleScanAllTracks()}
-          disabled={isScanning}
-          className="inline-flex items-center gap-3 rounded-full border border-rose-300/24 bg-rose-300/10 px-4 py-3 text-sm font-medium text-rose-50 transition hover:bg-rose-300/14 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radar className="h-4 w-4" />}
-          {isScanning ? "掃描中..." : "掃描全部曲目"}
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => void handleScanAllTracks()}
+            disabled={isScanning}
+            className="inline-flex items-center gap-2 rounded-full border border-rose-300/24 bg-rose-300/10 px-3 py-2 text-sm font-medium text-rose-50 transition hover:bg-rose-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            {isScanning ? <Loader2 className="h-4 w-4 animate-spin" /> : <Radar className="h-4 w-4" />}
+            {isScanning ? "掃描中..." : "掃描全部曲目"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleApplyAllDetectedBpms()}
+            disabled={!hasAnyDetections || isScanning}
+            title="將所有偵測結果寫入覆核"
+            className="inline-flex items-center gap-2 rounded-full border border-cyan-300/24 bg-cyan-300/10 px-3 py-2 text-sm font-medium text-cyan-50 transition hover:bg-cyan-300/14 disabled:cursor-not-allowed disabled:opacity-45"
+          >
+            <Zap className="h-4 w-4" />
+            一鍵套用全部偵測 BPM
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleClearAllOverrides()}
+            disabled={!hasAnyOverrides}
+            title="清除所有覆核紀錄，讓所有曲目重新參與掃描"
+            className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-2 text-sm font-medium text-white/62 transition hover:border-white/20 hover:bg-white/10 hover:text-white disabled:cursor-not-allowed disabled:opacity-38"
+          >
+            <Trash2 className="h-4 w-4" />
+            清除全部覆核
+          </button>
+        </div>
       }
       summaryCards={
         <>
