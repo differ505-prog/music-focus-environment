@@ -1,9 +1,9 @@
 import type { Track } from "@/types/music";
 
 /** Canonical BPM lane pivots. */
-export const bpmLaneOptions = [85, 90, 95, 100, 105, 115, 120, 125, 180] as const;
+export const bpmLaneOptions = [85, 105, 120, 180] as const;
 
-/** ±5 BPM tolerance around each pivot defines a lane. */
+/** LANE_TOLERANCE kept for backward compat — no longer used by classifyLane(). */
 export const LANE_TOLERANCE = 5;
 
 /** All canonical BPM lane pivots. */
@@ -72,12 +72,14 @@ export function rankTracksForMixing(currentTrack: Track | null, tracks: Track[])
 
 /**
  * Returns the canonical lane BPM for a given raw BPM, or null if it falls
- * outside every lane's ± LANE_TOLERANCE range.
+ * outside every defined lane range.
  */
 export function classifyLane(bpm: number): number | null {
   const rounded = Math.round(bpm);
   for (const pivot of bpmLaneOptions) {
-    if (Math.abs(rounded - pivot) <= LANE_TOLERANCE) {
+    const range = BPM_RANGE_MAP[pivot];
+    if (!range) continue;
+    if (rounded >= range.min && rounded <= range.max) {
       return pivot;
     }
   }
@@ -86,19 +88,17 @@ export function classifyLane(bpm: number): number | null {
 
 /**
  * Non-overlapping BPM range boundaries for each canonical lane pivot.
- * Uses midpoint分段: 80–90 for pivot 85, 91–97 for pivot 90, etc.
- * This is ONLY for display — classifyLane() unchanged (still uses ±5 overlap).
+ * Continuously covers the four frequency bands without gaps or overlap:
+ *   85  → 80–94   (深度心流 / CEO Deep Focus)
+ *   105 → 95–114  (都會心流 / City Pop)
+ *   120 → 115–129 (快閃 DJ / Beach Bar)
+ *   180 → 175–185 (超慢跑 / Slow Jog)
  */
 export const BPM_RANGE_MAP: Record<number, { min: number; max: number }> = {
-  85:  { min: 80, max: 90 },
-  90:  { min: 91, max: 97 },
-  95:  { min: 98, max: 102 },
-  100: { min: 103, max: 110 },
-  105: { min: 111, max: 117 },
-  115: { min: 118, max: 125 },
-  120: { min: 126, max: 132 },
-  125: { min: 133, max: 145 },
-  180: { min: 155, max: 200 },
+  85:  { min: 80, max: 94 },
+  105: { min: 95, max: 114 },
+  120: { min: 115, max: 129 },
+  180: { min: 175, max: 185 },
 };
 
 /**
