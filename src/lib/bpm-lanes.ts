@@ -25,6 +25,11 @@ export function defaultThemeProgramForBpm(bpm: number): string | null {
   return LANE_TO_THEME_PROGRAM[lane] ?? null;
 }
 
+/** Reverse lookup: themeProgramId → lane pivot. */
+export const LANE_FROM_THEME_PROGRAM: Record<string, number> = Object.fromEntries(
+  Object.entries(LANE_TO_THEME_PROGRAM).map(([lane, programId]) => [programId, Number(lane)]),
+);
+
 /** LANE_TOLERANCE kept for backward compat — no longer used by classifyLane(). */
 export const LANE_TOLERANCE = 5;
 

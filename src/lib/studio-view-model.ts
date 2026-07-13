@@ -1,4 +1,4 @@
-import { classifyLane, getBpmCompatibility } from "@/lib/bpm-lanes";
+import { classifyLane, getBpmCompatibility, LANE_FROM_THEME_PROGRAM } from "@/lib/bpm-lanes";
 import type { BpmCompatibility } from "@/lib/bpm-lanes";
 import type { MixEvent, MixSession, ThemeProgram, Track } from "@/types/music";
 
@@ -14,6 +14,11 @@ export type PublicRouteEntry = {
   totalMinutes: number;
 };
 
+/**
+ * @deprecated Use `classifyLane()` instead. The new Studio View classifies
+ * tracks purely by BPM via `LANE_TO_THEME_PROGRAM`; bpmDisplay string parsing
+ * is no longer authoritative. Kept exported for backward compatibility only.
+ */
 export function extractBpms(bpmDisplay: string) {
   return Array.from(new Set((bpmDisplay.match(/\d+/g) ?? []).map(Number))).sort((left, right) => left - right);
 }
@@ -37,49 +42,58 @@ function buildUncategorizedProgram(bpms: readonly number[]): ThemeProgram {
 }
 
 export function buildPublicRouteEntries(programs: readonly ThemeProgram[], trackList: readonly Track[]): PublicRouteEntry[] {
-  const configuredBpmMap = new Map(programs.map((program) => [program.id, extractBpms(program.bpmDisplay)] as const));
+  const programById = new Map(programs.map((program) => [program.id, program] as const));
 
-  const routeEntries = programs.map((program) => {
-    const configuredBpms = configuredBpmMap.get(program.id) ?? [];
-    const programTracks = trackList.filter(
-      (track) =>
-        track.themeProgramId === program.id &&
-        (configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm) || classifyLane(track.bpm) === null),
-    );
-    const subroutes = configuredBpms.map((bpm) => {
-      const bpmTracks = programTracks.filter((track) => classifyLane(track.bpm) === bpm);
+  const trackByLane = new Map<number, Track[]>();
+  const uncategorizedTracks: Track[] = [];
 
-      return {
-        bpm,
-        tracks: bpmTracks,
-        totalMinutes: Math.max(1, Math.round(bpmTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
-      };
-    });
+  for (const track of trackList) {
+    const lane = classifyLane(track.bpm);
+    if (lane === null) {
+      uncategorizedTracks.push(track);
+      continue;
+    }
+    const bucket = trackByLane.get(lane) ?? [];
+    bucket.push(track);
+    trackByLane.set(lane, bucket);
+  }
 
-    return {
+  const routeEntries: PublicRouteEntry[] = [];
+  for (const program of programs) {
+    if (program.id === "uncategorized-lane") continue;
+    const pivot = LANE_FROM_THEME_PROGRAM[program.id];
+    if (pivot === undefined) continue;
+    const programTracks = trackByLane.get(pivot) ?? [];
+    const subroutes = [
+      {
+        bpm: pivot,
+        tracks: programTracks,
+        totalMinutes: Math.max(1, Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
+      },
+    ];
+    routeEntries.push({
       program,
       programTracks,
-      configuredBpms,
+      configuredBpms: [pivot],
       subroutes,
       totalMinutes: Math.max(1, Math.round(programTracks.reduce((sum, track) => sum + track.durationSeconds, 0) / 60)),
-    };
-  });
-
-  const uncategorizedTracks = trackList.filter((track) => {
-    const configuredBpms = configuredBpmMap.get(track.themeProgramId ?? "");
-    // No program, or no configured lanes, or BPM doesn't match any lane → uncategorised
-    if (!configuredBpms || configuredBpms.length === 0) return true;
-    return !configuredBpms.some((bpm) => classifyLane(track.bpm) === bpm);
-  });
+    });
+  }
 
   if (uncategorizedTracks.length === 0) {
     return routeEntries;
   }
 
+  const outsideLaneBpms = Array.from(
+    new Set(uncategorizedTracks.map((track) => track.bpm)),
+  ).sort((left, right) => left - right);
+
+  void programById;
+
   return [
     ...routeEntries,
     {
-      program: buildUncategorizedProgram([]),
+      program: buildUncategorizedProgram(outsideLaneBpms),
       programTracks: uncategorizedTracks,
       configuredBpms: [],
       subroutes: [
