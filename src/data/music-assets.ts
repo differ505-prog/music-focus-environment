@@ -8,7 +8,7 @@ import type {
   TrackCollection,
   TrackTransitionProfile,
 } from "@/types/music";
-import { bpmLaneOptions } from "@/lib/bpm-lanes";
+import { bpmLaneOptions, defaultThemeProgramForBpm } from "@/lib/bpm-lanes";
 
 function buildMusicPrompt(bpm: number) {
   return `Instrumental deep chillwave, melodic techno, dark atmospheric electronic, steady driving bassline, focused deep work rhythm for CEO mindset, tempo ${bpm} BPM, constant tempo, subtle background fireplace crackling sounds, ambient, no vocals, cinematic, sophisticated.`;
@@ -505,7 +505,6 @@ const trackNarratives: TrackNarrativeSeed[] = [
       generationPrompt:
         "情境：絕對冷靜、螢幕冷光、碳纖桌墊、遠景壁爐與夜景。BPM 固定 125，不可漂移；需支援進場沉浸、long-loop、no vocals、smooth crossfade 與極度克制的深夜行政專注感。",
     },
-    themeProgramId: "uncategorized-lane",
     createdAt: "2026-07-04T13:37:24.000Z",
   },
   {
@@ -1090,7 +1089,7 @@ export const tracks: Track[] = trackNarratives.map((item, index) => ({
       `情境：${item.themeScenario}。BPM 必須從 ${bpmLaneOptions.join(" / ")} 中擇一，再依此生成歌名、背景圖片、背景影片、中文敘述、英文敘述與同風格音樂提示詞。`,
   },
   transition: transitionProfiles[index] ?? createFallbackTransitionProfile(item),
-  themeProgramId: item.themeProgramId ?? (item.bpm === 180 ? "slow-jog-180" : "ceo-focus-lanes"),
+  themeProgramId: item.themeProgramId ?? defaultThemeProgramForBpm(item.bpm) ?? "ceo-focus-lanes",
   collectionIds: trackCollectionsSeed
     .filter((collection) => (collection.trackIds as readonly string[]).includes(item.slug))
     .map((collection) => collection.id),

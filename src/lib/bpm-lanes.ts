@@ -3,6 +3,28 @@ import type { Track } from "@/types/music";
 /** Canonical BPM lane pivots. */
 export const bpmLaneOptions = [85, 105, 120, 180] as const;
 
+/**
+ * BPM lane → default themeProgramId mapping.
+ * Source of truth: classifyLane() + this map.
+ * Whenever a track lacks an explicit themeProgramId, the fallback chain
+ * (see music-assets.ts → tracks[]) uses this map to assign the lane's
+ * canonical program instead of the legacy "all 85/105 → ceo-focus-lanes"
+ * shortcut.
+ */
+export const LANE_TO_THEME_PROGRAM: Record<number, string> = {
+  85: "ceo-focus-lanes",
+  105: "city-pop-cruise",
+  120: "beach-bar-dj",
+  180: "slow-jog-180",
+};
+
+/** Returns the canonical themeProgramId for a BPM, or null if outside all lanes. */
+export function defaultThemeProgramForBpm(bpm: number): string | null {
+  const lane = classifyLane(bpm);
+  if (lane === null) return null;
+  return LANE_TO_THEME_PROGRAM[lane] ?? null;
+}
+
 /** LANE_TOLERANCE kept for backward compat — no longer used by classifyLane(). */
 export const LANE_TOLERANCE = 5;
 
