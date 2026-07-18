@@ -3,6 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+const CORS_HEADERS = {
+  "Access-Control-Allow-Origin": "https://taskflow-v2-pink.vercel.app",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Range",
+  "Access-Control-Expose-Headers": "Content-Range",
+} as const;
+
 export async function GET(
   _request: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -42,6 +49,7 @@ export async function GET(
         "Content-Length": String(chunkSize),
         "Content-Type": "audio/mpeg",
         "Cache-Control": "public, max-age=3600",
+        ...CORS_HEADERS,
       },
     });
   }
@@ -76,6 +84,7 @@ export async function GET(
       "Content-Type": "audio/mpeg",
       "Accept-Ranges": "bytes",
       "Cache-Control": "public, max-age=3600",
+      ...CORS_HEADERS,
     },
   });
 }

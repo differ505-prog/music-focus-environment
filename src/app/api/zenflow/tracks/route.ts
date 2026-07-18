@@ -2,6 +2,10 @@ import { NextResponse } from "next/server";
 
 import { tracks as allTracks } from "@/data/music-assets";
 
+const OMNISONIC_BASE_URL =
+  (process.env.NEXT_PUBLIC_BASE_URL as string | undefined) ??
+  "https://music-focus-environment.vercel.app";
+
 export type ZenFlowTrack = {
   id: string;
   slug: string;
@@ -30,7 +34,7 @@ export async function GET() {
     durationSeconds: track.durationSeconds,
     descriptionZh: track.copy.descriptionZh,
     descriptionEn: track.copy.descriptionEn,
-    audioUrl: `/api/stream/${track.slug}`,
+    audioUrl: `${OMNISONIC_BASE_URL}/api/zenflow/stream/${track.slug}`,
   }));
 
   return NextResponse.json(
