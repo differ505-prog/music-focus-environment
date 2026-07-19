@@ -52,14 +52,20 @@ type PlaybackContextValue = {
 
 const PlaybackContext = createContext<PlaybackContextValue | null>(null);
 
-export function PlaybackProvider({ children }: { children: ReactNode }) {
+export function PlaybackProvider({
+  children,
+  embedMode = false,
+}: {
+  children: ReactNode;
+  embedMode?: boolean;
+}) {
   const tracks = useRuntimeTracks();
   const pathname = usePathname();
   const mode = pathname.startsWith("/admin") ? "admin" : "public";
   const controllerRef = useRef<HowlerPlaylistController | null>(null);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pendingPlayId, setPendingPlayId] = useState<string | null>(null);
-  const [isPlayerOpen, setIsPlayerOpen] = useState(true);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(!embedMode);
   const [isPlayerMinimized, setIsPlayerMinimized] = useState(true);
   const [playback, setPlayback] = useState<PlaybackSnapshot>(initialPlaybackState);
 
@@ -319,8 +325,9 @@ export function PlaybackProvider({ children }: { children: ReactNode }) {
 
   return (
     <PlaybackContext.Provider value={value}>
-      {children}
-      {isPlayerOpen ? (
+      {embedMode ? (
+        children
+      ) : isPlayerOpen ? (
         <GlobalPlayer
           playlist={selectedAssets}
           currentTrack={currentTrack}

@@ -1,6 +1,9 @@
+'use client';
+
+import { Cormorant_Garamond, Manrope } from "next/font/google";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import type { Metadata } from "next";
-import { Cormorant_Garamond, Manrope } from "next/font/google";
 
 import { ErrorBoundary } from "@/components/error-boundary";
 import { PlaybackProvider } from "@/components/playback-provider";
@@ -51,11 +54,14 @@ export default function RootLayout({
 }: Readonly<{
   children: ReactNode;
 }>) {
+  const pathname = usePathname();
+  const isEmbedRoute = pathname?.startsWith("/embed") ?? false;
+
   return (
     <html lang="zh-Hant" suppressHydrationWarning>
       <body className={`${displayFont.variable} ${bodyFont.variable} antialiased`} suppressHydrationWarning>
         <ErrorBoundary>
-          <PlaybackProvider>{children}</PlaybackProvider>
+          {isEmbedRoute ? children : <PlaybackProvider>{children}</PlaybackProvider>}
         </ErrorBoundary>
       </body>
     </html>

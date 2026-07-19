@@ -3,12 +3,20 @@
 import { useEffect, useState } from "react";
 import { Waves } from "lucide-react";
 
-import { usePlayback } from "@/components/playback-provider";
+import { PlaybackProvider, usePlayback } from "@/components/playback-provider";
 import { useRuntimeTracks } from "@/hooks/use-runtime-tracks";
 
 type PlayState = "idle" | "loading" | "playing" | "error";
 
 export default function EmbedButtonPage() {
+  return (
+    <PlaybackProvider embedMode>
+      <EmbedButton />
+    </PlaybackProvider>
+  );
+}
+
+function EmbedButton() {
   const tracks = useRuntimeTracks();
   const { startRandomSession, playback } = usePlayback();
   const [playState, setPlayState] = useState<PlayState>("idle");
